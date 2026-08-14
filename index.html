@@ -1,0 +1,1726 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f9d55">
+<title>Fixa aí</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --ink:#16202b; --ink-2:#5a6b7c; --line:#e3e8ee;
+  --brand:#1f9d55; --brand-dark:#178044; --brand-soft:#e8f6ee;
+  --wrong:#d64545; --wrong-dark:#ab3434; --wrong-soft:#fdeceb;
+  --gold:#e8a33d; --purple:#6b5bd2; --blue:#2f7fd1;
+  --r:16px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#12171d; --card:#1a2129; --ink:#eef2f6; --ink-2:#93a3b4; --line:#2b343f;
+    --brand:#2fbb69; --brand-dark:#1d8a4c; --brand-soft:#16302250;
+    --wrong:#e5645f; --wrong-dark:#a83f3b; --wrong-soft:#3a201f;
+  }
+  .rolagem.mais{box-shadow:inset 0 -20px 15px -15px rgba(0,0,0,.6)}
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;overflow:hidden}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:ui-rounded,"SF Pro Rounded",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  font-size:16px; line-height:1.45;
+}
+/* ancorado na janela de verdade — funciona igual em aba, iframe ou painel de visualização */
+#app{position:fixed;top:0;right:0;bottom:0;left:0;inset:0;max-width:640px;margin:0 auto;
+  display:flex;flex-direction:column;overflow:hidden}
+
+/* área de rolagem própria: arrasta em qualquer ponto da tela, com inércia */
+.rolagem{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 16px;
+  touch-action:pan-y;scrollbar-width:thin;scrollbar-color:rgba(128,140,155,.45) transparent}
+.rolagem::-webkit-scrollbar{width:8px}
+.rolagem::-webkit-scrollbar-track{background:transparent}
+.rolagem::-webkit-scrollbar-thumb{background:rgba(128,140,155,.38);border-radius:99px}
+.rolagem::-webkit-scrollbar-thumb:hover{background:rgba(128,140,155,.7)}
+.rolagem.mais{box-shadow:inset 0 -20px 15px -15px rgba(20,30,45,.22)}
+#app.arrastando{cursor:grabbing;user-select:none}
+#app.arrastando *{cursor:grabbing !important}
+
+h1,h2,h3{margin:0;line-height:1.25;font-weight:800}
+button{font-family:inherit;font-size:inherit;cursor:pointer;border:none;background:none;color:inherit}
+.hide{display:none !important}
+.muted{color:var(--ink-2);font-size:13px;line-height:1.5}
+
+/* ---------- botões ---------- */
+.btn{display:block;width:100%;padding:14px 18px;border-radius:14px;font-weight:800;
+  letter-spacing:.02em;text-transform:uppercase;font-size:15px;
+  background:var(--brand);color:#fff;box-shadow:0 4px 0 var(--brand-dark);transition:transform .06s, box-shadow .06s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--brand-dark)}
+.btn[disabled]{background:var(--line);color:var(--ink-2);box-shadow:none;cursor:default;transform:none}
+.btn.ghost{background:transparent;color:var(--brand);box-shadow:inset 0 0 0 2px var(--line)}
+.btn.ghost:active{transform:translateY(2px)}
+.btn.danger{background:var(--wrong);box-shadow:0 4px 0 var(--wrong-dark)}
+.btn.sm{width:auto;display:inline-block;padding:9px 16px;font-size:13px}
+.btn.danger[disabled],.btn.ghost[disabled]{background:var(--line);color:var(--ink-2);box-shadow:none}
+.btn small{display:block;font-size:11px;font-weight:700;opacity:.85;text-transform:none;letter-spacing:0;margin-top:2px}
+
+/* ---------- barras superior e inferior ---------- */
+.topbar{flex:0 0 auto;display:flex;align-items:center;gap:12px;padding:14px 16px 10px;background:var(--bg)}
+.xbtn{font-size:24px;line-height:1;color:var(--ink-2);padding:4px 8px;font-weight:700}
+.bar{flex:1;height:14px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar > i{display:block;height:100%;background:var(--brand);border-radius:99px;transition:width .35s cubic-bezier(.2,.8,.2,1);
+  background-image:linear-gradient(180deg,rgba(255,255,255,.35),rgba(255,255,255,0) 60%)}
+.flame{font-weight:800;color:var(--gold);display:flex;align-items:center;gap:3px;font-size:15px}
+.semrank{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-2);
+  background:var(--line);border-radius:99px;padding:3px 8px}
+.cron{font-weight:800;font-size:15px;color:var(--ink-2);font-variant-numeric:tabular-nums;min-width:62px;text-align:right}
+.cron.apertado{color:var(--wrong);animation:pisca 1s infinite}
+@keyframes pisca{50%{opacity:.45}}
+.foot{flex:0 0 auto;background:var(--bg);padding:10px 16px calc(14px + env(safe-area-inset-bottom))}
+.foot:empty{padding:0}
+
+.nav{flex:0 0 auto;display:flex;background:var(--card);border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom)}
+.nav button{flex:1;padding:9px 4px 11px;display:flex;flex-direction:column;align-items:center;gap:2px;
+  font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-2)}
+.nav button b{font-size:21px;font-weight:400;line-height:1.1;filter:grayscale(1);opacity:.55}
+.nav button.on{color:var(--brand)}
+.nav button.on b{filter:none;opacity:1}
+
+/* ---------- cartões ---------- */
+.hero{padding:20px 0 4px}
+.hero .sub{color:var(--ink-2);font-size:14px;font-weight:600}
+.hero h1{font-size:27px;margin-top:2px}
+.cardz{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:12px}
+.secao{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-2);margin:20px 0 9px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 8px;text-align:center}
+.stat b{display:block;font-size:22px;font-weight:800}
+.stat span{font-size:11px;color:var(--ink-2);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.ring{display:flex;align-items:center;gap:14px}
+.ring svg{flex:0 0 76px}
+.ring .txt b{font-size:19px;display:block}
+.ring .txt span{color:var(--ink-2);font-size:13px;font-weight:600}
+.tp{display:flex;align-items:center;gap:10px;padding:9px 6px;width:100%;text-align:left;
+  background:transparent;border:0;border-radius:10px;font:inherit;color:inherit;cursor:pointer}
+.tp:hover{background:var(--brand-soft)}
+.tp:active{transform:scale(.99)}
+.tp .nm{flex:1;font-size:14px;font-weight:600}
+.tp .mini{width:74px;height:9px;border-radius:99px;background:var(--line);overflow:hidden}
+.tp .mini i{display:block;height:100%;background:var(--brand);border-radius:99px}
+.tp .pc{width:38px;text-align:right;font-size:12px;color:var(--ink-2);font-weight:700}
+.pv{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:11px 0;
+  border-bottom:1px solid var(--line)}
+.pv:last-child{border-bottom:none}
+.pv .ic{flex:0 0 34px;height:34px;border-radius:10px;background:var(--bg);display:grid;place-items:center;font-size:18px}
+.pv .tx{flex:1;min-width:0}
+.pv .tx b{display:block;font-size:14.5px;font-weight:800}
+.pv .tx span{display:block;font-size:12px;color:var(--ink-2);font-weight:600}
+.pv .dias{flex:0 0 auto;text-align:center;font-size:20px;font-weight:800;color:var(--purple);line-height:1}
+.pv .dias small{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;opacity:.8}
+.pv .dias.perto{color:var(--wrong)}
+.countdown{background:linear-gradient(135deg,var(--purple),#8e7ff0);color:#fff;border:none}
+.countdown b{font-size:30px;font-weight:800;display:block;line-height:1.1}
+.countdown small{opacity:.92;font-size:13px;font-weight:600}
+
+/* cartões de escolha do menu Estudar */
+.esc{display:flex;align-items:center;gap:13px;width:100%;text-align:left;background:var(--card);
+  border:2px solid var(--line);border-radius:var(--r);padding:13px 14px;margin-bottom:10px;
+  box-shadow:0 2px 0 var(--line);transition:.1s}
+.esc:active{transform:translateY(2px);box-shadow:none}
+.esc .ic{flex:0 0 42px;height:42px;border-radius:12px;background:var(--bg);display:grid;place-items:center;font-size:21px}
+.esc .tx{flex:1;min-width:0}
+.esc .tx b{display:block;font-size:15.5px;font-weight:800}
+.esc .tx span{display:block;font-size:12.5px;color:var(--ink-2);font-weight:600;margin-top:1px}
+.esc .ck{flex:0 0 22px;height:22px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;
+  font-size:12px;color:#fff;font-weight:900}
+.esc.on{border-color:var(--brand);background:var(--brand-soft);box-shadow:0 2px 0 var(--brand)}
+.esc.on .ck{background:var(--brand);border-color:var(--brand)}
+.esc.off{opacity:.5;pointer-events:none}
+.provas{margin:-4px 0 12px 55px;display:flex;flex-direction:column;gap:7px}
+.provas button{text-align:left;background:var(--card);border:2px solid var(--line);border-radius:12px;
+  padding:9px 12px;font-size:13.5px;font-weight:700;box-shadow:0 2px 0 var(--line)}
+.provas button.on{border-color:var(--brand);background:var(--brand-soft);box-shadow:0 2px 0 var(--brand)}
+.provas button span{display:block;font-weight:600;color:var(--ink-2);font-size:12px}
+
+.tipos{display:flex;flex-wrap:wrap;gap:8px}
+.tipo{background:var(--card);border:2px solid var(--line);box-shadow:0 2px 0 var(--line);border-radius:99px;
+  padding:8px 14px;font-weight:700;font-size:13.5px;transition:.1s}
+.tipo:active{transform:translateY(2px);box-shadow:none}
+.tipo.on{border-color:var(--brand);background:var(--brand-soft);box-shadow:0 2px 0 var(--brand);color:var(--brand-dark)}
+
+/* ---------- exercícios ---------- */
+.q{padding:6px 0 20px}
+.qtag{display:inline-block;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--ink-2);background:var(--line);padding:4px 9px;border-radius:99px;margin-bottom:12px}
+.qtitle{font-size:21px;font-weight:800;margin-bottom:16px}
+.qhead{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.qhead .qtag{margin-bottom:0}
+.info{flex:0 0 23px;height:23px;border-radius:50%;border:2px solid var(--line);color:var(--ink-2);
+  font-size:12px;font-weight:900;font-style:italic;display:grid;place-items:center;line-height:1;font-family:Georgia,serif}
+.info.on{border-color:var(--blue);color:var(--blue);background:#2f7fd118}
+.fonte{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--blue);
+  border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:13.5px;line-height:1.55;animation:up .2s}
+.fonte b.rot{display:block;font-size:13px;margin-bottom:2px}
+.fonte .ref{color:var(--ink-2);font-weight:700;font-size:12px;margin-bottom:8px}
+.fonte p{margin:0;color:var(--ink)}
+.fonte small{color:var(--ink-2);display:inline-block;margin-top:6px}
+.stem{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:16px;font-size:16px;line-height:1.5}
+.opt{display:flex;gap:11px;align-items:flex-start;width:100%;text-align:left;background:var(--card);
+  border:2px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:9px;box-shadow:0 2px 0 var(--line);transition:.1s}
+.opt:active{transform:translateY(2px);box-shadow:none}
+.resposta{width:100%;box-sizing:border-box;font:inherit;font-size:17px;font-weight:700;
+  padding:14px 15px;border:2px solid var(--line);border-radius:14px;background:var(--card);
+  color:var(--txt);outline:none;transition:border-color .12s}
+.resposta:focus{border-color:var(--brand)}
+.resposta.ok{border-color:var(--brand);background:var(--brand-soft)}
+.resposta.no{border-color:var(--wrong);background:var(--wrong-soft)}
+.resposta[disabled]{opacity:1}
+.pista{margin:10px 0 0;font-size:13.5px;color:var(--ink-2)}
+.revtexto{font-size:15px;line-height:1.6;margin:10px 0 0;color:var(--txt)}
+.revexp{font-size:14.5px;line-height:1.55;margin:10px 0 0;color:var(--ink-2)}
+.acoes .btn.ghost{flex:1}
+.pares{margin:6px 0 10px;display:flex;flex-direction:column;gap:6px}
+.par{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:13.5px;line-height:1.45}
+.par b{font-weight:800}
+.par .seta{opacity:.55;font-weight:800}
+.assuntos{margin:2px 0 10px 12px;padding-left:12px;border-left:2px solid var(--line)}
+.assuntos .rot{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.06em;margin:8px 0 6px}
+.as{display:flex;gap:10px;align-items:center;justify-content:space-between;width:100%;text-align:left;
+  background:var(--card);border:2px solid var(--line);border-radius:12px;padding:9px 12px;margin-bottom:6px;
+  font:inherit;font-size:14px;font-weight:700;color:var(--txt);cursor:pointer}
+.as.on{border-color:var(--brand);background:var(--brand-soft);color:var(--brand)}
+.as .nm{flex:1;min-width:0}
+.as .qt{flex:0 0 auto;font-size:12px;font-weight:800;color:var(--muted);opacity:.9}
+.as .ck2{flex:0 0 18px;height:18px;border-radius:5px;border:2px solid var(--line);
+  display:grid;place-items:center;font-size:11px;font-weight:900;color:var(--brand)}
+.as.on .ck2{border-color:var(--brand);background:var(--brand-soft)}
+.asbtns{display:flex;gap:8px;margin-bottom:8px}
+.minibt{flex:1;padding:7px 10px;border-radius:10px;border:2px solid var(--line);background:var(--card);
+  font:inherit;font-size:12.5px;font-weight:800;color:var(--ink-2);cursor:pointer}
+.minibt:hover:not([disabled]){border-color:var(--brand);color:var(--brand)}
+.minibt[disabled]{opacity:.4;cursor:default}
+.as.on .qt{color:var(--brand)}
+#semMemoria{position:fixed;left:10px;right:10px;bottom:10px;z-index:99;max-width:620px;margin:0 auto;
+  background:#4a2c00;color:#ffe9c7;border:2px solid #a86b1d;border-radius:14px;padding:12px 40px 12px 14px;
+  font-size:13px;line-height:1.5;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+#semMemoria b{display:block;margin-bottom:4px}
+#semMemoria button{position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:8px;
+  border:0;background:rgba(255,255,255,.14);color:inherit;font-size:14px;font-weight:800;cursor:pointer}
+.dica{margin:-4px 0 12px;font-size:13px;font-weight:800;color:var(--brand);letter-spacing:.02em}
+.optrow{display:flex;gap:8px;align-items:stretch;width:100%}
+.optrow .opt{flex:1;min-width:0}
+.risca{flex:0 0 34px;border:2px solid var(--line);border-radius:12px;background:transparent;
+  color:var(--muted);font-size:14px;font-weight:800;cursor:pointer;line-height:1;padding:0;
+  display:grid;place-items:center;transition:all .12s;opacity:.55}
+.risca:hover{border-color:var(--muted);color:var(--txt);opacity:1}
+.risca.on{border-color:var(--wrong);color:var(--wrong);background:var(--wrong-soft);opacity:1}
+.risca[disabled]{opacity:.35;cursor:default}
+.opt.riscada{opacity:.42}
+.opt.riscada span:last-child{text-decoration:line-through}
+.opt.ok,.opt.no{opacity:1}
+.opt.ok span:last-child,.opt.no span:last-child{text-decoration:none}
+.opt .k{flex:0 0 24px;height:24px;border-radius:7px;border:2px solid var(--line);display:grid;place-items:center;
+  font-size:12px;font-weight:800;color:var(--ink-2)}
+.opt.sel{border-color:var(--brand);background:var(--brand-soft);box-shadow:0 2px 0 var(--brand)}
+.opt.sel .k{border-color:var(--brand);color:var(--brand)}
+.opt.ok{border-color:var(--brand);background:var(--brand-soft);box-shadow:0 2px 0 var(--brand)}
+.opt.no{border-color:var(--wrong);background:var(--wrong-soft);box-shadow:0 2px 0 var(--wrong)}
+.vfgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.vfgrid .opt{justify-content:center;font-weight:800;font-size:16px;text-transform:uppercase;letter-spacing:.03em}
+
+.cloze{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;font-size:17px;line-height:2.1}
+.blank{display:inline-block;min-width:104px;border-bottom:3px solid var(--ink-2);text-align:center;
+  padding:1px 8px;margin:0 2px;font-weight:700;vertical-align:baseline;border-radius:4px 4px 0 0}
+.blank.filled{background:var(--brand-soft);border-bottom-color:var(--brand);color:var(--ink)}
+.blank.ok{background:var(--brand-soft);border-bottom-color:var(--brand)}
+.blank.no{background:var(--wrong-soft);border-bottom-color:var(--wrong);text-decoration:line-through;opacity:.75}
+.blank.fix{background:var(--brand-soft);border-bottom-color:var(--brand);font-weight:800}
+.bank{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.chip{background:var(--card);border:2px solid var(--line);box-shadow:0 2px 0 var(--line);border-radius:12px;
+  padding:9px 13px;font-weight:700;font-size:15px;transition:.1s}
+.chip:active{transform:translateY(2px);box-shadow:none}
+.chip.used{opacity:.28;pointer-events:none}
+
+.slots{min-height:56px;border:2px dashed var(--line);border-radius:var(--r);padding:8px;margin-bottom:14px;background:var(--card)}
+.slots:empty::after{content:"Toque nas etapas abaixo, na ordem certa";color:var(--ink-2);font-size:13px;
+  display:block;text-align:center;padding:14px 6px;font-weight:600}
+.srow{display:flex;gap:10px;align-items:flex-start;background:var(--brand-soft);border:2px solid var(--brand);
+  border-radius:11px;padding:9px 11px;margin:6px 0;font-size:14.5px;line-height:1.4}
+.srow .n{flex:0 0 21px;height:21px;border-radius:50%;background:var(--brand);color:#fff;display:grid;
+  place-items:center;font-size:11px;font-weight:800;margin-top:1px}
+.srow.no{background:var(--wrong-soft);border-color:var(--wrong)}
+.srow.no .n{background:var(--wrong)}
+.pool .prow{display:block;width:100%;text-align:left;background:var(--card);border:2px solid var(--line);
+  box-shadow:0 2px 0 var(--line);border-radius:11px;padding:11px 13px;margin-bottom:8px;font-size:14.5px;line-height:1.4}
+.pool .prow:active{transform:translateY(2px);box-shadow:none}
+.gab{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin-top:12px}
+.gab ol{margin:6px 0 0;padding-left:20px;font-size:14px;line-height:1.5}
+
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.mcol{display:flex;flex-direction:column;gap:9px}
+.mi{background:var(--card);border:2px solid var(--line);box-shadow:0 2px 0 var(--line);border-radius:12px;
+  padding:11px;font-size:13.5px;line-height:1.35;text-align:left;flex:1;display:flex;align-items:center;transition:.1s}
+.mi:active{transform:translateY(2px);box-shadow:none}
+.mi.sel{border-color:var(--blue);background:#2f7fd118}
+.mi.done{border-color:var(--brand);background:var(--brand-soft);opacity:.55;pointer-events:none;box-shadow:none}
+.mi.err{border-color:var(--wrong);background:var(--wrong-soft);animation:shake .35s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+.fb{border-radius:var(--r);padding:14px;margin-bottom:11px;animation:up .22s;max-height:38vh;max-height:38dvh;
+  overflow-y:auto;scrollbar-width:thin}
+@keyframes up{from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}
+.fb.good{background:var(--brand-soft);color:var(--brand-dark)}
+.fb.bad{background:var(--wrong-soft);color:var(--wrong-dark)}
+.fb h3{font-size:16px;margin-bottom:5px;display:flex;align-items:center;gap:7px}
+.fb p{margin:0;font-size:14px;line-height:1.5;color:var(--ink)}
+
+/* linha de ações do rodapé: Continuar + bandeirinha de reportar */
+.acoes{display:flex;gap:10px}
+.acoes .btn{flex:1}
+.flag{flex:0 0 56px;border-radius:14px;background:var(--wrong);color:#fff;box-shadow:0 4px 0 var(--wrong-dark);
+  display:grid;place-items:center;font-size:19px;transition:transform .06s, box-shadow .06s}
+.flag:active{transform:translateY(3px);box-shadow:0 1px 0 var(--wrong-dark)}
+.flag.neutra{background:var(--card);color:var(--ink-2);box-shadow:inset 0 0 0 2px var(--line)}
+.rep{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--wrong);
+  border-radius:var(--r);padding:14px;margin-bottom:11px;max-height:44vh;max-height:44dvh;overflow-y:auto;animation:up .2s}
+.rep h3{font-size:15px;margin-bottom:10px}
+.rep .mot{display:block;width:100%;text-align:left;border:2px solid var(--line);border-radius:12px;
+  padding:10px 12px;margin-bottom:8px;font-weight:700;font-size:14px;background:var(--bg)}
+.rep .mot.on{border-color:var(--wrong);background:var(--wrong-soft);color:var(--wrong-dark)}
+.rep textarea{width:100%;padding:10px;border-radius:12px;border:2px solid var(--line);background:var(--bg);
+  color:var(--ink);font-family:inherit;font-size:15px;resize:vertical;margin-top:4px}
+.repitem{border-top:1px solid var(--line);padding:10px 0;font-size:13.5px;line-height:1.5}
+.repitem:first-child{border-top:none}
+.repitem b{display:block;font-size:12px;color:var(--wrong-dark);text-transform:uppercase;letter-spacing:.04em}
+
+.done{text-align:center;padding:32px 0}
+.done .big{font-size:60px}
+.done h2{font-size:26px;margin:12px 0 6px}
+.done p{color:var(--ink-2);margin:0 0 22px}
+.pill{display:inline-block;background:var(--card);border:1px solid var(--line);border-radius:99px;
+  padding:8px 15px;margin:4px;font-weight:700;font-size:14px}
+
+label.f{display:block;font-size:13px;font-weight:700;color:var(--ink-2);margin:14px 0 5px;text-transform:uppercase;letter-spacing:.04em}
+input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--line);background:var(--card);
+  color:var(--ink);font-family:inherit;font-size:16px;font-weight:600}
+.rowb{display:flex;gap:10px;margin-top:16px}
+.rowb .btn{flex:1}
+.linkish{color:var(--brand);font-weight:700;text-decoration:underline;font-size:14px}
+</style>
+<meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Fixa aí">
+<meta name="description" content="Repetição espaçada para fixar conteúdo das provas da faculdade.">
+</head>
+<body>
+<div id="app"></div>
+
+<script>window.VERSAO_BANCO = "512843b70a99";</script>
+
+<script>
+"use strict";
+/* ============================================================
+   Fixa aí — repetição espaçada para provas da faculdade
+   ============================================================ */
+
+const KEY = "fixaai_v2";
+const INTERVALOS = [1, 2, 4, 7, 15, 30, 45];
+const CAIXA_MAX  = INTERVALOS.length - 1;
+const NOMES_TIPO  = { vf:"V ou F", mcq:"Assinalar", multi:"Marcar várias", escrita:"Escrever", cloze:"Lacunas", ordem:"Ordenar", relacionar:"Relacionar" };
+const TITULO_TIPO = { vf:"Verdadeiro ou falso", mcq:"Escolha a certa", multi:"Marque TODAS as corretas",
+                      escrita:"Escreva a resposta", cloze:"Complete as lacunas", ordem:"Coloque em ordem",
+                      relacionar:"Relacione" };
+
+/* toda questão pertence a uma disciplina e a uma prova */
+let porId = {}, discPorId = {};
+function indexarBanco(){
+  CURSO.itens.forEach(i => { i.disc = i.disc || "fisio"; i.prova = i.prova || "p3"; });
+  porId = {};     CURSO.itens.forEach(i => porId[i.id] = i);
+  discPorId = {}; CURSO.disciplinas.forEach(d => discPorId[d.id] = d);
+}
+
+/* ---------- utilidades ---------- */
+const $ = s => document.querySelector(s);
+const app = $("#app");
+const hoje = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+const addDias = (iso, n) => { const d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() + n); return d.toISOString().slice(0,10); };
+const difDias = (a, b) => Math.round((new Date(b+"T12:00:00") - new Date(a+"T12:00:00")) / 86400000);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const plural = (n, s, p) => n + " " + (n === 1 ? s : p);
+function embaralhar(a){ a = a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+/* ============================================================
+   Rolagem: arrastar em qualquer ponto da tela, com inércia.
+   Toque usa a rolagem nativa (touch-action:pan-y); mouse, trackpad
+   e caneta usam este arrasto — que era o que faltava.
+   ============================================================ */
+function areaRolavel(){ return document.querySelector(".rolagem"); }
+
+(function ligarArrasto(){
+  let ativo = false, arrastou = false, y0 = 0, top0 = 0, ultimoY = 0, ultimoT = 0, vel = 0, quadro = null;
+
+  app.addEventListener("pointerdown", e => {
+    if(e.pointerType === "touch") return;                     // toque: rolagem nativa do navegador
+    if(e.button !== 0) return;
+    if(e.target.closest("input, select, textarea")) return;
+    const el = areaRolavel(); if(!el) return;
+    if(e.clientX > el.getBoundingClientRect().right - 18) return;   // clique na barra de rolagem
+    ativo = true; arrastou = false; y0 = e.clientY; top0 = el.scrollTop;
+    ultimoY = e.clientY; ultimoT = performance.now(); vel = 0;
+    cancelAnimationFrame(quadro);
+  });
+
+  window.addEventListener("pointermove", e => {
+    if(!ativo) return;
+    const el = areaRolavel(); if(!el) return;
+    const dy = e.clientY - y0;
+    if(!arrastou){
+      if(Math.abs(dy) < 5) return;
+      arrastou = true; app.classList.add("arrastando");
+    }
+    el.scrollTop = top0 - dy;
+    const agora = performance.now(), dt = agora - ultimoT;
+    if(dt > 0){ vel = (e.clientY - ultimoY) / dt; ultimoY = e.clientY; ultimoT = agora; }
+    e.preventDefault();
+  }, { passive:false });
+
+  function soltar(){
+    if(!ativo) return;
+    ativo = false;
+    const el = areaRolavel();
+    if(arrastou && el){
+      let v = vel * 15;                                       // inércia
+      const passo = () => {
+        v *= 0.94; el.scrollTop -= v;
+        if(Math.abs(v) > 0.35) quadro = requestAnimationFrame(passo); else atualizaSombra();
+      };
+      passo();
+      const engolir = ev => { ev.stopPropagation(); ev.preventDefault(); };  // não dispara o botão sob o cursor
+      window.addEventListener("click", engolir, true);
+      setTimeout(() => window.removeEventListener("click", engolir, true), 0);
+    }
+    app.classList.remove("arrastando");
+    arrastou = false;
+  }
+  window.addEventListener("pointerup", soltar);
+  window.addEventListener("pointercancel", soltar);
+
+  // roda do mouse funciona apontando para qualquer lugar, inclusive rodapé e menu
+  app.addEventListener("wheel", e => {
+    const el = areaRolavel(); if(!el || el.contains(e.target)) return;
+    el.scrollTop += e.deltaY;
+  }, { passive:true });
+
+  window.addEventListener("keydown", e => {
+    const el = areaRolavel(); if(!el) return;
+    if(e.target.closest("input, select, textarea")) return;
+    if(e.key === "PageDown" || e.key === " "){ el.scrollBy({top: el.clientHeight*0.85, behavior:"smooth"}); e.preventDefault(); }
+    if(e.key === "PageUp"){ el.scrollBy({top: -el.clientHeight*0.85, behavior:"smooth"}); e.preventDefault(); }
+    if(e.key === "ArrowDown") el.scrollTop += 60;
+    if(e.key === "ArrowUp")   el.scrollTop -= 60;
+  });
+})();
+
+function atualizaSombra(){
+  const el = areaRolavel(); if(!el) return;
+  el.classList.toggle("mais", el.scrollTop + el.clientHeight < el.scrollHeight - 4);
+}
+function ligarCue(){
+  const el = areaRolavel(); if(!el) return;
+  el.onscroll = atualizaSombra;
+  atualizaSombra(); requestAnimationFrame(atualizaSombra);
+}
+window.addEventListener("resize", ligarCue);
+
+/* ============================================================
+   Estado
+   ============================================================ */
+const padrao = () => ({
+  v:3, prog:{}, ofensiva:0, ultimoDia:null, dia:null, feitosHoje:0, xp:0, meta:10,
+  segPorQuestao:90, esperaMin:30, proximaSessao:null, recorde:null,
+  xpSemana:0, semana:null,
+  datas:{},                                     // "fisio/p3" -> "2026-08-26"
+  foco:{ disc:null, prova:null, tops:[], tipos:[], soRevisao:false, soErros:false },
+  reportes:[],
+  historico:{}
+});
+let S = carregar();
+let aba = "inicio";
+
+function carregar(){
+  try{
+    const bruto = localStorage.getItem(KEY) || localStorage.getItem("fixaai_fisiologia_v1");
+    if(!bruto) return padrao();
+    const s = { ...padrao(), ...JSON.parse(bruto) };
+    s.foco = { ...padrao().foco, ...(s.foco || {}) };
+    s.datas = s.datas || {};
+    if(s.dataProva && !Object.keys(s.datas).length){          // migra a versão antiga
+      s.datas = { "fisio/p3": s.dataProva };
+      delete s.dataProva;
+    }
+    if(s.foco && s.foco.top !== undefined){           // o assunto passou a aceitar mais de um
+      if(s.foco.top && !(s.foco.tops || []).length) s.foco.tops = [s.foco.top];
+      delete s.foco.top;
+    }
+    if(!(s.v >= 3)){                    // o padrão passou de 1 min para 1min30 por questão
+      if(s.segPorQuestao === 60) s.segPorQuestao = 90;
+      s.v = 3;
+    }
+    return s;
+  }catch(e){ return padrao(); }
+}
+let SEM_MEMORIA = false;
+function salvar(){
+  try{ localStorage.setItem(KEY, JSON.stringify(S)); SEM_MEMORIA = false; }
+  catch(e){ SEM_MEMORIA = true; avisoSemMemoria(); }
+}
+/* Alguns navegadores — o Safari do iPhone abrindo um arquivo local é o caso típico —
+   bloqueiam o armazenamento. O app continua funcionando, mas o progresso se perde ao
+   fechar. Melhor dizer isso na cara do que deixar a pessoa descobrir depois. */
+function avisoSemMemoria(){
+  if(document.getElementById("semMemoria")) return;
+  const d = document.createElement("div");
+  d.id = "semMemoria";
+  d.innerHTML = `<b>⚠️ Seu progresso não está sendo salvo.</b>
+    Este navegador bloqueou o armazenamento do app. Costuma acontecer ao abrir o arquivo
+    direto no iPhone. Dá para estudar normalmente, mas ao fechar tudo recomeça do zero.
+    <button id="fechaAviso" aria-label="Fechar aviso">✕</button>`;
+  document.body.appendChild(d);
+  const b = document.getElementById("fechaAviso");
+  if(b) b.onclick = () => d.remove();
+}
+
+function domingoDa(iso){                       // chave da semana: o domingo que a inicia
+  const d = new Date(iso + "T12:00:00");
+  d.setDate(d.getDate() - d.getDay());
+  return d.toISOString().slice(0,10);
+}
+function virarASemana(){
+  const dom = domingoDa(hoje());
+  if(S.semana !== dom){ S.semana = dom; S.xpSemana = 0; salvar(); }
+}
+function virarODia(){
+  virarASemana();
+  const h = hoje();
+  if(S.dia !== h){
+    if(S.ultimoDia && difDias(S.ultimoDia, h) > 1) S.ofensiva = 0;
+    S.dia = h; S.feitosHoje = 0; salvar();
+  }
+}
+
+/* ---------- consultas ---------- */
+function itensDoFoco(){
+  const f = S.foco;
+  return CURSO.itens.filter(i =>
+    (!f.disc  || i.disc  === f.disc)  &&
+    (!f.prova || i.prova === f.prova) &&
+    (!(f.tops || []).length || f.tops.includes(i.top)) &&
+    (!f.tipos.length || f.tipos.includes(i.t)));
+}
+function vencidos(lista){ const h = hoje(); return (lista || CURSO.itens).filter(i => S.prog[i.id] && S.prog[i.id].venc <= h); }
+function errados(lista){ return (lista || CURSO.itens).filter(i => S.prog[i.id] && S.prog[i.id].erros > 0)
+  .sort((a,b) => (S.prog[b.id].erros - S.prog[a.id].erros) || (S.prog[a.id].caixa - S.prog[b.id].caixa)); }
+function vistos(lista){ return (lista || CURSO.itens).filter(i => S.prog[i.id]); }
+function novos(lista){ return (lista || CURSO.itens).filter(i => !S.prog[i.id]); }
+function itensDaProva(discId, provaId){
+  return CURSO.itens.filter(i => i.disc === discId && (!provaId || i.prova === provaId));
+}
+function nomeDoFoco(){
+  const f = S.foco;
+  if(f.soErros) return "Só o que eu errei";
+  if(f.soRevisao) return "Só revisão";
+  if(!f.disc) return "Mix de tudo";
+  const d = discPorId[f.disc];
+  if(!d) return "Mix de tudo";
+  const sel = f.tops || [];
+  if(sel.length === 1){
+    const t = CURSO.topicos.find(x => x.id === sel[0]);
+    if(t) return t.nome;
+  }
+  if(sel.length > 1) return sel.length + " assuntos";
+  if(!f.prova) return d.nome + " · tudo";
+  const p = d.provas.find(x => x.id === f.prova);
+  return d.nome + " " + (p ? p.nome : "");
+}
+function resumoTipos(){
+  const t = S.foco.tipos;
+  return t.length ? t.map(x => NOMES_TIPO[x]).join(", ") : "todos os tipos";
+}
+function progresso(lista){
+  if(!lista.length) return 0;
+  let soma = 0;
+  lista.forEach(i => { const p = S.prog[i.id]; soma += p ? Math.min(p.caixa, 4)/4 : 0; });
+  return Math.round(100 * soma / lista.length);
+}
+function provasFuturas(){
+  const h = hoje();
+  const lista = [];
+  Object.entries(S.datas || {}).forEach(([chave, data]) => {
+    if(!data) return;
+    const dias = difDias(h, data);
+    if(dias < 0) return;
+    const [discId, provaId] = chave.split("/");
+    const disc = discPorId[discId]; if(!disc) return;
+    const prova = (disc.provas || []).find(p => p.id === provaId);
+    const its = itensDaProva(discId, provaId);
+    lista.push({ dias, data, disc, prova, chave, discId, provaId,
+                 total: its.length, pc: progresso(its),
+                 faltam: its.filter(i => !S.prog[i.id] || S.prog[i.id].caixa < 4).length });
+  });
+  return lista.sort((a,b) => a.dias - b.dias);
+}
+function provaMaisProxima(){
+  const h = hoje();
+  let melhor = null;
+  Object.entries(S.datas || {}).forEach(([chave, data]) => {
+    if(!data) return;
+    const dias = difDias(h, data);
+    if(dias < 0) return;
+    if(!melhor || dias < melhor.dias){
+      const [discId, provaId] = chave.split("/");
+      const disc = discPorId[discId]; if(!disc) return;
+      melhor = { dias, disc, prova:(disc.provas||[]).find(p => p.id === provaId) };
+    }
+  });
+  return melhor;
+}
+
+/* ---------- agendamento ---------- */
+function registrar(id, acertou){
+  const h = hoje();
+  const p = S.prog[id] || { caixa:0, venc:h, erros:0, reps:0 };
+  p.reps++;
+  if(acertou){
+    // a caixa sobe no máximo uma vez por dia: repetir o mesmo exercício hoje
+    // treina, mas não é prova de que ficou fixado — isso só o tempo mostra
+    if(p.avancou !== h){
+      p.caixa = Math.min(p.caixa + 1, CAIXA_MAX);
+      p.avancou = h;
+      let intervalo = INTERVALOS[p.caixa];
+      const it = porId[id];
+      const data = it ? (S.datas || {})[it.disc + "/" + it.prova] : null;
+      if(data){                                  // reta final: nada some de vista até a prova
+        const faltam = difDias(h, data);
+        if(faltam > 0) intervalo = Math.min(intervalo, Math.max(1, Math.ceil(faltam/2)));
+      }
+      p.venc = addDias(h, intervalo);
+    }
+  }else{
+    p.caixa = 0; p.erros++; p.venc = addDias(h, 1);
+  }
+  S.prog[id] = p;
+  const ganho = acertou ? 10 : 3;
+  S.xp += ganho;                                          // XP total, histórico seu
+  if(!SES || SES.valeRanking !== false) S.xpSemana += ganho;   // XP da semana, do ranking
+  salvar();
+}
+
+function montarSessao(){
+  virarODia();
+  const pool = itensDoFoco();
+  const falta = Math.max(0, S.meta - S.feitosHoje);
+  const alvo = falta > 0 ? falta : S.meta;
+  const v = embaralhar(vencidos(pool));
+  const n = embaralhar(novos(pool));
+  if(S.foco.soErros)   return { fila: errados(pool).slice(0, alvo), modo:"erros" };
+  if(S.foco.soRevisao) return { fila: v.slice(0, alvo), modo:"revisao" };
+  let fila = v.concat(n).slice(0, alvo);
+  if(fila.length) return { fila, modo:"normal" };
+  // nada vencendo e nada novo: vira treino livre, que não é o mesmo que progresso
+  return { fila: embaralhar(pool).slice(0, Math.min(alvo, pool.length)), modo:"treino" };
+}
+
+/* ============================================================
+   Estrutura das telas
+   ============================================================ */
+function montarTela(corpo, opcoes){
+  const o = opcoes || {};
+  const comNav = o.comNav !== false;
+  app.innerHTML = (o.topo || "")
+    + '<div class="rolagem">' + corpo + '<div style="height:18px"></div></div>'
+    + (o.rodape !== undefined ? '<div class="foot">' + o.rodape + "</div>" : "")
+    + (comNav ? navHTML() : "");
+  if(comNav) ligarNav();
+  ligarCue();
+}
+function navHTML(){
+  const abas = [["inicio","🏠","Início"],["estudar","🎯","Estudar"],["ajustes","⚙️","Ajustes"]];
+  return '<div class="nav">' + abas.map(a =>
+    `<button data-aba="${a[0]}" class="${aba===a[0]?"on":""}"><b>${a[1]}</b>${a[2]}</button>`).join("") + "</div>";
+}
+function ligarNav(){
+  document.querySelectorAll("[data-aba]").forEach(b => b.onclick = () => {
+    aba = b.dataset.aba;
+    ({ inicio:telaInicio, estudar:telaEstudar, ajustes:telaAjustes })[aba]();
+  });
+}
+
+/* ============================================================
+   TELA: Início
+   ============================================================ */
+function telaInicio(){
+  virarODia(); aba = "inicio";
+  const prox = provaMaisProxima();
+  const feitos = Math.min(S.feitosHoje, S.meta);
+  const pcDia = Math.round(100 * feitos / S.meta);
+  const raio = 32, circ = 2 * Math.PI * raio;
+  const pool = itensDoFoco();
+  const nVenc = vencidos(pool).length, nNovos = novos(pool).length;
+  const prontas = CURSO.disciplinas.filter(d => d.provas.length);
+
+  const corpo = `
+  <div class="hero">
+    <div class="sub">Bom estudo</div>
+    <h1>Fixa aí 🧠</h1>
+  </div>
+
+  ${(() => {
+    const futuras = provasFuturas();
+    if(!futuras.length) return `<div class="cardz" style="border-style:dashed">
+      <b style="font-size:15px">📅 Cadastre suas provas</b>
+      <p class="muted" style="margin:6px 0 0">Em Ajustes, ponha a data de cada prova. O app mostra a
+      contagem regressiva e encurta os intervalos de revisão na reta final.</p></div>`;
+    if(futuras.length === 1) return "";
+    return `<div class="secao">Suas próximas provas</div>
+    <div class="cardz" style="padding:6px 14px">
+      ${futuras.map(f => `
+        <button class="pv" data-prova-ir="${f.chave}">
+          <span class="ic">${f.disc.emoji}</span>
+          <span class="tx">
+            <b>${esc(f.disc.nome)} ${esc(f.prova ? f.prova.nome : "")}</b>
+            <span>${f.pc}% dominado · ${plural(f.faltam, "exercício ainda não fixado", "exercícios ainda não fixados")}</span>
+          </span>
+          <span class="dias ${f.dias <= 3 ? "perto" : ""}">${f.dias === 0 ? "hoje" : f.dias}<small>${f.dias === 0 ? "" : f.dias === 1 ? "dia" : "dias"}</small></span>
+        </button>`).join("")}
+    </div>`;
+  })()}
+
+  ${prox ? `
+  <div class="cardz countdown">
+    <b>${prox.dias > 0 ? plural(prox.dias, "dia", "dias") : "É hoje!"}</b>
+    <small>até ${esc(prox.disc.nome)} ${esc(prox.prova ? prox.prova.nome : "")}${
+      prox.dias > 0
+        ? " · " + Math.max(1, Math.ceil(itensDaProva(prox.disc.id, prox.prova && prox.prova.id).length / prox.dias)) + " exercícios/dia pra dar conta"
+        : " · boa prova! 🍀"}</small>
+  </div>` : ""}
+
+  <div class="cardz">
+    <div class="ring">
+      <svg width="76" height="76" viewBox="0 0 76 76">
+        <circle cx="38" cy="38" r="${raio}" fill="none" stroke="var(--line)" stroke-width="9"/>
+        <circle cx="38" cy="38" r="${raio}" fill="none" stroke="var(--brand)" stroke-width="9" stroke-linecap="round"
+          stroke-dasharray="${circ}" stroke-dashoffset="${circ * (1 - pcDia/100)}" transform="rotate(-90 38 38)"/>
+        <text x="38" y="43" text-anchor="middle" font-size="17" font-weight="800" fill="var(--ink)">${feitos}</text>
+      </svg>
+      <div class="txt">
+        <b>Meta de hoje: ${feitos}/${S.meta}</b>
+        <span>${S.feitosHoje >= S.meta ? "Meta batida! 🎉" : (nVenc ? nVenc + " para revisar · " : "") + nNovos + " novos esperando"}</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="esc" id="trocar">
+    <span class="ic">🎯</span>
+    <span class="tx"><b>${esc(nomeDoFoco())}</b><span>${esc(resumoTipos())} · toque para trocar</span></span>
+    <span class="ck" style="border:none;color:var(--ink-2)">›</span>
+  </button>
+
+  <div class="stats">
+    <div class="stat"><b>🔥 ${S.ofensiva}</b><span>ofensiva</span></div>
+    <div class="stat"><b>${S.xpSemana}</b><span>xp da semana</span></div>
+    <div class="stat"><b>${progresso(pool)}%</b><span>dominado</span></div>
+  </div>
+  <p class="muted" style="margin:-4px 0 4px">${(() => {
+    const p2 = pool, nv = vistos(p2).length, ne = errados(p2).length;
+    return `<b>Dominado</b> não é quantas você viu: é quantas você acertou em <b>4 dias diferentes</b>.
+      Acertar de novo hoje treina, mas não conta de novo. Errar zera aquele exercício.<br>
+      Até agora: ${nv} de ${p2.length} vistos${ne ? ` · <b>${ne}</b> com erro no histórico` : ""}.`;
+  })()}</p>
+
+  ${prontas.map(d => {
+    const its = itensDaProva(d.id);
+    const tops = CURSO.topicos.filter(t => t.disc === d.id);
+    return `
+    <div class="secao">${esc(d.emoji)} ${esc(d.nome)}</div>
+    <div class="cardz">
+      ${tops.map(t => { const lista = its.filter(i => i.top === t.id); const pc = progresso(lista); return `
+        <button class="tp" data-topo-ir="${d.id}/${t.id}" title="Estudar só este assunto">
+          <div class="nm">${esc(t.nome)}</div>
+          <div class="mini"><i style="width:${pc}%"></i></div>
+          <div class="pc">${pc}%</div>
+        </button>`; }).join("")}
+    </div>`; }).join("")}`;
+
+  const esperando = S.proximaSessao && Date.now() < S.proximaSessao;
+  montarTela(corpo, { rodape: esperando
+    ? `<button class="btn" id="go" disabled>Aguarde<small id="contaEspera"></small></button>
+       <div style="height:8px"></div>
+       <button class="btn ghost sm" id="pular" style="width:100%">Estudar mesmo assim<small>não conta para o ranking</small></button>`
+    : `<button class="btn" id="go">${S.feitosHoje >= S.meta ? "Sessão extra" : "Estudar agora"}<small>${esc(nomeDoFoco())}</small></button>` });
+  if(esperando){
+    const tick = () => {
+      const falta = Math.round((S.proximaSessao - Date.now())/1000);
+      const el = $("#contaEspera");
+      if(!el){ clearInterval(espera); return; }
+      if(falta <= 0){ clearInterval(espera); telaInicio(); return; }
+      el.textContent = "libera em " + mmss(falta);
+    };
+    const espera = setInterval(tick, 1000); tick();
+    $("#pular").onclick = () => { clearInterval(espera); iniciarSessao(); };
+  } else {
+    $("#go").onclick = iniciarSessao;
+  }
+  $("#trocar").onclick = () => { aba = "estudar"; telaEstudar(); };
+  document.querySelectorAll("[data-prova-ir]").forEach(b => b.onclick = () => {
+    const [d, pr] = b.dataset.provaIr.split("/");
+    S.foco = { ...S.foco, disc:d, prova:pr, top:null, soRevisao:false, soErros:false };
+    salvar(); telaInicio();
+  });
+  document.querySelectorAll("[data-topo-ir]").forEach(b => b.onclick = () => {
+    const [d, t] = b.dataset.topoIr.split("/");
+    const um = CURSO.itens.find(i => i.top === t);
+    S.foco = { ...S.foco, disc:d, prova:(um ? um.prova : null), tops:[t], soRevisao:false, soErros:false };
+    salvar(); telaInicio();
+  });
+}
+
+/* ============================================================
+   TELA: Estudar — o menu principal
+   ============================================================ */
+function redesenhaEstudar(){          // mantém a rolagem onde estava ao marcar/desmarcar
+  const el = areaRolavel();
+  const y = el ? el.scrollTop : 0;
+  telaEstudar(y);
+}
+function telaEstudar(rolagemAnterior){
+  virarODia(); aba = "estudar";
+  const f = S.foco;
+  const nVencTotal = vencidos().length;
+  const mixOn = !f.disc && !f.soRevisao;
+
+  const corpo = `
+  <div class="hero"><h1>O que vamos estudar?</h1></div>
+  <p class="muted" style="margin:0 0 16px">Escolha um foco — ele fica valendo até você trocar.</p>
+
+  <div class="secao">Modos rápidos</div>
+  <button class="esc ${mixOn?"on":""}" data-modo="mix">
+    <span class="ic">🎲</span>
+    <span class="tx"><b>Mix de tudo</b><span>Todas as disciplinas e provas juntas</span></span>
+    <span class="ck">${mixOn?"✓":""}</span>
+  </button>
+  <button class="esc ${f.soErros?"on":""} ${errados(itensDoFoco()).length?"":"off"}" data-modo="erros">
+    <span class="ic">🎯</span>
+    <span class="tx"><b>Só o que eu errei</b><span>${(() => { const n = errados(itensDoFoco()).length;
+      return n ? plural(n,"exercício que você já errou","exercícios que você já errou") : "você ainda não errou nada"; })()}</span></span>
+    <span class="ck">${f.soErros?"✓":""}</span>
+  </button>
+  <button class="esc ${f.soRevisao?"on":""} ${nVencTotal?"":"off"}" data-modo="revisao">
+    <span class="ic">🔁</span>
+    <span class="tx"><b>Só revisão</b><span>${nVencTotal
+      ? plural(nVencTotal,"exercício vencendo hoje","exercícios vencendo hoje")
+      : "nada vencendo hoje"}</span></span>
+    <span class="ck">${f.soRevisao?"✓":""}</span>
+  </button>
+
+  <div class="secao">Por disciplina</div>
+  ${CURSO.disciplinas.map(d => {
+    const pronta = d.provas.length > 0;
+    const its = itensDaProva(d.id);
+    const escolhida = f.disc === d.id && !f.soRevisao;
+    return `
+    <button class="esc ${escolhida?"on":""} ${pronta?"":"off"}" data-disc="${d.id}">
+      <span class="ic">${d.emoji}</span>
+      <span class="tx"><b>${esc(d.nome)}</b><span>${pronta
+        ? plural(its.length,"exercício","exercícios") + " · " + progresso(its) + "% dominado"
+        : esc(d.embreve || "em breve")}</span></span>
+      <span class="ck">${escolhida?"✓":""}</span>
+    </button>
+    ${escolhida ? `<div class="provas">
+      <button data-prova="" data-d="${d.id}" class="${!f.prova?"on":""}">Todas as provas de ${esc(d.nome)}</button>
+      ${d.provas.map(p => {
+        const naProva = itensDaProva(d.id, p.id);
+        const tops = CURSO.topicos.filter(t => t.disc === d.id && naProva.some(i => i.top === t.id));
+        return `<button data-prova="${p.id}" data-d="${d.id}" class="${f.prova===p.id?"on":""}">${esc(p.nome)}
+        <span>${esc(p.sub || "")} · ${naProva.length} exercícios</span></button>
+        ${f.prova === p.id && tops.length ? `<div class="assuntos">
+          <div class="rot">Assunto — pode marcar quantos quiser</div>
+          <div class="asbtns">
+            <button class="minibt" data-tops-todos="${d.id}/${p.id}">Marcar todos</button>
+            <button class="minibt" data-tops-limpar="1" ${(f.tops||[]).length?"":"disabled"}>Limpar</button>
+          </div>
+          ${tops.map(t => { const lt = naProva.filter(i => i.top === t.id);
+            const on = (f.tops || []).includes(t.id); return `
+            <button class="as ${on?"on":""}" data-top="${t.id}" data-d="${d.id}" data-p="${p.id}">
+              <span class="ck2">${on?"✓":""}</span>
+              <span class="nm">${esc(t.nome)}</span>
+              <span class="qt">${lt.length} · ${progresso(lt)}%</span>
+            </button>`; }).join("")}
+          <p class="muted" style="margin:8px 0 0;font-size:12.5px">Sem nenhum marcado, entra a prova inteira.</p>
+        </div>` : ""}`; }).join("")}
+    </div>` : ""}`;
+  }).join("")}
+
+  <div class="secao">Tipo de exercício</div>
+  <div class="tipos">
+    <button class="tipo ${f.tipos.length?"":"on"}" data-tipo="">Todos</button>
+    ${Object.keys(NOMES_TIPO).map(k =>
+      `<button class="tipo ${f.tipos.includes(k)?"on":""}" data-tipo="${k}">${NOMES_TIPO[k]}</button>`).join("")}
+  </div>
+  <p class="muted" style="margin-top:9px">Dá para marcar mais de um. Sem nenhum marcado, entram todos.</p>`;
+
+  const pool = itensDoFoco();
+  const disponivel = f.soErros ? errados(pool).length : f.soRevisao ? vencidos(pool).length : pool.length;
+  montarTela(corpo, { rodape:
+    `<button class="btn" id="ir" ${disponivel?"":"disabled"}>${disponivel ? "Começar" : "Nada para estudar aqui"}
+     <small>${esc(nomeDoFoco())} · ${esc(resumoTipos())} · ${disponivel} disponíveis</small></button>` });
+
+  if(rolagemAnterior){                 // volta para onde ela estava, sem pular para o topo
+    const el = areaRolavel();
+    if(el){ el.scrollTop = rolagemAnterior; atualizaSombra(); }
+  }
+
+  document.querySelectorAll("[data-modo]").forEach(b => b.onclick = () => {
+    const m = b.dataset.modo;
+    if(m === "mix"){ S.foco.disc = null; S.foco.prova = null; S.foco.tops = []; S.foco.soRevisao = false; S.foco.soErros = false; }
+    else if(m === "erros"){ S.foco.soErros = !S.foco.soErros; S.foco.soRevisao = false; }
+    else { S.foco.soRevisao = !S.foco.soRevisao; S.foco.soErros = false; }
+    salvar(); redesenhaEstudar();
+  });
+  document.querySelectorAll("[data-disc]").forEach(b => b.onclick = () => {
+    const id = b.dataset.disc;
+    S.foco.soRevisao = false; S.foco.soErros = false; S.foco.tops = [];
+    if(S.foco.disc === id){ S.foco.disc = null; S.foco.prova = null; }
+    else { S.foco.disc = id; S.foco.prova = null; }
+    salvar(); redesenhaEstudar();
+  });
+  document.querySelectorAll("[data-prova]").forEach(b => b.onclick = () => {
+    S.foco.disc = b.dataset.d; S.foco.prova = b.dataset.prova || null;
+    S.foco.tops = []; S.foco.soRevisao = false; S.foco.soErros = false;
+    salvar(); redesenhaEstudar();
+  });
+  document.querySelectorAll("[data-top]").forEach(b => b.onclick = () => {
+    S.foco.disc = b.dataset.d; S.foco.prova = b.dataset.p;
+    S.foco.soRevisao = false; S.foco.soErros = false;
+    const t = b.dataset.top;
+    const sel = S.foco.tops || [];
+    S.foco.tops = sel.includes(t) ? sel.filter(x => x !== t) : sel.concat(t);
+    salvar(); redesenhaEstudar();
+  });
+  document.querySelectorAll("[data-tops-todos]").forEach(b => b.onclick = () => {
+    const [d, pr] = b.dataset.topsTodos.split("/");
+    S.foco.disc = d; S.foco.prova = pr; S.foco.soRevisao = false; S.foco.soErros = false;
+    const naProva = itensDaProva(d, pr);
+    S.foco.tops = CURSO.topicos.filter(t => naProva.some(i => i.top === t.id)).map(t => t.id);
+    salvar(); redesenhaEstudar();
+  });
+  document.querySelectorAll("[data-tops-limpar]").forEach(b => b.onclick = () => {
+    S.foco.tops = []; salvar(); redesenhaEstudar();
+  });
+  document.querySelectorAll("[data-tipo]").forEach(b => b.onclick = () => {
+    const t = b.dataset.tipo;
+    if(!t) S.foco.tipos = [];
+    else if(S.foco.tipos.includes(t)) S.foco.tipos = S.foco.tipos.filter(x => x !== t);
+    else S.foco.tipos = S.foco.tipos.concat(t);
+    salvar(); redesenhaEstudar();
+  });
+  if($("#ir")) $("#ir").onclick = iniciarSessao;
+}
+
+/* ============================================================
+   TELA: Ajustes
+   ============================================================ */
+function telaAjustes(){
+  aba = "ajustes";
+  const corpo = `
+  <div class="hero"><h1>Ajustes</h1></div>
+
+  <div class="cardz">
+    <label class="f">Exercícios por dia</label>
+    <select id="meta">
+      ${[5,10,15,20,30].map(n => `<option value="${n}" ${n===S.meta?"selected":""}>${n} por dia ${
+        n<=5?"(uns 2 min)":n<=10?"(uns 5 min)":n<=20?"(uns 10 min)":"(uns 15 min)"}</option>`).join("")}
+    </select>
+
+    <label class="f">Tempo por questão</label>
+    <select id="cronq">
+      ${[[0,"Sem cronômetro"],[45,"45 segundos"],[60,"1 minuto"],[90,"1 min e 30"],[120,"2 minutos"]]
+        .map(o => `<option value="${o[0]}" ${o[0]===S.segPorQuestao?"selected":""}>${o[1]}</option>`).join("")}
+    </select>
+    <p class="muted" style="margin-top:6px">O tempo é somado para a sessão inteira: numa sessão de
+      ${S.meta} questões a ${S.segPorQuestao || 0}s, você tem ${S.segPorQuestao ? mmss(S.segPorQuestao*S.meta) : "—"} no total.
+      Pode gastar mais numa e menos noutra. O que sobrar sem resposta conta como erro.</p>
+
+    <label class="f">Espera entre sessões</label>
+    <select id="espera">
+      ${[[0,"Sem espera"],[15,"15 minutos"],[30,"30 minutos"],[60,"1 hora"],[180,"3 horas"]]
+        .map(o => `<option value="${o[0]}" ${o[0]===S.esperaMin?"selected":""}>${o[1]}</option>`).join("")}
+    </select>
+    <p class="muted" style="margin-top:6px">Segura a vontade de maratonar. Dá para furar a espera se precisar.</p>
+    ${S.recorde ? `<p class="muted" style="margin-top:10px">🏅 Seu recorde: <b>${S.recorde}s por questão</b> numa sessão sem erro.</p>` : ""}
+    <p class="muted" style="margin-top:10px">⭐ XP total desde o começo: <b>${S.xp}</b> · nesta semana: <b>${S.xpSemana}</b>.
+      O ranking usa só o da semana, que zera todo domingo.</p>
+  </div>
+
+  <div class="secao">Datas das provas</div>
+  <div class="cardz">
+    ${CURSO.disciplinas.filter(d => d.provas.length).map(d => d.provas.map(p => `
+      <label class="f">${esc(d.nome)} ${esc(p.nome)}</label>
+      <input type="date" data-data="${d.id}/${p.id}" value="${S.datas[d.id+"/"+p.id] || ""}">`).join("")).join("")}
+    <p class="muted" style="margin-top:12px">Com a data marcada, o app encurta os intervalos na reta final,
+      para nada ficar sem revisar antes da prova.</p>
+  </div>
+
+  ${(S.reportes && S.reportes.length) ? `
+  <div class="secao">Questões reportadas (${S.reportes.length})</div>
+  <div class="cardz">
+    ${S.reportes.slice().reverse().map(r => {
+      const it = porId[r.id];
+      const rot = (MOTIVOS.find(m => m[0] === r.motivo) || [null, r.motivo])[1];
+      return `<div class="repitem">
+        <b>${esc(rot)}</b>
+        ${it ? esc((it.enunciado || it.frase || "").slice(0, 90)) + "…" : esc(r.id)}
+        ${r.obs ? `<div class="muted" style="margin-top:4px">“${esc(r.obs)}”</div>` : ""}
+      </div>`;
+    }).join("")}
+    <div class="rowb">
+      <button class="btn ghost sm" id="expRep">Exportar reportes</button>
+      <button class="btn ghost sm" id="limpaRep">Limpar lista</button>
+    </div>
+    <p class="muted" style="margin-top:12px">Exporte e me mande o arquivo — eu corrijo as questões e devolvo o app atualizado.</p>
+  </div>` : ""}
+
+  <div class="secao">Seu progresso</div>
+  <div class="cardz">
+    <p class="muted" style="margin:0">Fica guardado neste navegador. Use os botões para levar para outro aparelho.</p>
+    <div class="rowb">
+      <button class="btn ghost sm" id="exp">Salvar</button>
+      <button class="btn ghost sm" id="imp">Carregar</button>
+    </div>
+    <p style="margin-top:14px"><span class="linkish" id="zerar">zerar todo o progresso</span></p>
+  </div>
+  <input type="file" id="arq" accept="application/json" class="hide">`;
+
+  montarTela(corpo);
+  $("#meta").onchange = e => { S.meta = +e.target.value; salvar(); telaAjustes(); };
+  $("#cronq").onchange = e => { S.segPorQuestao = +e.target.value; salvar(); telaAjustes(); };
+  $("#espera").onchange = e => { S.esperaMin = +e.target.value; salvar(); };
+  document.querySelectorAll("[data-data]").forEach(inp => inp.onchange = e => {
+    const k = inp.dataset.data;
+    if(e.target.value) S.datas[k] = e.target.value; else delete S.datas[k];
+    salvar();
+  });
+  if($("#expRep")) $("#expRep").onclick = () => {
+    const linhas = S.reportes.map(r => {
+      const it = porId[r.id] || {};
+      const rot = (MOTIVOS.find(m => m[0] === r.motivo) || [null, r.motivo])[1];
+      return `--- ${r.id} (${r.disc}/${r.prova}, ${r.tipo}) — ${r.quando}\nMotivo: ${rot}\n` +
+             (r.obs ? `Observação: ${r.obs}\n` : "") +
+             `Questão: ${(it.enunciado || it.frase || "")}\n`;
+    }).join("\n");
+    const b = new Blob(["Questões reportadas no Fixa aí\n\n" + linhas], {type:"text/plain"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(b); a.download = "fixaai-reportes-" + hoje() + ".txt"; a.click();
+  };
+  if($("#limpaRep")) $("#limpaRep").onclick = () => {
+    if(confirm("Limpar a lista de questões reportadas?")){ S.reportes = []; salvar(); telaAjustes(); }
+  };
+  $("#zerar").onclick = () => { if(confirm("Apagar todo o progresso?")){ S = padrao(); localStorage.removeItem(KEY); salvar(); telaAjustes(); } };
+  $("#exp").onclick = () => {
+    const b = new Blob([JSON.stringify(S)], {type:"application/json"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(b); a.download = "fixaai-progresso-" + hoje() + ".json"; a.click();
+  };
+  $("#imp").onclick = () => $("#arq").click();
+  $("#arq").onchange = e => {
+    const f = e.target.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = () => { try{ S = { ...padrao(), ...JSON.parse(r.result) }; salvar(); telaAjustes(); }catch(err){ alert("Arquivo inválido."); } };
+    r.readAsText(f);
+  };
+}
+
+/* ============================================================
+   SESSÃO
+   ============================================================ */
+let SES = null;
+let relogio = null;
+
+const mmss = seg => Math.floor(Math.max(0,seg)/60) + ":" + String(Math.floor(Math.max(0,seg)%60)).padStart(2,"0");
+
+function pararRelogio(){ if(relogio){ clearInterval(relogio); relogio = null; } }
+
+function tocarRelogio(){
+  pararRelogio();
+  if(!SES || !SES.fim) return;
+  const passo = () => {
+    const falta = Math.round((SES.fim - Date.now())/1000);
+    const el = document.querySelector("#cron");
+    if(el){
+      el.textContent = "⏱ " + mmss(falta);
+      el.classList.toggle("apertado", falta <= 30);
+    }
+    if(falta <= 0) encerrarPorTempo();
+  };
+  passo();
+  relogio = setInterval(passo, 1000);
+}
+
+function encerrarPorTempo(){
+  pararRelogio();
+  const pendentes = [];
+  SES.fila.forEach(it => {
+    if(!SES.vistos.includes(it.id) && !pendentes.some(x => x.id === it.id)) pendentes.push(it);
+  });
+  pendentes.forEach(it => { registrar(it.id, false); SES.vistos.push(it.id); });
+  SES.estourou = pendentes.length;
+  SES.i = SES.fila.length;
+  S.historico[hoje()] = (S.historico[hoje()] || 0) + pendentes.length;
+  salvar();
+  telaFim();
+}
+
+function iniciarSessao(){
+  const { fila, modo } = montarSessao();
+  if(!fila.length){ alert("Não há exercícios com esse foco agora. Tente outro modo em Estudar."); return; }
+  const furou = !!(S.proximaSessao && Date.now() < S.proximaSessao);   // começou antes da espera acabar
+  SES = { fila, i:0, acertos:0, total:fila.length, respondido:false, vistos:[], estourou:0, log:[],
+          inicio:Date.now(), valeRanking: !furou, xpAntes: S.xpSemana, modo };
+  SES.fim = S.segPorQuestao ? Date.now() + S.segPorQuestao * 1000 * fila.length : null;
+  /* A espera é disparada AQUI, no clique, e não no fim da bateria. Dois motivos:
+     1) quem estuda fora do ranking enquanto espera não pode zerar o relógio do ranking;
+     2) desistir da bateria no meio e recomeçar não devolve a chance de nota cheia. */
+  if(!furou && S.esperaMin > 0){ S.proximaSessao = Date.now() + S.esperaMin * 60000; salvar(); }
+  render();
+  tocarRelogio();
+}
+
+function render(){
+  if(SES.i >= SES.fila.length) return telaFim();
+  const it = SES.fila[SES.i];
+  const pc = Math.round(100 * SES.i / SES.fila.length);
+  montarTela('<div class="q" id="q"></div>', {
+    topo: `<div class="topbar">
+             <button class="xbtn" id="sair">✕</button>
+             ${(SES.log && SES.log.length) ? `<button class="xbtn" id="voltarQ" title="Rever as questões que já passaram" aria-label="Rever as questões anteriores">‹</button>` : ""}
+             <div class="bar"><i style="width:${pc}%"></i></div>
+             ${SES.valeRanking === false ? `<div class="semrank" title="Fora do horário: vale só para o seu XP total">sem ranking</div>` : ""}
+             ${SES.fim ? `<div class="cron" id="cron">⏱ --:--</div>` : `<div class="flame">🔥 ${S.ofensiva}</div>`}
+           </div>`,
+    rodape: "", comNav:false });
+  $("#sair").onclick = () => { if(confirm("Sair da sessão? O que você já respondeu fica salvo.")){ pararRelogio(); telaInicio(); } };
+  const bv = $("#voltarQ"); if(bv) bv.onclick = () => telaRever(SES.log.length - 1);
+  SES.respondido = false;
+  if(SES.fim) tocarRelogio();
+  ({ vf:rVF, mcq:rMCQ, multi:rMulti, escrita:rEscrita, cloze:rCloze, ordem:rOrdem, relacionar:rRel })[it.t](it);
+  const bt = $("#btInfo");
+  if(bt) bt.onclick = () => {
+    const cx = $("#boxFonte");
+    cx.classList.toggle("hide");
+    bt.classList.toggle("on", !cx.classList.contains("hide"));
+    ligarCue();
+  };
+  ligarCue();
+}
+
+const ROTULO_FONTE = {
+  simulado:"📄 Questão de prova antiga",
+  guia:"📋 Guia de estudos da professora",
+  dirigido:"📝 Estudo dirigido da monitoria",
+  lista:"📚 Lista de questões da professora",
+  aula:"🖥️ Slide da aula",
+  audio:"🎧 Áudio da revisão da professora",
+  elaborada:"✍️ Elaborada a partir do material"
+};
+function blocoFonte(it){
+  const f = it.fonte;
+  if(!f) return "";
+  if(typeof f === "string")
+    return `<div class="fonte hide" id="boxFonte"><b class="rot">Origem</b><p>${esc(f)}</p></div>`;
+  return `<div class="fonte hide" id="boxFonte">
+      <b class="rot">${ROTULO_FONTE[f.t] || "Origem"}</b>
+      ${f.ref ? `<div class="ref">${esc(f.ref)}</div>` : ""}
+      ${f.txt ? `<p>${f.txt}</p>` : ""}
+    </div>`;
+}
+function cabecalho(it, titulo){
+  const d = discPorId[it.disc];
+  return `<div class="qhead">
+      <div class="qtag">${TITULO_TIPO[it.t]}${d ? " · " + esc(d.nome) : ""}</div>
+      ${it.fonte ? `<button class="info" id="btInfo" title="De onde veio esta questão" aria-label="De onde veio esta questão">i</button>` : ""}
+    </div>
+    <div class="qtitle">${esc(titulo)}</div>
+    ${blocoFonte(it)}`;
+}
+function pedirVerificar(fn, ativo){
+  $(".foot").innerHTML = `<button class="btn" id="ver" ${ativo?"":"disabled"}>Verificar</button>`;
+  $("#ver").onclick = fn;
+}
+function atualizaVerificar(ativo){ const b = $("#ver"); if(b) b.disabled = !ativo; ligarCue(); }
+
+function concluir(it, acertou, textoExtra){
+  if(SES.respondido) return;
+  SES.respondido = true;
+  if(!SES.vistos) SES.vistos = [];
+  virarODia();
+  registrar(it.id, acertou);
+  const primeiraVez = !SES.vistos.includes(it.id);   // repetição do erro não conta como acerto de primeira
+  if(primeiraVez) SES.vistos.push(it.id);
+  if(acertou && primeiraVez) SES.acertos++;
+  S.feitosHoje++;
+  if(S.feitosHoje === S.meta){
+    const h = hoje();
+    if(S.ultimoDia !== h){ S.ofensiva = (S.ultimoDia && difDias(S.ultimoDia,h) === 1) ? S.ofensiva + 1 : 1; S.ultimoDia = h; }
+  }
+  S.historico[hoje()] = (S.historico[hoje()] || 0) + 1;
+  salvar();
+
+  const exp = textoExtra || it.exp || it.just || "";
+  if(!SES.log) SES.log = [];
+  SES.log.push({ id: it.id, acertou, exp });     // guarda para a pessoa poder reler depois
+  rodapeFeedback(it, acertou, exp);
+  const barra = document.querySelector(".bar > i");
+  if(barra) barra.style.width = Math.round(100*(SES.i+1)/SES.fila.length) + "%";
+}
+
+/* ---------- rodapé de feedback e reporte de problema ---------- */
+function avancar(it, acertou){
+  if(!acertou && SES.fila.filter(x => x.id === it.id).length < 2) SES.fila.push(it);
+  SES.i++; render();
+}
+function rodapeFeedback(it, acertou, exp, aviso){
+  const jaReportou = (S.reportes || []).some(r => r.id === it.id);
+  $(".foot").innerHTML = `
+    ${aviso ? `<div class="fb good"><p>${aviso}</p></div>` : `
+    <div class="fb ${acertou?"good":"bad"}">
+      <h3>${acertou ? "✅ Isso aí!" : "❌ Quase"}</h3>
+      ${exp ? `<p>${exp}</p>` : ""}
+    </div>`}
+    <div class="acoes">
+      <button class="btn ${acertou?"":"danger"}" id="prox">Continuar</button>
+      <button class="flag ${jaReportou?"neutra":""}" id="btRep"
+        title="${jaReportou ? "Você já reportou esta questão" : "Reportar um problema nesta questão"}"
+        aria-label="Reportar problema nesta questão">${jaReportou ? "✓" : "🚩"}</button>
+    </div>`;
+  ligarCue();
+  $("#prox").onclick = () => avancar(it, acertou);
+  $("#btRep").onclick = () => painelReporte(it, acertou, exp);
+}
+
+const MOTIVOS = [
+  ["gabarito", "A resposta dada como certa está errada"],
+  ["erro",     "Tem um erro no conteúdo da questão"],
+  ["ambigua",  "Está confusa ou tem mais de uma resposta possível"],
+  ["fonte",    "Não bate com o que a professora ensinou"],
+  ["ofensiva", "É ofensiva ou inadequada"],
+  ["outro",    "Outro motivo"]
+];
+function painelReporte(it, acertou, exp){
+  let motivo = null;
+  $(".foot").innerHTML = `
+    <div class="rep">
+      <h3>🚩 O que houve com esta questão?</h3>
+      ${MOTIVOS.map(m => `<button class="mot" data-m="${m[0]}">${m[1]}</button>`).join("")}
+      <textarea id="obs" rows="2" placeholder="Quer explicar melhor? (opcional)"></textarea>
+    </div>
+    <div class="acoes">
+      <button class="btn danger" id="enviarRep" disabled>Enviar</button>
+      <button class="flag neutra" id="cancelRep" aria-label="Cancelar">✕</button>
+    </div>`;
+  ligarCue();
+  document.querySelectorAll(".mot").forEach(b => b.onclick = () => {
+    document.querySelectorAll(".mot").forEach(x => x.classList.remove("on"));
+    b.classList.add("on"); motivo = b.dataset.m;
+    $("#enviarRep").disabled = false;
+  });
+  $("#cancelRep").onclick = () => rodapeFeedback(it, acertou, exp);
+  $("#enviarRep").onclick = () => {
+    if(!motivo) return;
+    S.reportes = (S.reportes || []).filter(r => r.id !== it.id);
+    S.reportes.push({
+      id: it.id, disc: it.disc, prova: it.prova, tipo: it.t,
+      motivo, obs: ($("#obs").value || "").trim().slice(0, 500), quando: hoje()
+    });
+    salvar();
+    rodapeFeedback(it, acertou, exp,
+      "🚩 Anotado, obrigada. Fica guardado em Ajustes → Questões reportadas, para você me mandar depois.");
+  };
+}
+
+/* ---------- 1. Verdadeiro ou falso ---------- */
+function rVF(it){
+  $("#q").innerHTML = cabecalho(it, "A afirmação é verdadeira ou falsa?") +
+    `<div class="stem">${esc(it.frase)}</div>
+     <div class="vfgrid">
+       <button class="opt" data-v="1"><span>Verdadeiro</span></button>
+       <button class="opt" data-v="0"><span>Falso</span></button>
+     </div>`;
+  $(".foot").innerHTML = "";
+  document.querySelectorAll("[data-v]").forEach(b => b.onclick = () => {
+    if(SES.respondido) return;
+    const resp = b.dataset.v === "1", acertou = resp === it.correta;
+    document.querySelectorAll("[data-v]").forEach(x => {
+      if((x.dataset.v === "1") === it.correta) x.classList.add("ok");
+      else if(x === b) x.classList.add("no");
+    });
+    concluir(it, acertou, (it.correta ? "<b>Verdadeiro.</b> " : "<b>Falso.</b> ") + esc(it.just));
+  });
+}
+
+/* ---------- 2. Múltipla escolha ---------- */
+/* linha de alternativa: o botão da opção + o ✕ que risca o que a pessoa já descartou */
+function linhaOpcao(idx, letra, txt){
+  return `<div class="optrow">
+      <button class="opt" data-i="${idx}"><span class="k">${letra}</span><span>${esc(txt)}</span></button>
+      <button class="risca" data-r="${idx}" title="Riscar esta alternativa" aria-label="Riscar esta alternativa">✕</button>
+    </div>`;
+}
+function ligarRiscar(aoRiscar){
+  document.querySelectorAll("[data-r]").forEach(b => b.onclick = () => {
+    if(SES.respondido) return;
+    const i = +b.dataset.r;
+    const alvo = document.querySelector(`.opt[data-i="${i}"]`);
+    const agora = !alvo.classList.contains("riscada");
+    alvo.classList.toggle("riscada", agora);
+    b.classList.toggle("on", agora);
+    if(agora && alvo.classList.contains("sel")) aoRiscar(i, alvo);   // riscar o que estava marcado desmarca
+  });
+}
+function travarRiscar(){ document.querySelectorAll("[data-r]").forEach(b => b.disabled = true); }
+
+function rMCQ(it){
+  const ordem = embaralhar(it.opcoes.map((o,i) => ({o, i})));
+  $("#q").innerHTML = cabecalho(it, it.enunciado) +
+    ordem.map((x, n) => linhaOpcao(x.i, "ABCDE"[n], x.o)).join("");
+  let sel = null;
+  pedirVerificar(() => {
+    if(sel === null) return;
+    travarRiscar();
+    document.querySelectorAll(".opt[data-i]").forEach(x => {
+      if(+x.dataset.i === it.correta) x.classList.add("ok");
+      else if(+x.dataset.i === sel) x.classList.add("no");
+      x.classList.remove("sel");
+    });
+    concluir(it, sel === it.correta, `<b>Resposta: ${esc(it.opcoes[it.correta])}</b><br>${esc(it.exp)}`);
+  }, false);
+  document.querySelectorAll(".opt[data-i]").forEach(b => b.onclick = () => {
+    if(SES.respondido) return;
+    document.querySelectorAll(".opt[data-i]").forEach(x => x.classList.remove("sel"));
+    b.classList.add("sel"); sel = +b.dataset.i; atualizaVerificar(true);
+  });
+  ligarRiscar((i, alvo) => { alvo.classList.remove("sel"); sel = null; atualizaVerificar(false); });
+}
+
+/* ---------- 2b. Marque todas as corretas ---------- */
+function rMulti(it){
+  const ordem = embaralhar(it.opcoes.map((o,i) => ({o, i})));
+  const gab = new Set(it.corretas);
+  $("#q").innerHTML = cabecalho(it, it.enunciado) +
+    `<p class="dica">Pode haver mais de uma certa — marque todas.</p>` +
+    ordem.map((x, n) => linhaOpcao(x.i, "ABCDE"[n], x.o)).join("");
+  const sel = new Set();
+  pedirVerificar(() => {
+    if(!sel.size) return;
+    travarRiscar();
+    document.querySelectorAll(".opt[data-i]").forEach(x => {
+      const i = +x.dataset.i;
+      x.classList.remove("sel");
+      if(gab.has(i)) x.classList.add("ok");            // toda correta fica verde, marcada ou não
+      else if(sel.has(i)) x.classList.add("no");       // marcou uma errada
+    });
+    const acertou = sel.size === gab.size && [...sel].every(i => gab.has(i));
+    const listaOk = it.corretas.map(i => "• " + esc(it.opcoes[i])).join("<br>");
+    concluir(it, acertou, `<b>${it.corretas.length > 1 ? "Corretas:" : "Correta:"}</b><br>${listaOk}<br>${esc(it.exp)}`);
+  }, false);
+  document.querySelectorAll(".opt[data-i]").forEach(b => b.onclick = () => {
+    if(SES.respondido) return;
+    const i = +b.dataset.i;
+    if(sel.has(i)){ sel.delete(i); b.classList.remove("sel"); }
+    else{
+      sel.add(i); b.classList.add("sel");
+      b.classList.remove("riscada");                   // marcar desfaz o risco
+      const x = document.querySelector(`.risca[data-r="${i}"]`); if(x) x.classList.remove("on");
+    }
+    atualizaVerificar(sel.size > 0);
+  });
+  ligarRiscar((i, alvo) => { alvo.classList.remove("sel"); sel.delete(i); atualizaVerificar(sel.size > 0); });
+}
+
+/* ---------- 2c. Escrever a resposta ----------
+   Comparação tolerante de propósito: a pessoa está treinando o conteúdo, não a ortografia.
+   Ignora maiúscula, acento, pontuação e espaço sobrando; aceita as variantes de `aceita`;
+   e perdoa UMA letra trocada, faltando ou sobrando em palavras de 6 letras ou mais —
+   mas nesse caso mostra a grafia certa, para não fixar o erro. */
+function normaliza(t){
+  return String(t == null ? "" : t)
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")   // tira acento
+    .replace(/[^a-z0-9\s]/g, " ")                       // hífen, ponto, aspas viram espaço
+    .replace(/\s+/g, " ").trim()
+    // "a adenosina", "o epitálamo", "no epitálamo" valem tanto quanto a palavra sozinha
+    .replace(/^(?:o|a|os|as|um|uma|no|na|nos|nas|do|da|dos|das|de|em|pelo|pela)\s+/, "")
+    .trim();
+}
+function distancia(a, b){            // Levenshtein, só até o que precisamos
+  if(a === b) return 0;
+  if(Math.abs(a.length - b.length) > 1) return 2;
+  const m = a.length, k = b.length;
+  let linha = new Array(k + 1);
+  for(let j = 0; j <= k; j++) linha[j] = j;
+  for(let i = 1; i <= m; i++){
+    let ant = linha[0]; linha[0] = i;
+    for(let j = 1; j <= k; j++){
+      const tmp = linha[j];
+      linha[j] = Math.min(linha[j] + 1, linha[j-1] + 1, ant + (a[i-1] === b[j-1] ? 0 : 1));
+      ant = tmp;
+    }
+  }
+  return linha[k];
+}
+function conferirEscrita(it, digitado){
+  const d = normaliza(digitado);
+  if(!d) return { certo:false, quase:false };
+  const alvos = [it.resp].concat(it.aceita || []).map(normaliza);
+  if(alvos.includes(d)) return { certo:true, quase:false };
+  for(const a of alvos){
+    if(a.length >= 6 && distancia(d, a) === 1) return { certo:true, quase:true };
+  }
+  return { certo:false, quase:false };
+}
+
+function rEscrita(it){
+  $("#q").innerHTML = cabecalho(it, it.enunciado) +
+    `<p class="dica">Escreva a resposta — uma palavra basta.</p>
+     <input class="resposta" id="txtResp" type="text" inputmode="text"
+       autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+       placeholder="digite aqui" aria-label="Sua resposta">
+     ${it.pista ? `<p class="pista">💡 ${esc(it.pista)}</p>` : ""}`;
+  const campo = $("#txtResp");
+  const responder = () => {
+    if(SES.respondido) return;
+    const r = conferirEscrita(it, campo.value);
+    if(!campo.value.trim()) return;
+    campo.disabled = true;
+    campo.classList.add(r.certo ? "ok" : "no");
+    const grafia = r.quase
+      ? `<b>Quase na grafia — o certo é «${esc(it.resp)}».</b> Vou contar como acerto.<br>`
+      : (r.certo ? "" : `<b>Resposta: ${esc(it.resp)}</b><br>`);
+    concluir(it, r.certo, grafia + esc(it.exp));
+  };
+  pedirVerificar(responder, false);
+  campo.oninput = () => atualizaVerificar(!!campo.value.trim());
+  campo.onkeydown = e => { if(e.key === "Enter"){ e.preventDefault(); responder(); } };
+  setTimeout(() => { try{ campo.focus({ preventScroll:true }); }catch(e){ campo.focus(); } }, 60);
+}
+
+/* ---------- 3. Completar lacunas ---------- */
+function rCloze(it){
+  const partes = it.texto.split(/(\[\[\d+\]\])/g);
+  const corpo = partes.map(p => {
+    const m = p.match(/^\[\[(\d+)\]\]$/);
+    return m ? `<span class="blank" data-b="${m[1]}"></span>` : esc(p);
+  }).join("");
+
+  const respostas = it.lacunas.map(l => l.resp);
+  const extras = [];
+  it.lacunas.forEach(l => (l.dist||[]).forEach(d => {
+    if(!respostas.includes(d) && !extras.includes(d)) extras.push(d);
+  }));
+  const banco = embaralhar(respostas.concat(extras));
+
+  $("#q").innerHTML = cabecalho(it, it.enunciado) +
+    `<div class="cloze">${corpo}</div>
+     <div class="bank">${banco.map((w,i) => `<button class="chip" data-w="${i}">${esc(w)}</button>`).join("")}</div>`;
+
+  const preenchido = new Array(it.lacunas.length).fill(null);
+  const chips = [...document.querySelectorAll(".chip")];
+  const blanks = [...document.querySelectorAll(".blank")];
+  const completo = () => preenchido.every(x => x !== null);
+
+  function pintar(){
+    blanks.forEach((b, i) => {
+      const ci = preenchido[i];
+      b.textContent = ci === null ? "" : banco[ci];
+      b.classList.toggle("filled", ci !== null);
+    });
+    chips.forEach((c, i) => c.classList.toggle("used", preenchido.includes(i)));
+    atualizaVerificar(completo());
+  }
+  chips.forEach((c, i) => c.onclick = () => {
+    if(SES.respondido) return;
+    const vaga = preenchido.indexOf(null); if(vaga === -1) return;
+    preenchido[vaga] = i; pintar();
+  });
+  blanks.forEach((b, i) => b.onclick = () => {
+    if(SES.respondido) return;
+    if(preenchido[i] !== null){ preenchido[i] = null; pintar(); }
+  });
+
+  pedirVerificar(() => {
+    if(!completo()) return;
+    let tudoOk = true;
+    blanks.forEach((b, i) => {
+      const dado = banco[preenchido[i]], certo = it.lacunas[i].resp;
+      b.classList.remove("filled");
+      if(dado === certo) b.classList.add("ok");
+      else { tudoOk = false; b.classList.add("no"); b.insertAdjacentHTML("afterend", ` <span class="blank fix">${esc(certo)}</span>`); }
+    });
+    $(".bank").style.display = "none";
+    concluir(it, tudoOk, esc(it.exp));
+  }, false);
+  pintar();
+}
+
+/* ---------- 4. Colocar em ordem ---------- */
+function rOrdem(it){
+  const baralho = embaralhar(it.seq.map((s, i) => ({s, i})));
+  $("#q").innerHTML = cabecalho(it, it.enunciado) +
+    `<div class="slots" id="slots"></div>
+     <div class="pool" id="pool">${baralho.map((x, k) => `<button class="prow" data-k="${k}">${esc(x.s)}</button>`).join("")}</div>`;
+
+  const escolhidos = [];
+  function pintar(){
+    $("#slots").innerHTML = escolhidos.map((k, n) =>
+      `<div class="srow" data-pos="${n}"><div class="n">${n+1}</div><div>${esc(baralho[k].s)}</div></div>`).join("");
+    document.querySelectorAll("#pool .prow").forEach((b, k) => b.style.display = escolhidos.includes(k) ? "none" : "block");
+    document.querySelectorAll(".srow").forEach(r => r.onclick = () => {
+      if(SES.respondido) return;
+      escolhidos.splice(+r.dataset.pos, 1); pintar();
+    });
+    atualizaVerificar(escolhidos.length === it.seq.length);
+  }
+  document.querySelectorAll("#pool .prow").forEach((b, k) => b.onclick = () => {
+    if(SES.respondido) return;
+    escolhidos.push(k); pintar();
+  });
+
+  pedirVerificar(() => {
+    if(escolhidos.length !== it.seq.length) return;
+    let tudoOk = true;
+    escolhidos.forEach((k, n) => {
+      const certo = baralho[k].i === n;
+      if(!certo) tudoOk = false;
+      $(`.srow[data-pos="${n}"]`).classList.add(certo ? "ok" : "no");
+    });
+    $("#pool").style.display = "none";
+    if(!tudoOk) $("#slots").insertAdjacentHTML("afterend",
+      `<div class="gab"><b style="font-size:14px">Ordem correta:</b><ol>${it.seq.map(s => `<li>${esc(s)}</li>`).join("")}</ol></div>`);
+    concluir(it, tudoOk, esc(it.exp));
+  }, false);
+  pintar();
+}
+
+/* ---------- 5. Relacionar ---------- */
+/* o gabarito do relacionar, escrito por extenso — as colunas ficam embaralhadas
+   e depois de fechar tudo é difícil reler qual foi com qual */
+function listaDePares(it){
+  return `<div class="pares">${it.pares.map(p =>
+    `<div class="par"><b>${esc(p[0])}</b><span class="seta">→</span><span>${esc(p[1])}</span></div>`).join("")}</div>`;
+}
+function rRel(it){
+  const esqL = embaralhar(it.pares.map((p, i) => ({txt:p[0], i})));
+  const dirL = embaralhar(it.pares.map((p, i) => ({txt:p[1], i})));
+  $("#q").innerHTML = cabecalho(it, it.enunciado) +
+    `<div class="mgrid">
+       <div class="mcol">${esqL.map((x,k) => `<button class="mi" data-l="${k}" data-par="${x.i}">${esc(x.txt)}</button>`).join("")}</div>
+       <div class="mcol">${dirL.map((x,k) => `<button class="mi" data-r="${k}" data-par="${x.i}">${esc(x.txt)}</button>`).join("")}</div>
+     </div>`;
+  $(".foot").innerHTML = `<p class="muted" style="text-align:center;margin:0 0 8px">Toque num item da esquerda e depois no par dele à direita.</p>`;
+
+  let selE = null, feitos = 0, errou = false;
+  const tot = it.pares.length;
+  const todos = [...document.querySelectorAll(".mi")];
+  todos.forEach(b => b.onclick = () => {
+    if(SES.respondido) return;
+    if(b.hasAttribute("data-l")){
+      todos.forEach(x => x.classList.remove("sel"));
+      b.classList.add("sel"); selE = b; return;
+    }
+    if(!selE) return;
+    if(selE.dataset.par === b.dataset.par){
+      selE.classList.remove("sel"); selE.classList.add("done"); b.classList.add("done");
+      selE = null; feitos++;
+      if(feitos === tot) concluir(it, !errou,
+        (errou ? "Você fechou todos os pares, mas errou pelo caminho — volta amanhã.<br>" : "") +
+        listaDePares(it) + esc(it.exp));
+    }else{
+      errou = true;
+      const a = selE, c = b;
+      a.classList.add("err"); c.classList.add("err");
+      setTimeout(() => { a.classList.remove("err","sel"); c.classList.remove("err"); }, 400);
+      selE = null;
+    }
+  });
+}
+
+/* ============================================================
+   TELA: rever uma questão já respondida
+   Só leitura: não pontua de novo nem mexe no agendamento. O objetivo é
+   reler a explicação que passou rápido demais.
+   ============================================================ */
+function gabaritoLegivel(it){
+  switch(it.t){
+    case "mcq":   return `<div class="pares"><div class="par"><b>Resposta</b><span class="seta">→</span><span>${esc(it.opcoes[it.correta])}</span></div></div>`;
+    case "multi": return `<div class="pares">${it.corretas.map(i =>
+                    `<div class="par"><b>✓</b><span>${esc(it.opcoes[i])}</span></div>`).join("")}</div>`;
+    case "vf":    return `<div class="pares"><div class="par"><b>${it.correta ? "Verdadeiro" : "Falso"}</b></div></div>`;
+    case "escrita": return `<div class="pares"><div class="par"><b>Resposta</b><span class="seta">→</span><span>${esc(it.resp)}</span></div></div>`;
+    case "cloze": return `<div class="pares">${it.lacunas.map((l, k) =>
+                    `<div class="par"><b>${k+1}</b><span class="seta">→</span><span>${esc(l.resp)}</span></div>`).join("")}</div>`;
+    case "ordem": return `<div class="pares">${it.seq.map((p, k) =>
+                    `<div class="par"><b>${k+1}</b><span class="seta">→</span><span>${esc(p)}</span></div>`).join("")}</div>`;
+    case "relacionar": return listaDePares(it);
+    default: return "";
+  }
+}
+function telaRever(n){
+  pararRelogio();
+  const total = SES.log.length;
+  n = Math.max(0, Math.min(total - 1, n));
+  const reg = SES.log[n];
+  const it = porId[reg.id];
+  const titulo = it.enunciado || it.frase || "";
+  const corpo = `<div class="q" id="q">
+      <div class="qhead">
+        <div class="qtag">Revendo · ${n + 1} de ${total}</div>
+        ${it.fonte ? `<button class="info" id="btInfo" title="De onde veio esta questão" aria-label="De onde veio esta questão">i</button>` : ""}
+      </div>
+      <div class="qtitle">${esc(titulo)}</div>
+      ${blocoFonte(it)}
+      ${it.t === "cloze" ? `<p class="revtexto">${esc(it.texto.replace(/\[\[(\d+)\]\]/g, (m, k) => "___(" + (+k + 1) + ")"))}</p>` : ""}
+      <div class="fb ${reg.acertou ? "good" : "bad"}" style="margin-top:14px">
+        <h3>${reg.acertou ? "✅ Você acertou esta" : "❌ Esta você errou"}</h3>
+      </div>
+      ${gabaritoLegivel(it)}
+      ${reg.exp ? `<p class="revexp">${reg.exp}</p>` : ""}
+    </div>`;
+  montarTela(corpo, { comNav:false,
+    topo: `<div class="topbar">
+             <button class="xbtn" id="fechaRev">✕</button>
+             <div class="bar"><i style="width:${Math.round(100*(n+1)/total)}%"></i></div>
+             <div class="cron">${n + 1}/${total}</div>
+           </div>`,
+    rodape: `<div class="acoes">
+        <button class="btn ghost" id="revAnt" ${n === 0 ? "disabled" : ""}>‹ Anterior</button>
+        <button class="btn ghost" id="revProx" ${n === total - 1 ? "disabled" : ""}>Próxima ›</button>
+      </div>
+      <div style="height:8px"></div>
+      <button class="btn" id="revVoltar">Voltar ao exercício</button>` });
+  const bt = $("#btInfo");
+  if(bt) bt.onclick = () => {
+    const cx = $("#boxFonte");
+    cx.classList.toggle("hide");
+    bt.classList.toggle("on", !cx.classList.contains("hide"));
+    ligarCue();
+  };
+  const sair = () => { render(); };
+  $("#fechaRev").onclick = sair;
+  $("#revVoltar").onclick = sair;
+  $("#revAnt").onclick = () => telaRever(n - 1);
+  $("#revProx").onclick = () => telaRever(n + 1);
+  ligarCue();
+}
+
+/* ============================================================
+   TELA: fim de sessão
+   ============================================================ */
+function telaFim(){
+  pararRelogio();
+  const pc = SES.total ? Math.round(100 * SES.acertos / SES.total) : 0;
+  const bateuMeta = S.feitosHoje >= S.meta;
+  const respondidas = SES.vistos.length - SES.estourou;
+  const segMedio = respondidas > 0 ? Math.round((Date.now() - SES.inicio) / 1000 / respondidas) : null;
+  // bônus de velocidade: SÓ para sessão sem nenhum erro. Rapidez com erro é chute, não domínio.
+  const semErro = SES.total > 0 && SES.acertos === SES.total;
+  let bonus = 0;
+  if(SES.valeRanking !== false && SES.fim && !SES.estourou && semErro){
+    const total = S.segPorQuestao * 1000 * SES.total;
+    const usado = Date.now() - SES.inicio;
+    const sobra = Math.max(0, Math.min(1, 1 - usado / total));       // 0 = usou tudo, 1 = instantâneo
+    const baseSessao = S.xpSemana - SES.xpAntes;
+    bonus = Math.round(baseSessao * sobra * 0.5);                    // no máximo +50% da sessão
+    if(bonus > 0) S.xpSemana += bonus;
+  }
+  let novoRecorde = false;
+  if(segMedio && !SES.estourou && SES.acertos === SES.total && SES.total >= 5){
+    if(!S.recorde || segMedio < S.recorde){ S.recorde = segMedio; novoRecorde = true; }
+  }
+  const faltaEspera = S.proximaSessao ? Math.max(0, Math.round((S.proximaSessao - Date.now())/1000)) : 0;
+  salvar();
+
+  const corpo = `
+    <div class="done">
+      <div class="big">${SES.estourou ? "⏰" : pc >= 80 ? "🎉" : pc >= 50 ? "💪" : "🌱"}</div>
+      <h2>${SES.estourou ? "O tempo acabou" : pc >= 80 ? "Sessão redonda!" : pc >= 50 ? "Boa, tá fixando" : "Repetição é isso aí"}</h2>
+      <p>${SES.estourou
+            ? plural(SES.estourou, "questão ficou sem resposta e contou como erro", "questões ficaram sem resposta e contaram como erro") + ". Elas voltam amanhã."
+            : bateuMeta ? "Meta do dia batida. Volta amanhã que o app já separa o que precisa revisar."
+                        : "Faltam " + (S.meta - S.feitosHoje) + " para bater a meta de hoje."}</p>
+      <div>
+        <span class="pill">✅ ${SES.acertos}/${SES.total} de primeira</span>
+        ${segMedio ? `<span class="pill">⏱ ${segMedio}s por questão</span>` : ""}
+        <span class="pill">🔥 ${S.ofensiva} de ofensiva</span>
+        <span class="pill">⭐ ${S.xpSemana} XP na semana</span>
+        ${bonus ? `<span class="pill" style="color:var(--gold)">⚡ +${bonus} de bônus por velocidade</span>` : ""}
+        ${(!bonus && SES.fim && !SES.estourou && !semErro && SES.valeRanking !== false)
+          ? `<span class="pill muted">o bônus de velocidade pede a sessão inteira sem erro</span>` : ""}
+      </div>
+      ${SES.modo === "treino" ? `<p class="muted" style="margin-top:16px">Você já viu tudo o que havia de novo e nada estava vencendo:
+        esta foi uma sessão de <b>treino livre</b>, com exercícios repetidos. Treina bem, mas o "dominado" quase não anda —
+        ele depende de você voltar em outro dia.</p>` : ""}
+      ${SES.valeRanking === false ? `<p class="muted" style="margin-top:16px">Esta sessão entrou só no seu XP total —
+        para valer no ranking, é preciso respeitar a espera entre sessões.</p>` : ""}
+      ${novoRecorde ? `<p style="margin-top:16px;font-weight:800;color:var(--gold)">🏅 Novo recorde de tempo, sem errar nenhuma!</p>` : ""}
+      ${faltaEspera > 0 ? `<p class="muted" style="margin-top:18px">A próxima sessão que vale ranking libera em <b>${mmss(faltaEspera)}</b> —
+        a espera começou a correr quando você abriu esta bateria, então o tempo que você levou aqui já está descontado.</p>`
+        : (S.esperaMin > 0 && SES.valeRanking === false
+            ? `<p class="muted" style="margin-top:18px">A espera do ranking segue correndo normalmente — esta sessão não mexeu nela.</p>` : "")}
+    </div>`;
+  montarTela(corpo, { comNav:false, rodape:
+    `<button class="btn" id="mais">${bateuMeta ? "Mais uma rodada" : "Continuar estudando"}</button>
+     <div style="height:10px"></div>
+     <button class="btn ghost" id="home">Voltar ao início</button>` });
+  $("#mais").onclick = iniciarSessao;
+  $("#home").onclick = telaInicio;
+}
+
+/* ============================================================
+   Arranque
+   Em arquivo único o banco já veio embutido; na PWA ele chega
+   por fetch — e, mais adiante, do Firestore. Um ponto de entrada só.
+   ============================================================ */
+async function iniciar(){
+  if(typeof CURSO === "undefined" || !CURSO){
+    try{
+      const r = await fetch("banco.json?v=" + (window.VERSAO_BANCO || "0"), { cache:"no-cache" });
+      if(!r.ok) throw new Error("HTTP " + r.status);
+      window.CURSO = await r.json();
+    }catch(e){
+      const local = location.protocol === "file:";
+      document.getElementById("app").innerHTML =
+        '<div style="padding:28px;font:600 15px/1.6 system-ui;color:#16202b">' +
+        '<h2 style="margin:0 0 10px">Não consegui carregar as questões</h2>' +
+        (local
+          ? '<p style="color:#5a6b7c">Este arquivo não funciona abrindo direto do computador — ' +
+            'ele precisa estar publicado num endereço. Use o <b>arquivo único</b> se quiser ' +
+            'estudar offline pelo computador, ou abra o app pelo endereço da internet.</p>'
+          : '<p style="color:#5a6b7c">Verifique sua conexão e recarregue. ' +
+            'Se o problema continuar, me avise.</p>') +
+        '</div>';
+      return;
+    }
+  }
+  indexarBanco();
+  telaInicio();
+}
+iniciar();
+</script>
+<script>
+if("serviceWorker" in navigator){
+  addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+</script>
+</body>
+</html>
