@@ -1,3 +1,4 @@
 # Este app é para os alunos, não para buscadores.
+# A instrução de não indexar está na etiqueta noindex de cada página.
 User-agent: *
-Disallow: /
+Allow: /
