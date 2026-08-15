@@ -2,15 +2,19 @@
 
    Duas caches, com regras diferentes de propósito:
 
-   - PROGRAMA (index, ícones, manifesto): cache primeiro. Abre instantâneo e
-     funciona offline. Só troca quando eu publico código novo, e aí a versão
-     no nome da cache muda e a antiga é apagada.
+   - PÁGINA (index.html e qualquer navegação): REDE primeiro, cache como reserva.
+     Era cache primeiro, e isso criou uma armadilha: se um service worker antigo
+     ficasse no ar, ele serviria para sempre o index guardado, e publicar código
+     novo não adiantaria nada. Custa uma ida à rede ao abrir; garante que ninguém
+     fica preso numa versão velha. Sem internet, usa a última cópia salva.
+
+   - RESTO DO PROGRAMA (ícones, manifesto): cache primeiro. Quase nunca mudam.
 
    - BANCO (banco.json): rede primeiro, com a cache como rede de segurança.
      É o que garante o que a Isabela pediu: questão nova aparece sozinha,
      sem ninguém baixar arquivo. Sem internet, usa a última cópia salva.
 */
-const VERSAO_APP   = "e29331d47a15";
+const VERSAO_APP   = "03455ce7eeaa";
 const VERSAO_BANCO = "512843b70a99";
 const CACHE_APP   = "fixaai-app-" + VERSAO_APP;
 const CACHE_BANCO = "fixaai-banco";
@@ -71,7 +75,25 @@ self.addEventListener("fetch", e => {
     return;
   }
 
-  // ---- o programa: cache primeiro ----
+  // ---- a página: rede primeiro ----
+  const ehPagina = req.mode === "navigate" || url.pathname.endsWith("/index.html")
+                || url.pathname === "/" || url.pathname.endsWith("/");
+  if(ehPagina){
+    e.respondWith((async () => {
+      try{
+        const r = await fetch(req, { cache: "no-cache" });
+        if(r.ok) (await caches.open(CACHE_APP)).put("./index.html", r.clone());
+        return r;
+      }catch(err){
+        const salvo = await caches.match("./index.html");
+        if(salvo) return salvo;
+        throw err;
+      }
+    })());
+    return;
+  }
+
+  // ---- resto do programa: cache primeiro ----
   e.respondWith((async () => {
     const salvo = await caches.match(req, { ignoreSearch: true });
     if(salvo) return salvo;
@@ -80,11 +102,6 @@ self.addEventListener("fetch", e => {
       if(r.ok && r.type === "basic") (await caches.open(CACHE_APP)).put(req, r.clone());
       return r;
     }catch(err){
-      // navegação offline para um caminho qualquer cai no app
-      if(req.mode === "navigate"){
-        const raiz = await caches.match("./index.html");
-        if(raiz) return raiz;
-      }
       throw err;
     }
   })());

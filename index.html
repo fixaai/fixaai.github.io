@@ -216,6 +216,7 @@ button{font-family:inherit;font-size:inherit;cursor:pointer;border:none;backgrou
 .entrada .btg:hover{border-color:var(--brand)}
 .entrada .btg .g{width:20px;height:20px;flex:0 0 20px}
 .entrada .obs{font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:18px}
+.entrada .versao{font-size:11px;color:var(--muted);opacity:.6;margin-top:22px;letter-spacing:.04em}
 .entrada .erro{background:var(--wrong-soft);border:2px solid var(--wrong);color:var(--wrong);
   border-radius:12px;padding:11px 13px;font-size:13.5px;font-weight:700;margin-bottom:14px;text-align:left}
 .entrada .codigo{width:100%;box-sizing:border-box;font:inherit;font-size:20px;font-weight:800;
@@ -341,7 +342,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"};</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.VERSAO_BUILD = "b73aed3";</script>
 <script>window.VERSAO_BANCO = "512843b70a99";</script>
 
 <script>
@@ -985,6 +986,8 @@ function telaAjustes(){
     </select>
     <p class="muted" style="margin-top:6px">Segura a vontade de maratonar. Dá para furar a espera se precisar.</p>
     ${S.recorde ? `<p class="muted" style="margin-top:10px">🏅 Seu recorde: <b>${S.recorde}s por questão</b> numa sessão sem erro.</p>` : ""}
+    ${window.VERSAO_BUILD ? `<p class="muted" style="margin-top:10px">Versão do app:
+      <b>${esc(window.VERSAO_BUILD)}</b></p>` : ""}
     <p class="muted" style="margin-top:10px">⭐ XP total desde o começo: <b>${S.xp}</b> · nesta semana: <b>${S.xpSemana}</b>.
       O ranking usa só o da semana, que zera todo domingo.</p>
   </div>
@@ -1976,7 +1979,9 @@ addEventListener("pagehide", sincronizarAgora);
    ============================================================ */
 function molduraEntrada(dentro){
   app.innerHTML = `<div class="rolagem"><div class="entrada">
-      <div class="marca">✓</div>${dentro}</div></div>`;
+      <div class="marca">✓</div>${dentro}
+      ${window.VERSAO_BUILD ? `<p class="versao">versão ${esc(window.VERSAO_BUILD)}</p>` : ""}
+      </div></div>`;
   ligarCue();
 }
 
