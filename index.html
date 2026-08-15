@@ -205,6 +205,29 @@ button{font-family:inherit;font-size:inherit;cursor:pointer;border:none;backgrou
 #semMemoria b{display:block;margin-bottom:4px}
 #semMemoria button{position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:8px;
   border:0;background:rgba(255,255,255,.14);color:inherit;font-size:14px;font-weight:800;cursor:pointer}
+.entrada{display:flex;flex-direction:column;justify-content:center;min-height:100%;padding:30px 22px;text-align:center}
+.entrada .marca{width:76px;height:76px;border-radius:22px;background:var(--brand);margin:0 auto 18px;
+  display:grid;place-items:center;font-size:38px;color:#fff}
+.entrada h1{font-size:26px;margin:0 0 8px;letter-spacing:-.02em}
+.entrada .sub{color:var(--ink-2);font-size:15px;line-height:1.55;margin:0 0 26px}
+.entrada .btg{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:15px;
+  border-radius:14px;border:2px solid var(--line);background:var(--card);font:inherit;font-size:15px;
+  font-weight:800;color:var(--txt);cursor:pointer;margin-bottom:10px}
+.entrada .btg:hover{border-color:var(--brand)}
+.entrada .btg .g{width:20px;height:20px;flex:0 0 20px}
+.entrada .obs{font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:18px}
+.entrada .erro{background:var(--wrong-soft);border:2px solid var(--wrong);color:var(--wrong);
+  border-radius:12px;padding:11px 13px;font-size:13.5px;font-weight:700;margin-bottom:14px;text-align:left}
+.entrada .codigo{width:100%;box-sizing:border-box;font:inherit;font-size:20px;font-weight:800;
+  letter-spacing:.08em;text-align:center;text-transform:uppercase;padding:16px;border-radius:14px;
+  border:2px solid var(--line);background:var(--card);color:var(--txt);outline:none;margin-bottom:12px}
+.entrada .codigo:focus{border-color:var(--brand)}
+.entrada .sair{background:none;border:0;color:var(--muted);font:inherit;font-size:13px;font-weight:700;
+  text-decoration:underline;cursor:pointer;margin-top:20px}
+.admin .cx{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px}
+.admin .cod{font-size:24px;font-weight:900;letter-spacing:.1em;color:var(--brand);
+  background:var(--brand-soft);border-radius:12px;padding:14px;text-align:center;margin:10px 0;
+  user-select:all;-webkit-user-select:all}
 .dica{margin:-4px 0 12px;font-size:13px;font-weight:800;color:var(--brand);letter-spacing:.02em}
 .optrow{display:flex;gap:8px;align-items:stretch;width:100%}
 .optrow .opt{flex:1;min-width:0}
@@ -318,6 +341,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"};</script>
 <script>window.VERSAO_BANCO = "512843b70a99";</script>
 
 <script>
@@ -476,6 +500,7 @@ let SEM_MEMORIA = false;
 function salvar(){
   try{ localStorage.setItem(KEY, JSON.stringify(S)); SEM_MEMORIA = false; }
   catch(e){ SEM_MEMORIA = true; avisoSemMemoria(); }
+  if(typeof agendarSincronia === "function") agendarSincronia();
 }
 /* Alguns navegadores — o Safari do iPhone abrindo um arquivo local é o caso típico —
    bloqueiam o armazenamento. O app continua funcionando, mas o progresso se perde ao
@@ -1687,11 +1712,595 @@ function telaFim(){
 }
 
 /* ============================================================
+   NUVEM — Firebase (autenticação + Firestore)
+
+   Só liga se window.FIREBASE_CONFIG existir. No arquivo único ele não
+   existe, e o app roda exatamente como antes: banco embutido, progresso
+   no próprio aparelho, sem login. É de propósito — é a versão que
+   funciona offline no computador, sem depender de nada.
+
+   Nada aqui decide permissão. Quem decide é o Firestore, pelas regras
+   em firestore.rules. O que está deste lado é só a experiência.
+   ============================================================ */
+/* O endereço do SDK é trocável para os testes poderem rodar contra um dublê
+   que obedece às mesmas regras. Em produção, window.SDK_BASE não existe. */
+const SDK = window.SDK_BASE || "https://www.gstatic.com/firebasejs/12.17.1/";
+const N = { ligado:false, pronto:false, auth:null, db:null, api:{},
+            usuario:null, grupo:null, papel:null };
+
+const CHAVE_CACHE  = "fixaai_cache_banco";
+const CHAVE_GRUPO  = "fixaai_grupo";
+
+async function nuvemCarregar(){
+  if(!window.FIREBASE_CONFIG) return false;
+  const [a, au, fs] = await Promise.all([
+    import(SDK + "firebase-app.js"),
+    import(SDK + "firebase-auth.js"),
+    import(SDK + "firebase-firestore.js")
+  ]);
+  const app = a.initializeApp(window.FIREBASE_CONFIG);
+  N.auth = au.getAuth(app);
+  N.db   = fs.getFirestore(app);
+  N.api  = { ...au, ...fs };
+  N.ligado = true;
+  /* Se a pessoa está voltando de um redirecionamento, é aqui que o login se
+     completa. Precisa ser antes de qualquer decisão de tela. */
+  try{
+    const r = await N.api.getRedirectResult(N.auth);
+    N.voltouDeRedirecionamento = !!(r && r.user);
+  }catch(e){ N.erroRedirecionamento = traduzErro(e); }
+  sessionStorage.removeItem("fixaai_redirecionando");
+  return true;
+}
+
+/* ---------- entrar e sair ----------
+
+   Pop-up funciona bem no computador e no Android. No iPhone — e principalmente
+   num app adicionado à tela de início — o Safari costuma bloquear, e a janela
+   simplesmente não abre. Por isso: iOS vai direto de redirecionamento, e em
+   qualquer outro lugar o pop-up cai para redirecionamento se falhar.
+   Sem isso, quem usa iPhone não entra. */
+function ehIOS(){
+  return /iPad|iPhone|iPod/.test(navigator.userAgent)
+      || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)   // iPad recente
+      || /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+}
+function instaladoNaTela(){
+  return window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+}
+
+function provedorGoogle(){
+  const p = new N.api.GoogleAuthProvider();
+  p.setCustomParameters({ prompt: "select_account" });
+  return p;
+}
+
+async function entrarComGoogle(){
+  const p = provedorGoogle();
+  if(ehIOS() || instaladoNaTela()){
+    sessionStorage.setItem("fixaai_redirecionando", "1");
+    return N.api.signInWithRedirect(N.auth, p);      // não retorna: a página sai
+  }
+  try{
+    await N.api.signInWithPopup(N.auth, p);
+  }catch(e){
+    const c = (e && e.code) || "";
+    if(/popup-blocked|popup-closed-by-user|operation-not-supported|cancelled-popup|web-storage-unsupported/.test(c)){
+      sessionStorage.setItem("fixaai_redirecionando", "1");
+      return N.api.signInWithRedirect(N.auth, p);
+    }
+    throw e;
+  }
+}
+async function entrarComEmail(email, senha, criando){
+  if(criando) await N.api.createUserWithEmailAndPassword(N.auth, email, senha);
+  else        await N.api.signInWithEmailAndPassword(N.auth, email, senha);
+}
+async function sairDaConta(){
+  try{ await N.api.signOut(N.auth); }catch(e){}
+  localStorage.removeItem(CHAVE_GRUPO);
+  localStorage.removeItem(CHAVE_CACHE);
+  location.reload();
+}
+
+/* ---------- grupos ---------- */
+const ref  = (...p) => N.api.doc(N.db, ...p);
+const cole = (...p) => N.api.collection(N.db, ...p);
+
+async function meusGrupos(){
+  /* A lista fica no documento da pessoa só por conveniência, para o app não
+     precisar adivinhar. Ela NÃO vale como permissão: quem pode ler o banco
+     de um grupo é decidido pela existência do registro de membro, conferida
+     pelo servidor. Uma lista adulterada só faz o app tentar e levar não. */
+  const d = await N.api.getDoc(ref("usuarios", N.usuario.uid));
+  return (d.exists() && d.data().grupos) || [];
+}
+
+async function registrarUsuario(){
+  const u = N.usuario;
+  await N.api.setDoc(ref("usuarios", u.uid), {
+    nome: u.displayName || (u.email || "").split("@")[0],
+    email: u.email || null,
+    foto: u.photoURL || null,
+    ultimoAcesso: N.api.serverTimestamp()
+  }, { merge: true });
+}
+
+/* A data vem como Timestamp do Firestore, mas pode chegar como número em
+   cache ou em teste. Uma função só evita a comparação silenciosamente errada
+   que deixaria passar um convite vencido. */
+function emMilissegundos(v){
+  if(v == null) return 0;
+  if(typeof v === "number") return v;
+  if(typeof v.toMillis === "function") return v.toMillis();
+  if(v.seconds != null) return v.seconds * 1000;
+  const d = new Date(v);
+  return isNaN(d) ? 0 : d.getTime();
+}
+
+async function entrarNoGrupoPorCodigo(codigo){
+  codigo = String(codigo || "").trim().toUpperCase();
+  if(!codigo) throw new Error("Digite o código do convite.");
+
+  const cv = await N.api.getDoc(ref("convites", codigo));
+  if(!cv.exists()) throw new Error("Não encontrei esse código. Confira se digitou certo.");
+  const c = cv.data();
+  if(!c.ativo) throw new Error("Este convite foi desativado.");
+  if(c.usos >= c.maxUsos) throw new Error("Este convite já atingiu o limite de pessoas.");
+  if(emMilissegundos(c.expiraEm) && emMilissegundos(c.expiraEm) < Date.now())
+    throw new Error("Este convite venceu. Peça um código novo.");
+
+  const u = N.usuario;
+  await N.api.setDoc(ref("grupos", c.grupo, "membros", u.uid), {
+    nome: u.displayName || (u.email || "").split("@")[0],
+    entrouEm: N.api.serverTimestamp(),
+    papel: "membro",
+    viaConvite: codigo
+  });
+  await N.api.updateDoc(ref("convites", codigo), { usos: N.api.increment(1) });
+  await N.api.setDoc(ref("usuarios", u.uid),
+    { grupos: N.api.arrayUnion(c.grupo) }, { merge: true });
+  return c.grupo;
+}
+
+/* ---------- o banco de questões ---------- */
+async function lerBancoDoGrupo(g){
+  const q = await N.api.getDocs(cole("grupos", g, "banco"));
+  if(q.empty) return null;
+  const curso = { disciplinas:[], topicos:[], itens:[] };
+  const vistos = new Set();
+  q.forEach(d => {
+    const b = d.data();
+    (b.disciplinas || []).forEach(x => { if(!vistos.has("d"+x.id)){ vistos.add("d"+x.id); curso.disciplinas.push(x); } });
+    (b.topicos || []).forEach(x => { if(!vistos.has("t"+x.id)){ vistos.add("t"+x.id); curso.topicos.push(x); } });
+    (b.itens || []).forEach(x => { if(!vistos.has("i"+x.id)){ vistos.add("i"+x.id); curso.itens.push(x); } });
+  });
+  return curso;
+}
+
+function guardarBanco(curso){
+  try{ localStorage.setItem(CHAVE_CACHE, JSON.stringify(curso)); }catch(e){}
+}
+function bancoGuardado(){
+  try{ const b = localStorage.getItem(CHAVE_CACHE); return b ? JSON.parse(b) : null; }
+  catch(e){ return null; }
+}
+
+/* ---------- progresso na nuvem ---------- */
+const CAMPOS_SINC = ["prog","xp","xpSemana","semana","ofensiva","ultimoDia","dia",
+                     "feitosHoje","meta","segPorQuestao","esperaMin","recorde",
+                     "datas","foco","historico","reportes"];
+
+function juntarProgresso(local, remoto){
+  /* Mesma conta em dois aparelhos: fica o mais adiantado de cada questão,
+     e o maior de cada contador. Nunca perde acerto de ninguém. */
+  if(!remoto) return local;
+  const fora = { ...local };
+  const p = { ...(remoto.prog || {}) };
+  Object.keys(local.prog || {}).forEach(id => {
+    const a = local.prog[id], b = p[id];
+    p[id] = (!b || (a.reps || 0) >= (b.reps || 0)) ? a : b;
+  });
+  fora.prog = p;
+  ["xp","xpSemana","ofensiva","feitosHoje"].forEach(k =>
+    fora[k] = Math.max(local[k] || 0, remoto[k] || 0));
+  fora.historico = { ...(remoto.historico || {}), ...(local.historico || {}) };
+  fora.datas     = { ...(remoto.datas || {}), ...(local.datas || {}) };
+  if(remoto.recorde) fora.recorde = Math.min(local.recorde || 1e9, remoto.recorde);
+  return fora;
+}
+
+async function baixarProgresso(){
+  try{
+    const d = await N.api.getDoc(ref("progresso", N.usuario.uid));
+    return d.exists() ? d.data() : null;
+  }catch(e){ return null; }
+}
+
+let sincPendente = null, sincUltimo = 0;
+function agendarSincronia(){
+  /* Escrever a cada questão gastaria cota à toa. Uma escrita a cada 15s,
+     mais uma garantida ao fechar o app, dá conta com folga. */
+  if(!N.ligado || !N.usuario) return;
+  clearTimeout(sincPendente);
+  const espera = Math.max(0, 15000 - (Date.now() - sincUltimo));
+  sincPendente = setTimeout(sincronizarAgora, espera);
+}
+async function sincronizarAgora(){
+  if(!N.ligado || !N.usuario) return;
+  sincUltimo = Date.now();
+  const dados = {};
+  CAMPOS_SINC.forEach(k => { if(S[k] !== undefined) dados[k] = S[k]; });
+  dados.atualizadoEm = N.api.serverTimestamp();
+  try{ await N.api.setDoc(ref("progresso", N.usuario.uid), dados, { merge: true }); }
+  catch(e){ /* sem rede: fica local e sobe na próxima */ }
+}
+addEventListener("visibilitychange", () => { if(document.hidden) sincronizarAgora(); });
+addEventListener("pagehide", sincronizarAgora);
+
+/* ============================================================
+   TELAS DE ENTRADA
+   ============================================================ */
+function molduraEntrada(dentro){
+  app.innerHTML = `<div class="rolagem"><div class="entrada">
+      <div class="marca">✓</div>${dentro}</div></div>`;
+  ligarCue();
+}
+
+function telaEntrar(erro){
+  molduraEntrada(`
+    <h1>Fixa aí</h1>
+    <p class="sub">Um pouco todo dia, em vez de tudo na véspera.</p>
+    ${erro ? `<div class="erro">${esc(erro)}</div>` : ""}
+    <button class="btg" id="bGoogle">
+      <svg class="g" viewBox="0 0 48 48" aria-hidden="true"><path fill="#4285F4" d="M45 24c0-1.6-.1-2.7-.4-3.9H24v7.1h12c-.2 1.8-1.5 4.6-4.4 6.4l6.7 5.2C42.2 35 45 30 45 24z"/><path fill="#34A853" d="M24 46c5.9 0 10.9-2 14.5-5.3l-6.9-5.4C29.8 36.6 27.2 37.5 24 37.5c-5.8 0-10.8-3.9-12.5-9.3l-7.1 5.5C8 41.2 15.4 46 24 46z"/><path fill="#FBBC05" d="M11.5 28.2c-.5-1.4-.7-2.8-.7-4.2s.3-2.9.7-4.2l-7.1-5.6C3 17 2 20.4 2 24s1 7 2.4 9.8l7.1-5.6z"/><path fill="#EA4335" d="M24 10.5c4.1 0 6.9 1.8 8.5 3.3l6.2-6C34.9 4.3 29.9 2 24 2 15.4 2 8 6.8 4.4 14.2l7.1 5.6c1.7-5.4 6.7-9.3 12.5-9.3z"/></svg>
+      Entrar com Google
+    </button>
+    <button class="btg" id="bEmail">✉️ Entrar com e-mail</button>
+    <p class="obs">Entrar só identifica você. Para ver as questões, você precisa
+      do código de convite do seu grupo.</p>`);
+  $("#bGoogle").onclick = async () => {
+    try{ await entrarComGoogle(); }
+    catch(e){ telaEntrar(traduzErro(e)); }
+  };
+  $("#bEmail").onclick = () => telaEmail();
+}
+
+function telaEmail(erro, criando){
+  molduraEntrada(`
+    <h1>${criando ? "Criar conta" : "Entrar com e-mail"}</h1>
+    <p class="sub">${criando ? "Escolha uma senha de pelo menos 6 caracteres."
+                             : "Use o e-mail e a senha que você cadastrou."}</p>
+    ${erro ? `<div class="erro">${esc(erro)}</div>` : ""}
+    <input class="resposta" id="cEmail" type="email" inputmode="email" autocomplete="email"
+      autocapitalize="off" autocorrect="off" placeholder="seu e-mail" style="margin-bottom:10px">
+    <input class="resposta" id="cSenha" type="password" autocomplete="current-password"
+      placeholder="sua senha" style="margin-bottom:14px">
+    <button class="btn" id="bVai">${criando ? "Criar conta" : "Entrar"}</button>
+    <button class="sair" id="bTroca">${criando ? "Já tenho conta" : "Ainda não tenho conta"}</button>
+    <button class="sair" id="bVolta" style="display:block;margin:8px auto 0">Voltar</button>`);
+  const vai = async () => {
+    const e = $("#cEmail").value.trim(), sn = $("#cSenha").value;
+    if(!e || !sn) return telaEmail("Preencha o e-mail e a senha.", criando);
+    try{ await entrarComEmail(e, sn, criando); }
+    catch(err){ telaEmail(traduzErro(err), criando); }
+  };
+  $("#bVai").onclick = vai;
+  $("#cSenha").onkeydown = ev => { if(ev.key === "Enter") vai(); };
+  $("#bTroca").onclick = () => telaEmail(null, !criando);
+  $("#bVolta").onclick = () => telaEntrar();
+}
+
+function telaConvite(erro){
+  const nome = (N.usuario.displayName || N.usuario.email || "").split("@")[0];
+  molduraEntrada(`
+    <h1>Falta o convite</h1>
+    <p class="sub">Oi, ${esc(nome)}! Digite o código que a sua turma recebeu
+      para liberar as questões.</p>
+    ${erro ? `<div class="erro">${esc(erro)}</div>` : ""}
+    <input class="codigo" id="cCod" maxlength="24" autocapitalize="characters"
+      autocomplete="off" autocorrect="off" spellcheck="false" placeholder="MED2026-XXXX">
+    <button class="btn" id="bEntra">Entrar no grupo</button>
+    <p class="obs">Sem o código, o app não recebe questão nenhuma — nem se você
+      souber o endereço. Quem tem o código é quem organiza o seu grupo.</p>
+    <button class="sair" id="bSair">Sair desta conta</button>`);
+  const tenta = async () => {
+    const b = $("#bEntra"); b.disabled = true; b.textContent = "Conferindo...";
+    try{
+      const g = await entrarNoGrupoPorCodigo($("#cCod").value);
+      localStorage.setItem(CHAVE_GRUPO, g);
+      N.grupo = g;
+      await abrirComGrupo(g);
+    }catch(e){
+      b.disabled = false; b.textContent = "Entrar no grupo";
+      telaConvite(traduzErro(e));
+    }
+  };
+  $("#bEntra").onclick = tenta;
+  $("#cCod").onkeydown = ev => { if(ev.key === "Enter") tenta(); };
+  $("#bSair").onclick = sairDaConta;
+  setTimeout(() => { try{ $("#cCod").focus({ preventScroll:true }); }catch(e){} }, 80);
+}
+
+function telaCarregando(msg){
+  molduraEntrada(`<h1>${esc(msg || "Carregando...")}</h1>
+    <p class="sub">Só um instante.</p>`);
+}
+
+function telaSemBanco(){
+  molduraEntrada(`
+    <h1>Grupo ainda sem questões</h1>
+    <p class="sub">Você está num grupo que ainda não tem banco publicado.
+      Se você entrou no grupo errado, dá para tentar outro código.</p>
+    <button class="btn" id="bOutro">Usar outro código</button>
+    <button class="sair" id="bSair">Sair desta conta</button>`);
+  $("#bOutro").onclick = () => {
+    localStorage.removeItem(CHAVE_GRUPO);
+    localStorage.removeItem(CHAVE_CACHE);
+    N.grupo = null;
+    telaConvite();
+  };
+  $("#bSair").onclick = sairDaConta;
+}
+
+function traduzErro(e){
+  const c = (e && (e.code || e.message)) || "";
+  if(/popup-closed|cancelled-popup/.test(c)) return "A janela do Google fechou antes de terminar. Tente de novo.";
+  if(/popup-blocked/.test(c))       return "O navegador bloqueou a janela do Google. Libere os pop-ups para este site.";
+  if(/invalid-email/.test(c))       return "Esse e-mail não parece válido.";
+  if(/weak-password/.test(c))       return "A senha precisa ter pelo menos 6 caracteres.";
+  if(/email-already-in-use/.test(c))return "Já existe conta com esse e-mail. Tente entrar em vez de criar.";
+  if(/invalid-credential|wrong-password|user-not-found/.test(c))
+                                    return "E-mail ou senha não conferem.";
+  if(/too-many-requests/.test(c))   return "Muitas tentativas seguidas. Espere um minuto e tente de novo.";
+  if(/network-request-failed|unavailable/.test(c))
+                                    return "Sem conexão com o servidor. Confira sua internet.";
+  if(/permission-denied/.test(c))   return "Você não tem acesso a esse conteúdo.";
+  return (e && e.message) ? String(e.message).replace(/^Firebase:\s*/, "") : "Não consegui completar. Tente de novo.";
+}
+
+/* ============================================================
+   ADMINISTRAÇÃO — só quem organiza o grupo usa esta tela.
+   Criar o grupo, emitir o código de convite e publicar as questões.
+   ============================================================ */
+function sorteioCodigo(){
+  const letras = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";   // sem I, O, 0, 1: confundem ao ditar
+  let f = "";
+  const r = new Uint8Array(4);
+  crypto.getRandomValues(r);
+  for(let i = 0; i < 4; i++) f += letras[r[i] % letras.length];
+  return f;
+}
+
+async function telaAdmin(aviso){
+  const meus = await meusGrupos().catch(() => []);
+  let dono = null;
+  for(const g of meus){
+    try{
+      const d = await N.api.getDoc(ref("grupos", g));
+      if(d.exists() && d.data().dono === N.usuario.uid){ dono = { id:g, ...d.data() }; break; }
+    }catch(e){}
+  }
+
+  if(!dono){
+    molduraEntrada(`
+      <h1>Criar um grupo</h1>
+      <p class="sub">O grupo é o que guarda as questões e reúne quem estuda junto.
+        Você cria uma vez e distribui o código.</p>
+      ${aviso ? `<div class="erro">${esc(aviso)}</div>` : ""}
+      <input class="resposta" id="gNome" placeholder="Medicina 2º ano — 2026" style="margin-bottom:12px">
+      <button class="btn" id="bCria">Criar grupo</button>
+      <button class="sair" id="bVolta">Voltar</button>`);
+    $("#bCria").onclick = async () => {
+      const nome = $("#gNome").value.trim();
+      if(!nome) return telaAdmin("Dê um nome ao grupo.");
+      const b = $("#bCria"); b.disabled = true; b.textContent = "Criando...";
+      try{
+        const id = "g" + Date.now().toString(36) + sorteioCodigo().toLowerCase();
+        await N.api.setDoc(ref("grupos", id), {
+          nome, dono: N.usuario.uid, criadoEm: N.api.serverTimestamp()
+        });
+        await N.api.setDoc(ref("grupos", id, "membros", N.usuario.uid), {
+          nome: N.usuario.displayName || "organizadora",
+          entrouEm: N.api.serverTimestamp(), papel: "dono", viaConvite: "fundadora"
+        });
+        await N.api.setDoc(ref("usuarios", N.usuario.uid),
+          { grupos: N.api.arrayUnion(id) }, { merge:true });
+        localStorage.setItem(CHAVE_GRUPO, id);
+        telaAdmin();
+      }catch(e){ telaAdmin(traduzErro(e)); }
+    };
+    $("#bVolta").onclick = () => telaConvite();
+    return;
+  }
+
+  // já existe grupo: mostrar convite, membros e publicação
+  let convite = null;
+  try{
+    const q = await N.api.getDocs(N.api.query(cole("convites"),
+      N.api.where("grupo", "==", dono.id)));
+    q.forEach(d => { if(!convite) convite = { codigo:d.id, ...d.data() }; });
+  }catch(e){}
+  let nMembros = "—";
+  try{ nMembros = (await N.api.getDocs(cole("grupos", dono.id, "membros"))).size; }catch(e){}
+  let nQuestoes = 0;
+  try{
+    const q = await N.api.getDocs(cole("grupos", dono.id, "banco"));
+    q.forEach(d => nQuestoes += ((d.data().itens || []).length));
+  }catch(e){}
+
+  const vencMs = convite ? emMilissegundos(convite.expiraEm) : 0;
+  const venc = vencMs ? new Date(vencMs).toLocaleDateString("pt-BR") : null;
+
+  app.innerHTML = `<div class="rolagem"><div class="admin" style="padding:18px 16px 30px">
+    <div class="secao">${esc(dono.nome)}</div>
+    ${aviso ? `<div class="erro" style="margin-bottom:12px">${esc(aviso)}</div>` : ""}
+
+    <div class="cx">
+      <b>Código de convite</b>
+      ${convite ? `
+        <div class="cod">${esc(convite.codigo)}</div>
+        <p class="muted" style="margin:0 0 10px">
+          ${convite.ativo ? "Ativo" : "Desativado"} ·
+          ${convite.usos} de ${convite.maxUsos} usos
+          ${venc ? " · vence em " + venc : ""}
+        </p>
+        <div class="asbtns">
+          <button class="minibt" id="bLiga">${convite.ativo ? "Desativar" : "Reativar"}</button>
+          <button class="minibt" id="bNovo">Gerar outro</button>
+        </div>`
+      : `<p class="muted" style="margin:8px 0 10px">Ainda não existe convite para este grupo.</p>
+         <button class="minibt" id="bNovo" style="width:100%">Gerar código</button>`}
+    </div>
+
+    <div class="cx">
+      <b>Quem já entrou</b>
+      <p class="muted" style="margin:8px 0 0">${nMembros} ${nMembros === 1 ? "pessoa" : "pessoas"}</p>
+    </div>
+
+    <div class="cx">
+      <b>Questões publicadas</b>
+      <p class="muted" style="margin:8px 0 10px">
+        ${nQuestoes ? nQuestoes + " exercícios no ar" : "Nenhuma ainda — publique o banco abaixo."}</p>
+      <input type="file" id="arq" accept="application/json,.json" style="display:none">
+      <div class="asbtns">
+        <button class="minibt" id="bPubArq">Publicar de um arquivo</button>
+        <button class="minibt" id="bPubWeb">Publicar do banco.json</button>
+      </div>
+    </div>
+
+    <div class="cx">
+      <b>Seu identificador</b>
+      <p class="muted" style="margin:8px 0 6px">É o que vai na lista de organizadoras,
+        dentro das regras de segurança.</p>
+      <div class="cod" style="font-size:13px;letter-spacing:.02em">${esc(N.usuario.uid)}</div>
+    </div>
+
+    <button class="btn" id="bIr" style="margin-top:6px">Ir para o app</button>
+    <div style="height:8px"></div>
+    <button class="btn ghost" id="bSair">Sair desta conta</button>
+  </div></div>`;
+  ligarCue();
+
+  const bl = $("#bLiga");
+  if(bl) bl.onclick = async () => {
+    try{
+      await N.api.updateDoc(ref("convites", convite.codigo), { ativo: !convite.ativo });
+      telaAdmin();
+    }catch(e){ telaAdmin(traduzErro(e)); }
+  };
+
+  $("#bNovo").onclick = async () => {
+    const base = (dono.nome.match(/[A-Za-zÀ-ÿ]+/g) || ["GRUPO"])[0]
+      .toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "").slice(0, 6);
+    const ano = new Date().getFullYear();
+    const codigo = `${base}${ano}-${sorteioCodigo()}`;
+    try{
+      if(convite) await N.api.updateDoc(ref("convites", convite.codigo), { ativo:false });
+      await N.api.setDoc(ref("convites", codigo), {
+        grupo: dono.id, ativo:true, usos:0, maxUsos:60,
+        expiraEm: N.api.Timestamp.fromMillis(Date.now() + 21 * 864e5),
+        criadoEm: N.api.serverTimestamp()
+      });
+      telaAdmin();
+    }catch(e){ telaAdmin(traduzErro(e)); }
+  };
+
+  async function publicar(curso){
+    if(!curso || !curso.itens || !curso.itens.length)
+      return telaAdmin("Esse arquivo não parece um banco de questões válido.");
+    const porProva = {};
+    curso.itens.forEach(i => {
+      const k = (i.disc || "geral") + "_" + (i.prova || "p");
+      (porProva[k] = porProva[k] || []).push(i);
+    });
+    try{
+      for(const k of Object.keys(porProva)){
+        await N.api.setDoc(ref("grupos", dono.id, "banco", k), {
+          disciplinas: curso.disciplinas || [],
+          topicos: curso.topicos || [],
+          itens: porProva[k],
+          atualizadoEm: N.api.serverTimestamp()
+        });
+      }
+      localStorage.removeItem(CHAVE_CACHE);
+      telaAdmin();
+    }catch(e){ telaAdmin(traduzErro(e)); }
+  }
+
+  $("#bPubArq").onclick = () => $("#arq").click();
+  $("#arq").onchange = async ev => {
+    const f = ev.target.files[0];
+    if(!f) return;
+    try{ await publicar(JSON.parse(await f.text())); }
+    catch(e){ telaAdmin("Não consegui ler esse arquivo: " + e.message); }
+  };
+  $("#bPubWeb").onclick = async () => {
+    try{
+      const r = await fetch("banco.json?v=" + Date.now(), { cache:"no-store" });
+      if(!r.ok) throw new Error("não achei o banco.json aqui do lado");
+      await publicar(await r.json());
+    }catch(e){ telaAdmin("Não consegui buscar o banco.json: " + e.message); }
+  };
+
+  $("#bIr").onclick = () => abrirComGrupo(dono.id);
+  $("#bSair").onclick = sairDaConta;
+}
+
+/* ---------- abrir o app já com grupo ---------- */
+async function abrirComGrupo(g){
+  telaCarregando("Baixando as questões");
+  let curso = null;
+  try{ curso = await lerBancoDoGrupo(g); }catch(e){ curso = null; }
+  if(curso && curso.itens.length){ guardarBanco(curso); }
+  else { curso = bancoGuardado(); }
+  if(!curso || !curso.itens.length) return telaSemBanco();
+
+  window.CURSO = curso;
+  indexarBanco();
+
+  const remoto = await baixarProgresso();
+  if(remoto){ S = { ...S, ...juntarProgresso(S, remoto) }; salvar(); }
+
+  telaInicio();
+  sincronizarAgora();
+}
+
+/* ============================================================
    Arranque
    Em arquivo único o banco já veio embutido; na PWA ele chega
    por fetch — e, mais adiante, do Firestore. Um ponto de entrada só.
    ============================================================ */
 async function iniciar(){
+  /* Com Firebase configurado (a versão publicada), o caminho é
+     entrar → convite → questões. Sem Firebase (o arquivo único que roda
+     offline no computador), o banco já veio junto e o app abre direto. */
+  if(window.FIREBASE_CONFIG){
+    try{ await nuvemCarregar(); }
+    catch(e){
+      const guardado = bancoGuardado();
+      if(guardado){ window.CURSO = guardado; indexarBanco(); return telaInicio(); }
+      return molduraEntrada('<h1>Sem conexão</h1><p class="sub">Não consegui falar com o servidor. ' +
+        'Conecte-se à internet e abra de novo.</p>');
+    }
+    telaCarregando("Entrando");
+    N.api.onAuthStateChanged(N.auth, async (u) => {
+      N.usuario = u;
+      if(!u) return telaEntrar(N.erroRedirecionamento);
+      try{ await registrarUsuario(); }catch(e){}
+      let g = localStorage.getItem(CHAVE_GRUPO);
+      if(!g){
+        try{ g = (await meusGrupos())[0] || null; }catch(e){ g = null; }
+        if(g) localStorage.setItem(CHAVE_GRUPO, g);
+      }
+      if(location.hash === "#organizar") return telaAdmin();
+      if(!g) return telaConvite();
+      N.grupo = g;
+      await abrirComGrupo(g);
+    });
+    return;
+  }
+
   if(typeof CURSO === "undefined" || !CURSO){
     try{
       const r = await fetch("banco.json?v=" + (window.VERSAO_BANCO || "0"), { cache:"no-cache" });
