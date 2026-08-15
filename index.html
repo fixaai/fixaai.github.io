@@ -1863,7 +1863,40 @@ async function entrarNoGrupoPorCodigo(codigo){
   return c.grupo;
 }
 
-/* ---------- o banco de questões ---------- */
+/* ---------- o banco de questões ----------
+
+   O Firestore NÃO aceita lista dentro de lista. As questões de relacionar
+   guardam os pares como [["esquerda","direita"], ...] — exatamente o formato
+   proibido. Na ida cada par vira {e,d}; na volta, par de novo. O resto do app
+   continua vendo pares como sempre viu.                                    */
+function paraNuvem(it){
+  if(!Array.isArray(it.pares)) return it;
+  return { ...it, pares: it.pares.map(p => ({ e: p[0], d: p[1] })) };
+}
+function daNuvem(it){
+  if(!Array.isArray(it.pares)) return it;
+  return { ...it, pares: it.pares.map(p => Array.isArray(p) ? p : [p.e, p.d]) };
+}
+/* Rede de proteção: se um tipo novo de exercício trouxer outra lista aninhada,
+   quero saber na hora de publicar, com o caminho exato, e não um erro genérico. */
+function acharListaAninhada(v, caminho){
+  if(Array.isArray(v)){
+    for(let i = 0; i < v.length; i++){
+      if(Array.isArray(v[i])) return caminho + "[" + i + "]";
+      const f = acharListaAninhada(v[i], caminho + "[" + i + "]");
+      if(f) return f;
+    }
+    return null;
+  }
+  if(v && typeof v === "object"){
+    for(const k of Object.keys(v)){
+      const f = acharListaAninhada(v[k], caminho + "." + k);
+      if(f) return f;
+    }
+  }
+  return null;
+}
+
 async function lerBancoDoGrupo(g){
   const q = await N.api.getDocs(cole("grupos", g, "banco"));
   if(q.empty) return null;
@@ -1873,7 +1906,7 @@ async function lerBancoDoGrupo(g){
     const b = d.data();
     (b.disciplinas || []).forEach(x => { if(!vistos.has("d"+x.id)){ vistos.add("d"+x.id); curso.disciplinas.push(x); } });
     (b.topicos || []).forEach(x => { if(!vistos.has("t"+x.id)){ vistos.add("t"+x.id); curso.topicos.push(x); } });
-    (b.itens || []).forEach(x => { if(!vistos.has("i"+x.id)){ vistos.add("i"+x.id); curso.itens.push(x); } });
+    (b.itens || []).forEach(x => { if(!vistos.has("i"+x.id)){ vistos.add("i"+x.id); curso.itens.push(daNuvem(x)); } });
   });
   return curso;
 }
@@ -2045,6 +2078,12 @@ function telaSemBanco(){
 
 function traduzErro(e){
   const c = (e && (e.code || e.message)) || "";
+  if(/unauthorized-domain/.test(c))
+    return "Este endereço não está autorizado no Firebase. Se você abriu o arquivo direto do "
+         + "computador, use o endereço do app na internet. Se já está no endereço certo, "
+         + "falta liberá-lo em Authentication → Settings → Authorized domains.";
+  if(/operation-not-allowed|configuration-not-found/.test(c))
+    return "Esta forma de entrar não está ligada no Firebase. Ative em Authentication → Sign-in method.";
   if(/popup-closed|cancelled-popup/.test(c)) return "A janela do Google fechou antes de terminar. Tente de novo.";
   if(/popup-blocked/.test(c))       return "O navegador bloqueou a janela do Google. Libere os pop-ups para este site.";
   if(/invalid-email/.test(c))       return "Esse e-mail não parece válido.";
@@ -2115,12 +2154,16 @@ async function telaAdmin(aviso){
   }
 
   // já existe grupo: mostrar convite, membros e publicação
+  /* O código do convite fica guardado NO GRUPO. Listar convites é proibido pelas
+     regras — é o que impede alguém de descobrir códigos alheios —, e sem isso a
+     própria tela de administração ficava sem enxergar o código que criou. */
   let convite = null;
-  try{
-    const q = await N.api.getDocs(N.api.query(cole("convites"),
-      N.api.where("grupo", "==", dono.id)));
-    q.forEach(d => { if(!convite) convite = { codigo:d.id, ...d.data() }; });
-  }catch(e){}
+  if(dono.convite){
+    try{
+      const d = await N.api.getDoc(ref("convites", dono.convite));
+      if(d.exists()) convite = { codigo: dono.convite, ...d.data() };
+    }catch(e){}
+  }
   let nMembros = "—";
   try{ nMembros = (await N.api.getDocs(cole("grupos", dono.id, "membros"))).size; }catch(e){}
   let nQuestoes = 0;
@@ -2202,6 +2245,7 @@ async function telaAdmin(aviso){
         expiraEm: N.api.Timestamp.fromMillis(Date.now() + 21 * 864e5),
         criadoEm: N.api.serverTimestamp()
       });
+      await N.api.updateDoc(ref("grupos", dono.id), { convite: codigo });
       telaAdmin();
     }catch(e){ telaAdmin(traduzErro(e)); }
   };
@@ -2212,8 +2256,13 @@ async function telaAdmin(aviso){
     const porProva = {};
     curso.itens.forEach(i => {
       const k = (i.disc || "geral") + "_" + (i.prova || "p");
-      (porProva[k] = porProva[k] || []).push(i);
+      (porProva[k] = porProva[k] || []).push(paraNuvem(i));
     });
+    // confere antes de mandar: erro do Firestore aqui não diz qual questão é
+    for(const k of Object.keys(porProva)){
+      const ruim = acharListaAninhada(porProva[k], k);
+      if(ruim) return telaAdmin("Uma questão tem lista dentro de lista, que o Firestore não aceita: " + ruim);
+    }
     try{
       for(const k of Object.keys(porProva)){
         await N.api.setDoc(ref("grupos", dono.id, "banco", k), {
