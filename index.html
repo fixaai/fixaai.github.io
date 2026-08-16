@@ -35,10 +35,11 @@ body{
 /* área de rolagem própria: arrasta em qualquer ponto da tela, com inércia */
 .rolagem{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 16px;
   touch-action:pan-y;scrollbar-width:thin;scrollbar-color:rgba(128,140,155,.45) transparent}
-.rolagem::-webkit-scrollbar{width:8px}
-.rolagem::-webkit-scrollbar-track{background:transparent}
-.rolagem::-webkit-scrollbar-thumb{background:rgba(128,140,155,.38);border-radius:99px}
-.rolagem::-webkit-scrollbar-thumb:hover{background:rgba(128,140,155,.7)}
+.rolagem::-webkit-scrollbar,.caixaRol::-webkit-scrollbar{width:8px}
+.rolagem::-webkit-scrollbar-track,.caixaRol::-webkit-scrollbar-track{background:transparent}
+.rolagem::-webkit-scrollbar-thumb,.caixaRol::-webkit-scrollbar-thumb{background:rgba(128,140,155,.38);border-radius:99px}
+.rolagem::-webkit-scrollbar-thumb:hover,.caixaRol::-webkit-scrollbar-thumb:hover{background:rgba(128,140,155,.7)}
+.rolagem,.caixaRol{scrollbar-width:thin;scrollbar-color:rgba(128,140,155,.38) transparent}
 .rolagem.mais{box-shadow:inset 0 -20px 15px -15px rgba(20,30,45,.22)}
 #app.arrastando{cursor:grabbing;user-select:none}
 #app.arrastando *{cursor:grabbing !important}
@@ -63,10 +64,24 @@ button{font-family:inherit;font-size:inherit;cursor:pointer;border:none;backgrou
 
 /* ---------- barras superior e inferior ---------- */
 .topbar{flex:0 0 auto;display:flex;align-items:center;gap:12px;padding:14px 16px 10px;background:var(--bg)}
-.xbtn{font-size:24px;line-height:1;color:var(--ink-2);padding:4px 8px;font-weight:700}
-.bar{flex:1;height:14px;border-radius:99px;background:var(--line);overflow:hidden}
-.bar > i{display:block;height:100%;background:var(--brand);border-radius:99px;transition:width .35s cubic-bezier(.2,.8,.2,1);
-  background-image:linear-gradient(180deg,rgba(255,255,255,.35),rgba(255,255,255,0) 60%)}
+/* O ✕ de sair da bateria era um caractere solto e a Isabela não achou que dava
+   para sair. Agora é botão redondo, com contorno, do tamanho de um dedo. */
+.xbtn{flex:0 0 34px;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);
+  background:var(--card);font-size:17px;line-height:1;color:var(--ink-2);font-weight:700;
+  display:grid;place-items:center}
+.bar{flex:1;display:flex;gap:3px;height:14px}
+.bar > i{flex:1;background:var(--line);border-radius:3px;transition:background .25s}
+.bar > i:first-child{border-radius:99px 3px 3px 99px}
+.bar > i:last-child{border-radius:3px 99px 99px 3px}
+.bar > i.ok{background:var(--brand)}
+.raiobox{display:flex;align-items:center}
+.raio{font-weight:800;font-size:13px;color:var(--gold);white-space:nowrap;
+  background:rgba(212,160,23,.13);border-radius:99px;padding:3px 8px}
+.xpg{float:right;font-size:12.5px;font-weight:800;color:var(--brand);white-space:nowrap}
+.xpg b{font-weight:800;color:var(--gold)}
+.fb.bad .xpg{color:var(--ink-2)}
+.perdeu{font-size:12.5px;font-weight:700;color:var(--ink-2);margin-top:6px}
+
 .flame{font-weight:800;color:var(--gold);display:flex;align-items:center;gap:3px;font-size:15px}
 .semrank{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-2);
   background:var(--line);border-radius:99px;padding:3px 8px}
@@ -83,6 +98,155 @@ button{font-family:inherit;font-size:inherit;cursor:pointer;border:none;backgrou
 .nav button b{font-size:21px;font-weight:400;line-height:1.1;filter:grayscale(1);opacity:.55}
 .nav button.on{color:var(--brand)}
 .nav button.on b{filter:none;opacity:1}
+/* a espadinha do meio: maior, redonda, sem rótulo */
+.nav .espada{flex:0 0 64px;position:relative}
+.nav .espada b{position:absolute;top:-16px;left:50%;transform:translateX(-50%);
+  width:54px;height:54px;border-radius:50%;background:var(--brand);color:#fff;
+  display:grid;place-items:center;font-size:24px;filter:none;opacity:1;
+  box-shadow:0 4px 14px rgba(31,157,85,.38);border:3px solid var(--card)}
+.nav .espada.on b{background:var(--purple);box-shadow:0 4px 14px rgba(107,91,210,.42)}
+/* lista de gente do grupo */
+.gpLinha{display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line)}
+.gpLinha:last-child{border-bottom:none}
+.gpQuem{flex:1;display:flex;align-items:center;gap:11px;text-align:left;padding:11px 0;min-width:0}
+.gpIc{flex:0 0 34px;height:34px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font-size:17px}
+.gpTx{flex:1;min-width:0}
+.gpTx b{display:block;font-size:14.5px;font-weight:800}
+.gpTx span{display:block;font-size:12px;color:var(--ink-2);font-weight:700}
+.gpPos{flex:0 0 30px;text-align:center;font-size:14px;font-weight:800;color:var(--ink-2)}
+.gpPos.podio{font-size:19px}
+.gpLinha>.gpPos,.gpLinha>.gpIc{margin:11px 0}
+.gpLinha>.gpTx{padding:11px 0}
+.gpLinha.souEu{background:rgba(31,157,85,.07);margin:0 -14px;padding:0 14px;border-radius:8px}
+/* caixa de diálogo */
+.caixa{position:absolute;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.caixaFundo{position:absolute;inset:0;background:rgba(16,24,35,.42)}
+.caixaCorpo{position:relative;width:100%;max-width:520px;max-height:88%;display:flex;flex-direction:column;
+  background:var(--card);border-radius:20px 20px 0 0;padding:10px 18px 16px;
+  box-shadow:0 -8px 30px rgba(16,24,35,.22);animation:sobe .18s ease-out}
+@keyframes sobe{from{transform:translateY(18px);opacity:.6}to{transform:none;opacity:1}}
+.caixaTopo{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding-bottom:6px}
+.caixaTopo>*:first-child{flex:1}
+.caixaX{width:32px;height:32px;border-radius:50%;
+  border:1px solid var(--line);background:var(--bg);color:var(--ink-2);font-size:15px;font-weight:700;
+  display:grid;place-items:center}
+.caixaRol{overflow:auto;flex:1;min-height:0}
+.caixaCorpo h3{font-size:19px;font-weight:800;margin:0}
+.cxSub{color:var(--ink-2);font-size:12.5px;font-weight:700;margin:2px 0 0}
+.caixaBt{flex:0 0 auto;padding-top:14px}
+@media(min-width:560px){.caixa{align-items:center}.caixaCorpo{border-radius:20px;max-height:80%}}
+/* liga */
+.ligaTopo{display:flex;align-items:center;gap:11px;margin:16px 2px 8px}
+.ligaEmoji{font-size:26px}
+.ligaTopo b{display:block;font-size:16px;font-weight:800;color:var(--lc)}
+.ligaTopo span{display:block;font-size:11.5px;color:var(--ink-2);font-weight:700;
+  text-transform:uppercase;letter-spacing:.04em}
+.gpMove{flex:0 0 auto;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.03em}
+.gpLinha.sobe .gpMove{color:var(--brand)}
+.gpLinha.desce .gpMove{color:var(--wrong)}
+/* desafio */
+.desLinha{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px;
+  padding:12px;background:var(--bg);border-radius:14px;font-size:14px;font-weight:800}
+.desIc{font-size:22px}
+.desVs{color:var(--ink-2);font-size:11px;font-weight:800;text-transform:uppercase}
+.desLista{margin:8px 0 0;padding-left:18px}
+.desLista li{font-size:13.5px;color:var(--ink-2);font-weight:600;margin-top:7px;line-height:1.45}
+.desLista b{color:var(--ink)}
+.desEsc{display:flex;gap:8px;margin-top:8px}
+.desEsc .minibt{flex:1}
+.minibt.on{border-color:var(--brand);color:var(--brand);background:rgba(31,157,85,.08)}
+/* calendário */
+.calCab{display:flex;align-items:center;gap:8px;min-width:0}
+.calTit{flex:1;text-align:center;min-width:0}
+.calTit h3{font-size:17px;line-height:1.15}
+.calTit .cxSub{margin-top:1px}
+/* seta em desenho, não em caractere: o ‹ de fonte nasce fora do centro da bolinha */
+.calSeta{flex:0 0 32px;width:32px;height:32px;border-radius:50%;border:1px solid var(--line);
+  background:var(--bg);color:var(--ink-2);display:grid;place-items:center;padding:0}
+.calSeta svg{width:17px;height:17px;display:block}
+.calSem{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
+.calSem span{text-align:center;font-size:10.5px;font-weight:800;color:var(--ink-2);
+  text-transform:uppercase;letter-spacing:.04em}
+/* seis fileiras fixas: a altura do calendário nunca muda de mês para mês */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(6,1fr);gap:4px}
+/* trocar de mês desliza para o lado que o dedo pediu, em vez de a caixa crescer
+   ou encolher — movimento lateral diz "outro mês", vertical diz "mais conteúdo" */
+@keyframes deDireita{from{transform:translateX(14%);opacity:.25}to{transform:none;opacity:1}}
+@keyframes deEsquerda{from{transform:translateX(-14%);opacity:.25}to{transform:none;opacity:1}}
+.cal.vemDaDireita{animation:deDireita .17s ease-out}
+.cal.vemDaEsquerda{animation:deEsquerda .17s ease-out}
+.dia{position:relative;aspect-ratio:1;border-radius:10px;background:var(--bg);
+  display:grid;place-items:center;border:1px solid transparent}
+.dia.vazio{background:transparent}
+.dia .n{font-size:12px;font-weight:700;color:var(--ink-2)}
+/* o foguinho e o emoji da matéria podem passar da borda do quadradinho: o
+   quadrado pintado já diz de qual dia eles são, e presos dentro ficavam
+   pequenos demais para se enxergar */
+.dia .mk{position:absolute;top:-5px;right:-4px;font-size:15px;line-height:1}
+.dia .pv{position:absolute;bottom:-5px;left:-4px;font-size:14px;line-height:1}
+.dia.fez{background:rgba(212,160,23,.16)}
+.dia.fez .n{color:var(--ink)}
+.dia.gelo{background:rgba(74,111,165,.16)}
+.dia.furou{background:var(--bg);opacity:.45}
+.dia.prova{border-color:var(--purple)}
+.dia.hoje{outline:2px solid var(--brand);outline-offset:-2px}
+.dia.hoje .n{color:var(--brand);font-weight:800}
+.calLeg{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.calLeg span{display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:var(--ink-2)}
+.lg{width:18px;height:18px;border-radius:6px;display:grid;place-items:center;font-size:11px;
+  background:var(--bg);border:1px solid transparent;font-style:normal}
+.lg.fez{background:rgba(212,160,23,.16)}
+.lg.gelo{background:rgba(74,111,165,.16)}
+.lg.furou{opacity:.45}
+.lg.prova{border-color:var(--purple)}
+.calProvas{margin-top:4px}
+.calPr{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.calPr:last-child{border-bottom:none}
+.calPr .ic{flex:0 0 30px;height:30px;border-radius:9px;background:var(--bg);display:grid;place-items:center;font-size:15px}
+.calPr .tx b{display:block;font-size:14px;font-weight:800}
+.calPr .tx span{display:block;font-size:11.5px;color:var(--ink-2);font-weight:700}
+.gpDes.ocupada{opacity:.45}
+/* cabeçalho de disciplina na tela inicial */
+.dhead{display:flex;align-items:center;gap:10px;width:100%;text-align:left;margin:16px 2px 8px}
+.dhead .ic{flex:0 0 36px;height:36px;border-radius:10px;background:var(--card);
+  border:1px solid var(--line);display:grid;place-items:center;font-size:18px}
+.dhead .tx{flex:1;min-width:0}
+.dhead .tx b{display:block;font-size:15px;font-weight:800}
+.dhead .tx span{display:block;font-size:11.5px;color:var(--ink-2);font-weight:700}
+.dhead .dbar{flex:0 0 56px;height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.dhead .dbar i{display:block;height:100%;background:var(--brand);border-radius:99px}
+.dhead .dpc{flex:0 0 34px;text-align:right;font-size:12px;font-weight:800;color:var(--ink-2)}
+.dhead .dseta{flex:0 0 14px;text-align:center;color:var(--ink-2);font-weight:800}
+/* fechamento da liga */
+.ligaConta{margin:0 2px 8px;padding:9px 12px;border-radius:12px;background:rgba(212,160,23,.13);
+  color:var(--gold);font-size:13px;font-weight:700}
+.ligaConta.urgente{background:rgba(198,60,50,.12);color:var(--wrong)}
+.ligaPremio{margin:0 2px 10px;padding:9px 12px;border-radius:12px;background:var(--card);
+  border:1px solid var(--line);font-size:12.5px;font-weight:600;color:var(--ink-2)}
+.ligaPremio b{color:var(--ink)}
+.fimTopo{text-align:center;padding:4px 0 12px}
+.fimMedalha{font-size:52px;line-height:1}
+.fimTopo h3{margin-top:6px}
+.fimNums{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+.fimNums>div{text-align:center;background:var(--bg);border-radius:12px;padding:10px 4px}
+.fimNums b{display:block;font-size:19px;font-weight:800}
+.fimNums span{display:block;font-size:10.5px;color:var(--ink-2);font-weight:700;margin-top:2px}
+.fimPremio{border:1px solid var(--gold);border-radius:14px;padding:12px;font-size:15px;font-weight:800}
+.fimPremio span{display:block;font-size:12.5px;font-weight:600;color:var(--ink-2);margin-top:6px}
+.fimPremio.semPremio{border-color:var(--line);font-size:14px;color:var(--ink-2)}
+/* mais específico que `.dhead .tx span{display:block}`, senão o selo vira faixa */
+.dhead .tx b .selNovo,.selNovo{display:inline-block;vertical-align:middle;margin-left:6px;padding:1px 7px;border-radius:99px;
+  border:1.5px solid var(--brand);color:var(--brand);background:rgba(31,157,85,.10);
+  font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
+.fimGrade{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0 14px;text-align:center}
+.fimGrade>div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 6px}
+.fimGrade b{display:block;font-size:22px;font-weight:800}
+.fimGrade span{display:block;font-size:11px;color:var(--ink-2);font-weight:700;margin-top:2px}
+.cron.parado{opacity:.5}
+.maquete{border-style:dashed;border-color:var(--gold)}
+.maquete>b{font-size:14px;color:var(--gold)}
+.gpDes{flex:0 0 38px;height:38px;border-radius:50%;border:1px solid var(--line);
+  background:var(--bg);font-size:17px;display:grid;place-items:center}
 
 /* ---------- cartões ---------- */
 .hero{padding:20px 0 4px}
@@ -132,6 +296,51 @@ button{font-family:inherit;font-size:inherit;cursor:pointer;border:none;backgrou
   font-size:21px;line-height:1;display:grid;place-items:center}
 .emj.on{border-color:var(--brand);background:rgba(31,157,85,.10);box-shadow:0 0 0 2px rgba(31,157,85,.18)}
 .novoConv{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+/* cabeçalho do início com o botão do perfil */
+.heroPf{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.btPf{flex:0 0 42px;width:42px;height:42px;border-radius:50%;border:1px solid var(--line);
+  background:var(--card);font-size:20px;display:grid;place-items:center;overflow:hidden;margin-top:4px}
+.btPf img{width:100%;height:100%;object-fit:cover;display:block}
+.cardBt{display:block;width:100%;text-align:left}
+.maisProvas{width:100%;text-align:left;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink-2)}
+/* perfil */
+.pfTopo{text-align:center;padding:6px 0 14px}
+.pfTopo h1{font-size:22px;font-weight:800;margin:10px 0 2px}
+.pfFoto{width:78px;height:78px;border-radius:50%;margin:0 auto;display:block;object-fit:cover;
+  border:2px solid var(--line)}
+.pfEmoji{display:grid;place-items:center;font-size:34px;background:var(--card)}
+.pfSub{color:var(--ink-2);font-size:13px;font-weight:600;margin:0}
+.pfNums{display:grid;grid-template-columns:1fr 1fr;gap:16px 8px}
+.pfN{text-align:center}
+.pfN b{display:block;font-size:21px;font-weight:800}
+.pfN span{display:block;font-size:11.5px;color:var(--ink-2);font-weight:700;margin-top:3px;line-height:1.3}
+.pfMenor{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:18px;
+  padding-top:14px;border-top:1px solid var(--line)}
+.pfMenor>div{text-align:center}
+.pfMenor b{display:block;font-size:14px;font-weight:800;color:var(--ink-2)}
+.pfMenor span{display:block;font-size:10.5px;color:var(--ink-2);font-weight:700;margin-top:2px;line-height:1.25}
+.avisoRank{margin:-4px 2px 14px;font-size:13px}
+.pfLinha{display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid var(--line)}
+.pfLinha:last-child{border-bottom:none}
+.pfIc{flex:0 0 30px;height:30px;border-radius:9px;background:var(--bg);display:grid;place-items:center;font-size:16px}
+.pfTx{flex:1;min-width:0}
+.pfTx b{display:block;font-size:14px;font-weight:800}
+.pfTx span{display:block;font-size:11.5px;color:var(--ink-2);font-weight:600}
+.pfVal{flex:0 0 auto;font-size:17px;font-weight:800;color:var(--ink-2)}
+/* selos de conquista */
+.selos{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:9px}
+.selo{border:1px solid var(--line);border-radius:14px;background:var(--bg);padding:11px 5px 9px;
+  display:grid;place-items:center;gap:5px;opacity:.55}
+.selo.tem{opacity:1;background:var(--card);border-color:var(--brand)}
+.selo .fig{font-size:25px;line-height:1}
+.selo .nm{font-size:10.5px;font-weight:700;color:var(--ink-2);text-align:center;line-height:1.25}
+.selo.tem .nm{color:var(--ink)}
+.novaConq{margin-top:18px;border:1px solid var(--gold);border-radius:14px;padding:12px;text-align:left}
+.novaConq>b{display:block;font-size:14px;color:var(--gold);margin-bottom:8px}
+.cq{display:flex;align-items:center;gap:10px;padding:4px 0}
+.cq .sel{font-size:24px}
+.cqtx b{display:block;font-size:13.5px;font-weight:800}
+.cqtx span{display:block;font-size:12px;color:var(--ink-2);font-weight:600}
 .novoConv select{flex:1 1 0;min-width:0;margin:0}
 .countdown{background:linear-gradient(135deg,var(--purple),#8e7ff0);color:#fff;border:none}
 .countdown b{font-size:30px;font-weight:800;display:block;line-height:1.1}
@@ -368,8 +577,8 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.VERSAO_BUILD = "c5a32f1";</script>
-<script>window.VERSAO_BANCO = "f46f80d15d9a";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.VERSAO_BUILD = "5f55a6b";</script>
+<script>window.VERSAO_BANCO = "6d5776ea7153";</script>
 
 <script>
 "use strict";
@@ -387,10 +596,35 @@ const TITULO_TIPO = { vf:"Verdadeiro ou falso", mcq:"Escolha a certa", multi:"Ma
 
 /* toda questão pertence a uma disciplina e a uma prova */
 let porId = {}, discPorId = {};
+/* Quais matérias ganharam exercício desde a última vez que ESTE aparelho olhou.
+
+   A lista de ids conhecidos fica só no aparelho, de propósito: o selo de "novos"
+   responde "o que apareceu desde a última vez que eu olhei aqui", e isso é uma
+   pergunta de aparelho, não de conta. Quem estuda no celular e no tablet vê o
+   aviso nos dois, cada um na sua vez.
+
+   Na primeira abertura nada é novo — senão o app inteiro nasceria pintado de
+   verde e o selo não significaria nada. */
+let discsComNovidade = new Set();
+function marcarNovidades(){
+  const ids = CURSO.itens.map(i => i.id);
+  const antes = new Set(S.conhecidos || []);
+  discsComNovidade = new Set();
+  if(antes.size){
+    CURSO.itens.forEach(i => { if(!antes.has(i.id)) discsComNovidade.add(i.disc); });
+  }
+  S.conhecidos = ids;
+  salvar();
+}
+function jaViANovidade(discId){
+  discsComNovidade.delete(discId);
+}
+
 function indexarBanco(){
   CURSO.itens.forEach(i => { i.disc = i.disc || "fisio"; i.prova = i.prova || "p3"; });
   porId = {};     CURSO.itens.forEach(i => porId[i.id] = i);
   discPorId = {}; CURSO.disciplinas.forEach(d => discPorId[d.id] = d);
+  marcarNovidades();
 }
 
 /* ---------- utilidades ---------- */
@@ -417,6 +651,7 @@ function areaRolavel(){ return document.querySelector(".rolagem"); }
     if(e.pointerType === "touch") return;                     // toque: rolagem nativa do navegador
     if(e.button !== 0) return;
     if(e.target.closest("input, select, textarea")) return;
+    if(e.target.closest("#caixa")) return;          // dentro da caixa, quem rola é a caixa
     const el = areaRolavel(); if(!el) return;
     if(e.clientX > el.getBoundingClientRect().right - 18) return;   // clique na barra de rolagem
     ativo = true; arrastou = false; y0 = e.clientY; top0 = el.scrollTop;
@@ -461,6 +696,7 @@ function areaRolavel(){ return document.querySelector(".rolagem"); }
 
   // roda do mouse funciona apontando para qualquer lugar, inclusive rodapé e menu
   app.addEventListener("wheel", e => {
+    if(e.target.closest("#caixa")) return;
     const el = areaRolavel(); if(!el || el.contains(e.target)) return;
     el.scrollTop += e.deltaY;
   }, { passive:true });
@@ -468,6 +704,7 @@ function areaRolavel(){ return document.querySelector(".rolagem"); }
   window.addEventListener("keydown", e => {
     const el = areaRolavel(); if(!el) return;
     if(e.target.closest("input, select, textarea")) return;
+    if(document.getElementById("caixa")) return;
     if(e.key === "PageDown" || e.key === " "){ el.scrollBy({top: el.clientHeight*0.85, behavior:"smooth"}); e.preventDefault(); }
     if(e.key === "PageUp"){ el.scrollBy({top: -el.clientHeight*0.85, behavior:"smooth"}); e.preventDefault(); }
     if(e.key === "ArrowDown") el.scrollTop += 60;
@@ -489,12 +726,35 @@ window.addEventListener("resize", ligarCue);
 /* ============================================================
    Estado
    ============================================================ */
+/* ============================================================
+   REGRAS IGUAIS PARA TODO MUNDO
+
+   Tamanho da sessão, tempo por questão e espera entre sessões saíram dos
+   ajustes. Eram três coisas que cada pessoa regulava — e, com ranking, três
+   maneiras de a comparação deixar de significar alguma coisa: quem faz 30 por
+   dia acumula mais XP que quem faz 5 sem estudar melhor, e quem zera a espera
+   emenda sessões e dispara na frente.
+
+   O preço disso é real e é da Isabela a decisão: quem queria 20 por dia agora
+   faz 10. Em troca, o número na tabela quer dizer a mesma coisa para todas.
+   Quem quiser estudar mais continua podendo — é só começar outra rodada; ela
+   entra no XP total, e no ranking quando a espera correr.
+   ============================================================ */
+const SESSAO         = 10;    // exercícios por sessão
+const SEG_POR_QUESTAO = 90;   // 1 min e 30 por questão, somado para a sessão inteira
+const ESPERA_MIN     = 30;    // minutos entre sessões que valem ranking
+
 const padrao = () => ({
-  v:3, prog:{}, ofensiva:0, ultimoDia:null, dia:null, feitosHoje:0, xp:0, meta:10,
-  segPorQuestao:90, esperaMin:30, proximaSessao:null, recorde:null,
+  v:4, prog:{}, ofensiva:0, ultimoDia:null, dia:null, feitosHoje:0, xp:0,
+  meta:SESSAO, segPorQuestao:SEG_POR_QUESTAO, esperaMin:ESPERA_MIN,
+  proximaSessao:null, recorde:null,
   xpSemana:0, semana:null,
+  congelados:[],                                // dias em que a ofensiva foi congelada
+  conhecidos:[],                                // ids de exercício que este aparelho já viu chegar
   apelido:"", emoji:"",                         // como a pessoa quer ser chamada
                                                 // emoji vazio = ainda não escolheu
+  horizonte:1,                                  // quantas provas por matéria entram na mistura
+  marcos:{},                                    // o que já foi conquistado
   datas:{},                                     // "fisio/p3" -> "2026-08-26"
   foco:{ disc:null, prova:null, tops:[], tipos:[], soRevisao:false, soErros:false },
   reportes:[],
@@ -503,6 +763,7 @@ const padrao = () => ({
 let S = carregar();
 let aba = "inicio";
 let discAberta = null;      // qual disciplina está aberta na lista de datas de prova
+const discsAbertas = new Set();   // quais matérias estão abertas na tela inicial
 
 /* Emojis para a pessoa escolher. Coisa de faculdade de medicina, sem cara de
    app de banco: órgão, bicho, vidraria, estudo. */
@@ -524,10 +785,11 @@ function carregar(){
       if(s.foco.top && !(s.foco.tops || []).length) s.foco.tops = [s.foco.top];
       delete s.foco.top;
     }
-    if(!(s.v >= 3)){                    // o padrão passou de 1 min para 1min30 por questão
-      if(s.segPorQuestao === 60) s.segPorQuestao = 90;
-      s.v = 3;
-    }
+    /* Quem já usava o app tinha esses três valores regulados por conta. Não
+       adianta migrar "com jeitinho": ou vale a mesma regra para todas, ou o
+       ranking não compara nada. Então a cada abertura eles voltam ao padrão. */
+    s.meta = SESSAO; s.segPorQuestao = SEG_POR_QUESTAO; s.esperaMin = ESPERA_MIN;
+    s.v = 4;
     return s;
   }catch(e){ return padrao(); }
 }
@@ -572,6 +834,64 @@ function virarODia(){
 }
 
 /* ---------- consultas ---------- */
+/* Quais provas entram no "um pouco de tudo".
+
+   Duas regras, as duas pedidas pela Isabela:
+
+   1. Prova que já aconteceu sai. Depois da prova de micro, continuar recebendo
+      questão de micro no sorteio geral só rouba tempo do que ainda vai cair.
+   2. De cada matéria entram só as próximas `horizonte` provas. Sem isso, quem
+      cadastra o ano inteiro em fevereiro começa a receber conteúdo de dezembro
+      no meio do estudo — e conhecimento em medicina se constrói em ordem: dá
+      para entender a P4 depois da P1, não antes.
+
+   Prova sem data marcada continua entrando: o app não sabe quando ela é, e
+   esconder conteúdo por falta de informação seria pior. Escolher a matéria de
+   propósito no 🎯 desliga as duas regras — é assim que se revisa o que passou. */
+function provasNaMistura(){
+  const h = hoje();
+  const porDisc = {};
+  CURSO.itens.forEach(i => {
+    const k = i.disc + "/" + i.prova;
+    if(porDisc[i.disc] && porDisc[i.disc].chaves.has(k)) return;
+    porDisc[i.disc] = porDisc[i.disc] || { chaves:new Set(), comData:[], semData:[] };
+    porDisc[i.disc].chaves.add(k);
+    const d = (S.datas || {})[k];
+    if(d) porDisc[i.disc].comData.push({ k, dias: difDias(h, d) });
+    else  porDisc[i.disc].semData.push(k);
+  });
+  const quantas = (S.horizonte == null ? 1 : S.horizonte);
+  const dentro = new Set();
+  Object.values(porDisc).forEach(d => {
+    d.semData.forEach(k => dentro.add(k));
+    const futuras = d.comData.filter(x => x.dias >= 0).sort((a,b) => a.dias - b.dias);
+    (quantas > 0 ? futuras.slice(0, quantas) : futuras).forEach(x => dentro.add(x.k));
+  });
+  return dentro;
+}
+/* ============================================================
+   O que vale para o ranking
+
+   O XP da semana é o que compara as pessoas, então precisa ser difícil de
+   fabricar. Escolhendo um assunto de 22 exercícios e um tipo só, dá para
+   montar uma bateria de dez questões conhecidas, emendar dez acertos e levar
+   200 XP mais o bônus de tempo — sem ter estudado nada.
+
+   Então o ranking só conta a sessão de foco largo: sem filtro de tipo, sem
+   escolher assunto, e sem o modo "só o que eu errei", que gira sempre em cima
+   dos mesmos poucos exercícios. Escolher a matéria ou a prova inteira continua
+   valendo — é o recorte que a Isabela usa para estudar de verdade na véspera.
+
+   Nada disso impede ninguém de estudar do jeito que quiser. Só não pontua.
+   ============================================================ */
+function focoValeRanking(f){
+  f = f || S.foco;
+  if((f.tipos || []).length) return { vale:false, porque:"você escolheu tipos de exercício" };
+  if((f.tops  || []).length) return { vale:false, porque:"você escolheu assuntos soltos" };
+  if(f.soErros)              return { vale:false, porque:"“só o que eu errei” repete os mesmos exercícios" };
+  return { vale:true, porque:null };
+}
+
 function itensDoFoco(){
   const f = S.foco;
   const base = CURSO.itens.filter(i =>
@@ -579,20 +899,17 @@ function itensDoFoco(){
     (!f.prova || i.prova === f.prova) &&
     (!(f.tops || []).length || f.tops.includes(i.top)) &&
     (!f.tipos.length || f.tipos.includes(i.t)));
-  /* No "um pouco de tudo", prova que já aconteceu sai da mistura: depois da
-     prova de micro, continuar recebendo questão de micro no meio do sorteio só
-     rouba tempo do que ainda vai cair. Quem quiser revisar o que já passou
-     escolhe aquela disciplina de propósito — e aí o filtro não se aplica.
-     Se TODAS as provas marcadas já passaram, é melhor devolver tudo do que
-     devolver nada. */
   if(f.disc || f.prova) return base;
-  const futuras = base.filter(i => !provaJaPassou(i.disc, i.prova));
-  return futuras.length ? futuras : base;
+  const dentro = provasNaMistura();
+  const filtrados = base.filter(i => dentro.has(i.disc + "/" + i.prova));
+  // se a regra apagar tudo, melhor devolver tudo do que devolver nada
+  return filtrados.length ? filtrados : base;
 }
 function quantoFicouDeFora(){
   const f = S.foco;
   if(f.disc || f.prova) return 0;
-  const n = CURSO.itens.filter(i => provaJaPassou(i.disc, i.prova)).length;
+  const dentro = provasNaMistura();
+  const n = CURSO.itens.filter(i => !dentro.has(i.disc + "/" + i.prova)).length;
   return n < CURSO.itens.length ? n : 0;
 }
 function vencidos(lista){ const h = hoje(); return (lista || CURSO.itens).filter(i => S.prog[i.id] && S.prog[i.id].venc <= h); }
@@ -639,7 +956,7 @@ function progresso(lista){
    "pr" para nunca colidir com o da teórica. */
 function gradeDe(disc){
   const g = (disc && disc.grade) || {};
-  return { t: g.t == null ? 3 : g.t, p: g.p || 0 };
+  return { t: g.t == null ? 5 : g.t, p: g.p || 0 };
 }
 function vagasDeProva(disc){
   const g = gradeDe(disc);
@@ -708,6 +1025,101 @@ function provaMaisProxima(){
   return melhor;
 }
 
+/* ============================================================
+   CONQUISTAS
+
+   Regra de ouro, copiada do Duolingo: enquanto não conquistou, a pessoa não vê
+   nem o desenho nem o texto. Só o cadeado e a categoria. É o que faz valer a
+   pena descobrir — se dá para ler tudo desde o primeiro dia, vira lista de
+   tarefas, não coleção.
+
+   Toda conquista se calcula a partir do que já está guardado: nada aqui pede
+   servidor, então funciona offline e não dá para trapacear pela rede.
+   ============================================================ */
+function totalRespondidas(){
+  return Object.values(S.prog || {}).reduce((a, p) => a + (p.reps || 0), 0);
+}
+function tiposJaFeitos(){
+  const t = new Set();
+  Object.keys(S.prog || {}).forEach(id => { const i = porId[id]; if(i) t.add(i.t); });
+  return t;
+}
+function dominou(lista){
+  return lista.length > 0 && lista.every(i => S.prog[i.id] && S.prog[i.id].caixa >= 4);
+}
+const CONQUISTAS = [
+  { id:"primeira", emoji:"🌱", nome:"Primeiro passo", dica:"Comece por algum lugar.",
+    desc:"Terminou a primeira sessão.",
+    tem: () => Object.keys(S.historico || {}).length >= 1 },
+  { id:"redonda", emoji:"🎯", nome:"Sessão redonda", dica:"Uma sessão inteira sem escorregar.",
+    desc:"Fechou uma sessão sem errar nenhuma.",
+    tem: () => (S.marcos.perfeitas || 0) >= 1 },
+  { id:"of3", emoji:"🔥", nome:"Três dias", dica:"Constância se mede em dias.",
+    desc:"Estudou três dias seguidos.", tem: () => (S.marcos.ofensivaMax || S.ofensiva) >= 3 },
+  { id:"of7", emoji:"🗓️", nome:"Uma semana inteira", dica:"Constância se mede em dias.",
+    desc:"Sete dias seguidos sem furar.", tem: () => (S.marcos.ofensivaMax || S.ofensiva) >= 7 },
+  { id:"of14", emoji:"🏔️", nome:"Duas semanas", dica:"Constância se mede em dias.",
+    desc:"Catorze dias seguidos.", tem: () => (S.marcos.ofensivaMax || S.ofensiva) >= 14 },
+  { id:"of30", emoji:"🧗", nome:"Um mês", dica:"Constância se mede em dias.",
+    desc:"Trinta dias seguidos. Isso é hábito, não força de vontade.",
+    tem: () => (S.marcos.ofensivaMax || S.ofensiva) >= 30 },
+  { id:"cem", emoji:"💯", nome:"Cem exercícios", dica:"Quantidade também conta.",
+    desc:"Respondeu cem exercícios.", tem: () => totalRespondidas() >= 100 },
+  { id:"quinhentos", emoji:"📚", nome:"Quinhentos", dica:"Quantidade também conta.",
+    desc:"Respondeu quinhentos exercícios.", tem: () => totalRespondidas() >= 500 },
+  { id:"mil", emoji:"🏛️", nome:"Mil", dica:"Quantidade também conta.",
+    desc:"Respondeu mil exercícios.", tem: () => totalRespondidas() >= 1000 },
+  { id:"sete", emoji:"🎭", nome:"Sete jeitos de saber", dica:"Existe mais de um tipo de exercício.",
+    desc:"Respondeu ao menos um de cada um dos sete tipos.",
+    tem: () => tiposJaFeitos().size >= 7 },
+  { id:"assunto", emoji:"🧠", nome:"Assunto na ponta da língua", dica:"Fixar é diferente de ver.",
+    desc:"Levou um assunto inteiro até a última caixa da revisão.",
+    tem: () => CURSO.topicos.some(t => dominou(CURSO.itens.filter(i => i.top === t.id))) },
+  { id:"prova", emoji:"🎓", nome:"Prova dominada", dica:"Fixar é diferente de ver.",
+    desc:"Levou todos os exercícios de uma prova até a última caixa.",
+    tem: () => CURSO.disciplinas.some(d => (d.provas || []).some(p =>
+      dominou(CURSO.itens.filter(i => i.disc === d.id && i.prova === p.id)))) },
+  { id:"virou", emoji:"♻️", nome:"Virou o jogo", dica:"Errar não é o fim da questão.",
+    desc:"Fixou um exercício que já tinha errado três vezes.",
+    tem: () => Object.values(S.prog || {}).some(p => (p.erros || 0) >= 3 && (p.caixa || 0) >= 3) },
+  { id:"rapida", emoji:"⏱️", nome:"Mão na roda", dica:"Velocidade só vale sem erro.",
+    desc:"Cravou um recorde de tempo numa sessão sem nenhum erro.",
+    tem: () => !!S.recorde },
+  { id:"vespera", emoji:"🌙", nome:"Reta final", dica:"Tem dia que o app importa mais.",
+    desc:"Estudou na véspera de uma prova.", tem: () => !!S.marcos.vespera }
+];
+function conquistasGanhas(){ return CONQUISTAS.filter(c => { try{ return c.tem(); }catch(e){ return false; } }); }
+
+/* ============================================================
+   XP — quanto vale uma sessão
+
+   Acerto vale 10. Erro vale 0. E acerto seguido vale mais que acerto avulso:
+   uma sequência de n acertos faz TODOS os n valerem 10 × multiplicador(n).
+
+     1 acerto  → ×1,0 →  10
+     2 acertos → ×1,2 →  24 na sequência
+     3 acertos → ×1,3 →  39
+     5 acertos → ×1,5 →  75
+    10 acertos → ×2,0 → 200
+
+   Errar zera a sequência e o multiplicador recomeça.
+
+   O efeito é o que a Isabela quis: quem acerta cinco alternando com cinco erros
+   faz 50; quem acerta cinco seguidas e depois erra cinco faz 75. A mesma
+   quantidade de acertos, mas defender a sequência passa a valer alguma coisa —
+   e é aí que a pessoa desacelera na questão difícil em vez de chutar.
+
+   Como o bônus é retroativo, cada acerto paga a diferença entre o que a
+   sequência inteira passa a valer e o que já foi pago por ela.
+   ============================================================ */
+const XP_ACERTO = 10;
+const XP_ERRO   = 0;
+function multiploDaSequencia(n){ return n <= 1 ? 1 : Math.min(1 + n / 10, 2); }
+function valorDaSequencia(n){ return Math.round(XP_ACERTO * n * multiploDaSequencia(n)); }
+/* Bônus de tempo, só para quem acertou a sessão inteira. Rapidez com erro é
+   chute, não domínio, então errar uma questão apaga o bônus por completo. */
+const BONUS_TEMPO = [ { seg:30, xp:50 }, { seg:60, xp:30 } ];
+
 /* ---------- agendamento ---------- */
 function registrar(id, acertou){
   const h = hoje();
@@ -732,10 +1144,28 @@ function registrar(id, acertou){
     p.caixa = 0; p.erros++; p.venc = addDias(h, 1);
   }
   S.prog[id] = p;
-  const ganho = acertou ? 10 : 3;
+
+  let ganho = XP_ERRO;
+  if(acertou){
+    if(SES){
+      SES.seq = (SES.seq || 0) + 1;
+      SES.maiorSeq = Math.max(SES.maiorSeq || 0, SES.seq);
+      const vale = valorDaSequencia(SES.seq);
+      ganho = vale - (SES.xpDaSeq || 0);
+      SES.xpDaSeq = vale;
+    }else{
+      ganho = XP_ACERTO;                 // fora de sessão (teste, revisão avulsa)
+    }
+  }else if(SES){
+    SES.perdeuSeq = (SES.seq || 0) >= 2 ? SES.seq : 0;
+    SES.seq = 0; SES.xpDaSeq = 0;        // errou: a sequência recomeça do zero
+  }
+  if(acertou && SES) SES.perdeuSeq = 0;
   S.xp += ganho;                                          // XP total, histórico seu
+  if(SES) SES.xpGanho = (SES.xpGanho || 0) + ganho;       // XP só desta rodada
   if(!SES || SES.valeRanking !== false) S.xpSemana += ganho;   // XP da semana, do ranking
   salvar();
+  return ganho;
 }
 
 function montarSessao(){
@@ -785,22 +1215,28 @@ function montarTela(corpo, opcoes){
   }
   ligarCue();
 }
+const TELAS = { inicio:() => telaInicio(), estudar:() => telaEstudar(),
+                grupo:() => telaGrupo(), perfil:() => telaPerfil(),
+                ajustes:() => telaAjustes() };
 function navHTML(){
-  const abas = [["inicio","🏠","Início"],["estudar","🎯","Estudar"],["ajustes","⚙️","Ajustes"]];
-  return '<div class="nav">' + abas.map(a =>
-    `<button data-aba="${a[0]}" class="${aba===a[0]?"on":""}"><b>${a[1]}</b>${a[2]}</button>`).join("") + "</div>";
+  const esq = [["inicio","🏠","Início"],["estudar","🎯","Estudar"]];
+  const dir = [["perfil","👤","Perfil"],["ajustes","⚙️","Ajustes"]];
+  const bt = a => `<button data-aba="${a[0]}" class="${aba===a[0]?"on":""}"><b>${a[1]}</b>${a[2]}</button>`;
+  return '<div class="nav">' + esq.map(bt).join("")
+       + `<button data-aba="grupo" class="espada ${aba==="grupo"?"on":""}" aria-label="Seu grupo e desafios"><b>⚔️</b></button>`
+       + dir.map(bt).join("") + "</div>";
 }
 function ligarNav(){
   document.querySelectorAll("[data-aba]").forEach(b => b.onclick = () => {
     aba = b.dataset.aba;
-    ({ inicio:telaInicio, estudar:telaEstudar, ajustes:telaAjustes })[aba]();
+    TELAS[aba]();
   });
 }
 
 /* ============================================================
    TELA: Início
    ============================================================ */
-function telaInicio(){
+function telaInicio(op){
   virarODia(); aba = "inicio";
   const prox = provaMaisProxima();
   const feitos = Math.min(S.feitosHoje, S.meta);
@@ -814,23 +1250,35 @@ function telaInicio(){
     ? `<p class="quemSou">Você está como <b>${esc(N.usuario.displayName || N.usuario.email || "")}</b>${
         N.grupoNome ? " · " + esc(N.grupoNome) : ""}</p>` : "";
   const apelido = (S.apelido || "").trim();
+  const fr0 = focoValeRanking();
   const corpo = `
-  <div class="hero">
-    <div class="sub">Bom estudo</div>
-    <h1>Fixa aí${apelido ? ", " + esc(apelido) : ""} ${esc(S.emoji || "🧠")}</h1>
+  <div class="hero heroPf">
+    <div>
+      <div class="sub">Bom estudo</div>
+      <h1>Fixa aí${apelido ? ", " + esc(apelido) : ""} ${esc(S.emoji || "🧠")}</h1>
+    </div>
+    <button class="btPf" id="irCalendario" aria-label="Seu calendário de estudo e provas">📅</button>
   </div>
   ${quem}
 
   ${(() => {
     const futuras = provasFuturas();
-    if(!futuras.length) return `<div class="cardz" style="border-style:dashed">
-      <b style="font-size:15px">📅 Cadastre suas provas</b>
-      <p class="muted" style="margin:6px 0 0">Em Ajustes, ponha a data de cada prova. O app mostra a
-      contagem regressiva e encurta os intervalos de revisão na reta final.</p></div>`;
+    /* O card vazio virou botão. A irmã da Isabela viu "cadastre suas provas",
+       tocou em cima — que é o que qualquer pessoa faz — e não aconteceu nada:
+       a instrução para ir até Ajustes estava escrita logo abaixo. Ler instrução
+       é o que se faz quando tocar não funciona. */
+    if(!futuras.length) return `<button class="cardz cardBt" id="irDatas" style="border-style:dashed">
+      <b style="font-size:15px">📅 Cadastrar minhas provas</b>
+      <p class="muted" style="margin:6px 0 0">Toque aqui para pôr a data de cada prova. O app mostra a
+      contagem regressiva e encurta os intervalos de revisão na reta final.</p></button>`;
     if(futuras.length === 1) return "";
+    /* Com o ano inteiro cadastrado, mostrar tudo vira uma lista de vinte provas
+       e a que importa some no meio. Só as quatro mais próximas. */
+    const MOSTRA = 4;
+    const sobram = futuras.length - MOSTRA;
     return `<div class="secao">Suas próximas provas</div>
     <div class="cardz" style="padding:6px 14px">
-      ${futuras.map(f => `
+      ${futuras.slice(0, MOSTRA).map(f => `
         <button class="pv" data-prova-ir="${f.chave}">
           <span class="ic">${f.disc.emoji}</span>
           <span class="tx">
@@ -839,6 +1287,7 @@ function telaInicio(){
           </span>
           <span class="dias ${f.dias <= 3 ? "perto" : ""}">${f.dias === 0 ? "hoje" : f.dias}<small>${f.dias === 0 ? "" : f.dias === 1 ? "dia" : "dias"}</small></span>
         </button>`).join("")}
+      ${sobram > 0 ? `<button class="maisProvas" id="irDatas">e mais ${plural(sobram, "prova cadastrada", "provas cadastradas")} · ver todas</button>` : ""}
     </div>`;
   })()}
 
@@ -871,6 +1320,8 @@ function telaInicio(){
     <span class="tx"><b>${esc(nomeDoFoco())}</b><span>${esc(resumoTipos())} · toque para trocar</span></span>
     <span class="ck" style="border:none;color:var(--ink-2)">›</span>
   </button>
+  ${fr0.vale ? "" : `<p class="muted avisoRank">Este recorte não conta para o ranking, porque ${esc(fr0.porque)}.
+    O XP total continua subindo normalmente.</p>`}
   ${(() => {
     const fora = quantoFicouDeFora();
     if(!fora) return "";
@@ -891,26 +1342,45 @@ function telaInicio(){
       Até agora: ${nv} de ${p2.length} vistos${ne ? ` · <b>${ne}</b> com erro no histórico` : ""}.`;
   })()}</p>
 
-  ${prontas.map(d => {
-    const its = itensDaProva(d.id);
-    const tops = CURSO.topicos.filter(t => t.disc === d.id);
-    return `
-    <div class="secao">${esc(d.emoji)} ${esc(d.nome)}</div>
-    <div class="cardz">
-      ${tops.map(t => { const lista = its.filter(i => i.top === t.id); const pc = progresso(lista); return `
-        <button class="tp" data-topo-ir="${d.id}/${t.id}" title="Estudar só este assunto">
-          <div class="nm">${esc(t.nome)}</div>
-          <div class="mini"><i style="width:${pc}%"></i></div>
-          <div class="pc">${pc}%</div>
-        </button>`; }).join("")}
-    </div>`; }).join("")}`;
+  ${(() => {
+    /* Cada disciplina abre e fecha. Com uma prova por matéria a lista já era
+       longa; com as cinco provas de nove matérias vira uma rolagem sem fim, e
+       o que a Isabela quer ver — como está cada matéria — some no meio dos
+       assuntos. Fechada, a matéria mostra o essencial: quanto está dominado. */
+    return prontas.map(d => {
+      const its = itensDaProva(d.id);
+      const tops = CURSO.topicos.filter(t => t.disc === d.id);
+      const pcD = progresso(its);
+      const aberta = discsAbertas.has(d.id);
+      return `
+      <button class="dhead ${aberta ? "on" : ""}" data-disc-abre2="${d.id}">
+        <span class="ic">${esc(d.emoji)}</span>
+        <span class="tx"><b>${esc(d.nome)}${discsComNovidade.has(d.id)
+          ? ` <span class="selNovo">novos</span>` : ""}</b>
+          <span>${plural(its.length, "exercício", "exercícios")} · ${plural(tops.length, "assunto", "assuntos")}</span></span>
+        <span class="dbar"><i style="width:${pcD}%"></i></span>
+        <span class="dpc">${pcD}%</span>
+        <span class="dseta">${aberta ? "⌄" : "›"}</span>
+      </button>
+      ${aberta ? `<div class="cardz">
+        ${tops.map(t => { const lista = its.filter(i => i.top === t.id); const pc = progresso(lista); return `
+          <button class="tp" data-topo-ir="${d.id}/${t.id}" title="Estudar só este assunto">
+            <div class="nm">${esc(t.nome)}</div>
+            <div class="mini"><i style="width:${pc}%"></i></div>
+            <div class="pc">${pc}%</div>
+          </button>`; }).join("")}
+      </div>` : ""}`;
+    }).join("");
+  })()}`;
 
   const esperando = S.proximaSessao && Date.now() < S.proximaSessao;
-  montarTela(corpo, { rodape: esperando
+  const fr = focoValeRanking();
+  montarTela(corpo, { manterRolagem: !!(op && op.manterRolagem), rodape: esperando
     ? `<button class="btn" id="go" disabled>Aguarde<small id="contaEspera"></small></button>
        <div style="height:8px"></div>
        <button class="btn ghost sm" id="pular" style="width:100%">Estudar mesmo assim<small>não conta para o ranking</small></button>`
-    : `<button class="btn" id="go">${S.feitosHoje >= S.meta ? "Sessão extra" : "Estudar agora"}<small>${esc(nomeDoFoco())}</small></button>` });
+    : `<button class="btn" id="go">${S.feitosHoje >= S.meta ? "Sessão extra" : "Estudar agora"}<small>${
+        esc(nomeDoFoco())}${fr.vale ? "" : " · fora do ranking"}</small></button>` });
   if(esperando){
     const tick = () => {
       const falta = Math.round((S.proximaSessao - Date.now())/1000);
@@ -925,16 +1395,689 @@ function telaInicio(){
     $("#go").onclick = iniciarSessao;
   }
   $("#trocar").onclick = () => { aba = "estudar"; telaEstudar(); };
+  if($("#irDatas")) $("#irDatas").onclick = () => { aba = "ajustes"; telaAjustes({ irPara:"datas" }); };
+  $("#irCalendario").onclick = () => caixaCalendario();
+  /* Tocar numa prova mudava o foco e redesenhava a tela — que subia para o topo,
+     longe de onde o dedo estava, e a única coisa que mudava era um texto lá em
+     cima. Dava a impressão exata de que o toque não fez nada. Agora a tela fica
+     no lugar e o cartão avisa o que mudou. */
   document.querySelectorAll("[data-prova-ir]").forEach(b => b.onclick = () => {
     const [d, pr] = b.dataset.provaIr.split("/");
-    S.foco = { ...S.foco, disc:d, prova:pr, top:null, soRevisao:false, soErros:false };
-    salvar(); telaInicio();
+    S.foco = { ...S.foco, disc:d, prova:pr, tops:[], soRevisao:false, soErros:false };
+    salvar(); telaInicio({ manterRolagem:true });
   });
+  /* No assunto, mudar o foco em silêncio era ainda pior: o botão diz "estudar só
+     este assunto" e não começava nada. Agora começa. */
   document.querySelectorAll("[data-topo-ir]").forEach(b => b.onclick = () => {
     const [d, t] = b.dataset.topoIr.split("/");
-    const um = CURSO.itens.find(i => i.top === t);
-    S.foco = { ...S.foco, disc:d, prova:(um ? um.prova : null), tops:[t], soRevisao:false, soErros:false };
-    salvar(); telaInicio();
+    perguntarAssunto(d, t);
+  });
+  document.querySelectorAll("[data-disc-abre2]").forEach(b => b.onclick = () => {
+    const id = b.dataset.discAbre2;
+    if(discsAbertas.has(id)){ discsAbertas.delete(id); }
+    else { discsAbertas.add(id); jaViANovidade(id); }   // abriu, viu: o selo cumpriu o papel
+    telaInicio({ manterRolagem:true });
+  });
+}
+
+/* ============================================================
+   CAIXA DE DIÁLOGO
+
+   Perguntar levando a pessoa para outra tela faz ela perder o lugar onde
+   estava e o fio do que ia fazer — a Isabela tocou num assunto, foi parar
+   numa tela nova e teve a impressão de já ter saído do início. A caixa por
+   cima resolve isso: o que estava embaixo continua ali, visível, e fechar
+   devolve exatamente o mesmo lugar.
+   ============================================================ */
+/* Enquanto a caixa está aberta, a tela de trás não rola. Sem isto o dedo
+   arrastava as duas ao mesmo tempo: a Isabela rolava o perfil de alguém e o
+   grupo escorregava junto atrás. */
+function travarFundo(travar){
+  const el = areaRolavel();
+  if(el) el.style.overflow = travar ? "hidden" : "";
+}
+function fecharCaixa(){
+  const c = document.getElementById("caixa");
+  if(c) c.remove();
+  travarFundo(false);
+}
+function abrirCaixa(dentro, botoes, topo){
+  fecharCaixa();
+  const d = document.createElement("div");
+  d.id = "caixa"; d.className = "caixa";
+  /* O ✕ mora numa barra própria, fora da área que rola. Antes ele era absoluto
+     por cima do conteúdo, e os dias do calendário passavam na frente dele ao
+     rolar — o botão de fechar sumia embaixo dos números. */
+  d.innerHTML = `<div class="caixaFundo"></div>
+    <div class="caixaCorpo" role="dialog" aria-modal="true">
+      <div class="caixaTopo">${topo || ""}<button class="caixaX" id="caixaFecha" aria-label="Fechar">✕</button></div>
+      <div class="caixaRol">${dentro}</div>
+      ${botoes ? `<div class="caixaBt">${botoes}</div>` : ""}
+    </div>`;
+  document.getElementById("app").appendChild(d);
+  travarFundo(true);
+  /* a roda do mouse e o arrasto param na caixa: o que estiver embaixo não se mexe */
+  d.addEventListener("wheel", ev => ev.stopPropagation(), { passive:true });
+  d.addEventListener("pointerdown", ev => ev.stopPropagation());
+  d.querySelector(".caixaFundo").onclick = fecharCaixa;
+  d.querySelector("#caixaFecha").onclick = fecharCaixa;
+  const esc = ev => { if(ev.key === "Escape"){ fecharCaixa(); removeEventListener("keydown", esc); } };
+  addEventListener("keydown", esc);
+  return d;
+}
+
+/* `alert` e `confirm` do navegador não servem mais para nada aqui.
+
+   Eles travam a página inteira, não têm a cara do app, e — o que custou caro —
+   somem sem avisar quando a página roda dentro de um quadro com restrições:
+   a Isabela tocou no ✕ para sair da bateria e nada aconteceu, porque o
+   `confirm` que ia perguntar "quer mesmo sair?" foi bloqueado pelo navegador e
+   devolveu "não" em silêncio. O botão parecia quebrado e não estava.
+
+   Toda pergunta e todo aviso passam por estas duas daqui em diante. */
+function caixaAviso(titulo, texto, sub){
+  abrirCaixa(`<h3>${titulo}</h3>${sub ? `<p class="cxSub">${sub}</p>` : ""}
+    <p style="margin:14px 0 0">${texto}</p>`,
+    `<button class="btn ghost" id="cxOk">Entendi</button>`);
+  document.getElementById("cxOk").onclick = fecharCaixa;
+}
+function caixaConfirma(titulo, texto, rotulo, aoConfirmar, perigo){
+  abrirCaixa(`<h3>${titulo}</h3><p style="margin:14px 0 0">${texto}</p>`,
+    `<button class="btn ${perigo ? "danger" : ""}" id="cxSim">${esc(rotulo)}</button>
+     <div style="height:8px"></div>
+     <button class="btn ghost" id="cxNao">Cancelar</button>`);
+  document.getElementById("cxSim").onclick = () => { fecharCaixa(); aoConfirmar(); };
+  document.getElementById("cxNao").onclick = fecharCaixa;
+}
+
+/* Começar a estudar é uma coisa que a pessoa tem que decidir, não descobrir. A
+   primeira versão disparava a bateria no toque, e a Isabela levou um susto:
+   tocou para ver o assunto e caiu dentro do exercício. */
+function perguntarAssunto(discId, topId){
+  const t = CURSO.topicos.find(x => x.id === topId);
+  const lista = CURSO.itens.filter(i => i.top === topId);
+  const pc = progresso(lista);
+  const um = lista[0];
+  const fr = focoValeRanking({ tops:[topId], tipos:[] });
+  abrirCaixa(`
+    <h3>${esc(t ? t.nome : "Este assunto")}</h3>
+    <p class="cxSub">${esc((discPorId[discId] || {}).nome || "")}</p>
+    <p style="margin:14px 0 0;font-weight:700">Começar uma bateria só deste assunto?</p>
+    <p class="muted" style="margin:6px 0 0">${plural(lista.length, "exercício", "exercícios")} no assunto ·
+      ${pc}% dominado · a bateria traz ${SESSAO}.</p>
+    ${fr.vale ? "" : `<p class="muted" style="margin:10px 0 0">Assunto sozinho <b>não conta para o
+      ranking</b> — é recorte estreito demais para comparar com as outras pessoas. O seu XP total
+      sobe normalmente, e a espera do ranking não começa a correr.</p>`}`,
+    `<button class="btn" id="vai">Começar</button>
+     <div style="height:8px"></div>
+     <button class="btn ghost" id="volta">Agora não</button>`);
+  document.getElementById("vai").onclick = () => {
+    fecharCaixa();
+    S.foco = { ...S.foco, disc:discId, prova:(um ? um.prova : null), tops:[topId],
+               soRevisao:false, soErros:false };
+    salvar(); iniciarSessao();
+  };
+  document.getElementById("volta").onclick = fecharCaixa;
+}
+
+/* ============================================================
+   CALENDÁRIO
+
+   Um mês por vez, com tudo o que já estava espalhado pelo app junto num lugar
+   só: o dia que você estudou, o dia que você deixou passar, o dia congelado e
+   o dia de prova. Ver a fileira de foguinhos com um buraco no meio explica a
+   ofensiva melhor do que qualquer texto.
+
+   O dia congelado ainda não existe de verdade — o prêmio de congelar ofensiva
+   vem com as ligas. O desenho já o prevê, e `S.congelados` guarda as datas.
+   ============================================================ */
+const MESES = ["janeiro","fevereiro","março","abril","maio","junho",
+               "julho","agosto","setembro","outubro","novembro","dezembro"];
+const DIAS_SEM = ["D","S","T","Q","Q","S","S"];
+function provasDoDia(){
+  const m = {};
+  Object.entries(S.datas || {}).forEach(([chave, data]) => {
+    if(!data) return;
+    const [discId, provaId] = chave.split("/");
+    const d = discPorId[discId]; if(!d) return;
+    (m[data] = m[data] || []).push({ disc:d, prova: provaDe(d, provaId) });
+  });
+  return m;
+}
+function caixaCalendario(desloc, lado){
+  const passo = desloc || 0;
+  const hj = hoje();
+  const [ay, am] = hj.split("-").map(Number);
+  const base = new Date(Date.UTC(ay, am - 1 + passo, 1));
+  const ano = base.getUTCFullYear(), mes = base.getUTCMonth();
+  const primeiro = new Date(Date.UTC(ano, mes, 1)).getUTCDay();
+  const quantos = new Date(Date.UTC(ano, mes + 1, 0)).getUTCDate();
+  const provas = provasDoDia();
+  const congelados = new Set(S.congelados || []);
+  const dd = n => `${ano}-${String(mes+1).padStart(2,"0")}-${String(n).padStart(2,"0")}`;
+
+  let celulas = "";
+  for(let i = 0; i < primeiro; i++) celulas += `<div class="dia vazio"></div>`;
+  let usadas = primeiro;
+  for(let n = 1; n <= quantos; n++){
+    const data = dd(n);
+    const estudou = (S.historico || {})[data] > 0;
+    const gelo = congelados.has(data);
+    const prova = provas[data];
+    const futuro = data > hj;
+    const classes = ["dia"];
+    if(data === hj) classes.push("hoje");
+    if(prova) classes.push("prova");
+    if(estudou) classes.push("fez");
+    else if(gelo) classes.push("gelo");
+    else if(!futuro && (S.historico && Object.keys(S.historico).length)) classes.push("furou");
+    const marca = estudou ? "🔥" : gelo ? "🧊" : "";
+    celulas += `<div class="${classes.join(" ")}" ${prova ? `data-dia-prova="${data}"` : ""}
+      title="${prova ? prova.map(x => x.disc.nome + " " + x.prova.nome).join(" · ") : data}">
+      ${marca ? `<span class="mk">${marca}</span>` : ""}
+      <span class="n">${n}</span>
+      ${prova ? `<span class="pv">${prova[0].disc.emoji}</span>` : ""}</div>`;
+    usadas++;
+  }
+  /* Sempre seis fileiras, mesmo que o mês caiba em cinco. Sem isto a caixa
+     mudava de altura de um mês para o outro e a tela inteira pulava para cima
+     e para baixo a cada seta — fevereiro cabe em cinco, agosto às vezes precisa
+     de seis. Fileira sobrando fica invisível, só ocupando o lugar. */
+  for(let i = usadas; i < 42; i++) celulas += `<div class="dia vazio"></div>`;
+
+  const doMes = Object.keys(provas).filter(d => d.startsWith(`${ano}-${String(mes+1).padStart(2,"0")}`)).sort();
+  const diasFeitos = Object.keys(S.historico || {})
+    .filter(d => d.startsWith(`${ano}-${String(mes+1).padStart(2,"0")}`)).length;
+
+  const seta = (lado, alvo) => `<button class="calSeta" data-mes="${alvo}"
+    aria-label="${lado < 0 ? "Mês anterior" : "Próximo mês"}">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="${lado < 0 ? "M15 5l-7 7 7 7" : "M9 5l7 7-7 7"}"
+      fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>`;
+  abrirCaixa(`
+    <div class="calSem">${DIAS_SEM.map(d => `<span>${d}</span>`).join("")}</div>
+    <div class="cal ${lado === 1 ? "vemDaDireita" : lado === -1 ? "vemDaEsquerda" : ""}">${celulas}</div>
+    <div class="calLeg">
+      <span><span class="lg fez">🔥</span> estudou</span>
+      <span><span class="lg gelo">🧊</span> congelado</span>
+      <span><span class="lg furou"></span> deixou passar</span>
+      <span><span class="lg prova"></span> prova</span>
+    </div>
+    ${doMes.length ? `<div class="secao" style="margin-top:16px">Provas deste mês</div>
+      <div class="calProvas">${doMes.map(d => {
+        const dias = difDias(hj, d);
+        return provas[d].map(x => `<div class="calPr">
+          <span class="ic">${x.disc.emoji}</span>
+          <span class="tx"><b>${esc(x.disc.nome)} ${esc(x.prova.nome)}</b>
+            <span>${d.slice(8,10)}/${d.slice(5,7)} · ${dias < 0 ? "já passou" : dias === 0 ? "é hoje" : "faltam " + plural(dias, "dia", "dias")}</span></span>
+        </div>`).join("");
+      }).join("")}</div>` : `<p class="muted" style="margin-top:14px">Nenhuma prova marcada neste mês.</p>`}`,
+    `<button class="btn ghost" id="calDatas">Marcar datas de prova</button>`,
+    `<div class="calCab">
+       ${seta(-1, passo - 1)}
+       <div class="calTit">
+         <h3>${MESES[mes]} de ${ano}</h3>
+         <p class="cxSub">${plural(diasFeitos, "dia estudado neste mês", "dias estudados neste mês")}</p>
+       </div>
+       ${seta(1, passo + 1)}
+     </div>`);
+
+  document.querySelectorAll("[data-mes]").forEach(b => b.onclick = () =>
+    caixaCalendario(+b.dataset.mes, +b.dataset.mes > passo ? 1 : -1));
+  document.getElementById("calDatas").onclick = () => {
+    fecharCaixa(); aba = "ajustes"; telaAjustes({ irPara:"datas" });
+  };
+}
+
+/* ============================================================
+   TELA: Grupo — quem estuda junto, e de onde vão sair os desafios
+
+   Os nomes vêm da lista de membros do grupo, que só quem é membro consegue ler.
+   XP, pódios e desafios ganhos ainda aparecem em branco: hoje o progresso de
+   cada pessoa é privado, e mostrar o XP das outras exige um lugar novo no
+   servidor que o grupo inteiro possa ler. É o próximo pedaço, e é o mesmo que
+   destranca ranking e desafio.
+   ============================================================ */
+let CACHE_MEMBROS = null;
+async function telaGrupo(){
+  aba = "grupo";
+  /* Sem conta — e também enquanto o grupo estiver vazio — vale mais mostrar a
+     maquete com gente inventada do que uma tela em branco: dá para decidir o
+     desenho antes de existir uma pessoa cadastrada. Fica escrito, em cima, que
+     é exemplo, para ninguém confundir com colega de verdade. */
+  if(!N.ligado || !N.grupo) return maqueteDoGrupo();
+  if(!CACHE_MEMBROS){
+    montarTela(`<div class="hero"><h1>Seu grupo ⚔️</h1></div>
+      <p class="muted" style="text-align:center;padding:20px 0">Carregando quem está aqui...</p>`);
+    try{
+      const q = await N.api.getDocs(cole("grupos", N.grupo, "membros"));
+      CACHE_MEMBROS = [];
+      q.forEach(d => CACHE_MEMBROS.push({ uid:d.id, ...d.data() }));
+    }catch(e){ CACHE_MEMBROS = []; }
+  }
+  const eu = N.usuario ? N.usuario.uid : null;
+  const lista = CACHE_MEMBROS.slice().sort((a, b) =>
+    (a.uid === eu ? -1 : b.uid === eu ? 1 : 0) ||
+    String(a.nome || "").localeCompare(String(b.nome || ""), "pt-BR"));
+
+  montarTela(`
+  <div class="hero"><h1>Seu grupo ⚔️</h1>
+    <div class="sub">${esc(N.grupoNome || "")} · ${plural(lista.length, "pessoa", "pessoas")}</div>
+  </div>
+  <div class="cardz" style="padding:6px 14px">
+    ${lista.map(m => {
+      const souEu = m.uid === eu;
+      const nome = souEu ? ((S.apelido || "").trim() || m.nome || "você") : (m.nome || "sem nome");
+      return `<div class="gpLinha">
+        <button class="gpQuem" data-quem="${esc(m.uid)}">
+          <span class="gpIc">${souEu ? esc(S.emoji || "🧠") : "👤"}</span>
+          <span class="gpTx"><b>${esc(nome)}${souEu ? " · você" : ""}</b>
+            <span>⭐ — XP · 🥇 — · ⚔️ —</span></span>
+        </button>
+        ${souEu ? "" : `<button class="gpDes" data-desafiar="${esc(m.uid)}" aria-label="Desafiar ${esc(nome)}">⚔️</button>`}
+      </div>`;
+    }).join("")}
+  </div>
+  <p class="muted" style="margin:14px 2px">Os números de XP, pódio e desafio ainda estão em branco:
+    hoje o progresso de cada pessoa é privado e ninguém vê o das outras. Para o grupo poder ver,
+    falta a parte do servidor que guarda o placar da semana — é o que vem a seguir, junto com o
+    desafio de verdade.</p>`);
+
+  document.querySelectorAll("[data-quem]").forEach(b => b.onclick = () => {
+    const m = CACHE_MEMBROS.find(x => x.uid === b.dataset.quem);
+    if(m && N.usuario && m.uid === N.usuario.uid) return telaPerfil();
+    caixaAviso(esc((m && m.nome) || "Esta pessoa"),
+      "O perfil de quem está no grupo abre quando o placar compartilhado existir. "
+      + "Por enquanto, só o seu perfil tem números.");
+  });
+  document.querySelectorAll("[data-desafiar]").forEach(b => b.onclick = () => {
+    caixaAviso("⚔️ Desafio",
+      `Ainda não dá para desafiar — é a próxima coisa da fila. A ideia é as duas pessoas fazerem `
+      + `a mesma bateria de ${DESAFIO_TAM} e comparar acerto e tempo.`);
+  });
+}
+
+/* Maquete: como a tela do grupo vai ficar quando houver turma e placar. Os nomes
+   são inventados e estão marcados como tal. Serve para decidir o desenho —
+   ordem, o que aparece em cada linha, onde fica o botão de desafiar — antes de
+   existir uma pessoa cadastrada para olhar. */
+/* A turma inteira, e a liga da semana.
+
+   Ideia da Isabela, e é a coisa mais bem pensada do desenho todo: numa sala de
+   cinquenta, o ranking único deixa quarenta e cinco pessoas olhando de longe
+   para sempre os mesmos três nomes. Então o ranking da semana não é a sala: é
+   uma liga de no máximo oito, montada só com quem estudou naquela semana.
+
+   Duas consequências, as duas boas. Quem não abriu o app não ocupa vaga, então
+   a lista nunca parece um lugar vazio. E cinquenta pessoas viram seis ou sete
+   ligas, o que dá seis ou sete primeiros lugares por semana em vez de um — que
+   é a diferença entre um jogo que dá para ganhar e um placar que só confirma
+   quem já estava na frente.
+
+   A lista de todo mundo continua existindo, separada, e é de lá que sai o
+   desafio: dá para desafiar qualquer pessoa do grupo, esteja ela na sua liga
+   ou não. */
+const TAM_LIGA = 8;
+/* Desafio pontua no ranking — sem isso ninguém desafiaria ninguém, e a Isabela
+   está certa nisso. O que impede de virar fábrica de XP entre duas amigas são
+   três travas juntas: pouca gente ativa por vez, um desafio novo por dia, e a
+   bateria sorteada do banco em vez de escolhida por quem desafia. Vencer ainda
+   exige acertar dez questões — que é exatamente o que a gente quer premiar. */
+/* Dois em andamento, mas não dois seus: um que você mandou e um que te mandaram.
+   Assim ninguém enche a turma de convites, e continua valendo a pena responder
+   rápido — só liberando o seu é que dá para mandar outro. */
+const MAX_ENVIADOS  = 1;     // desafios que você mandou e ainda estão de pé
+const MAX_RECEBIDOS = 1;     // desafios que te mandaram e você ainda não respondeu
+const HORAS_ENTRE_DESAFIOS = 24;
+const MAX_DESAFIOS = MAX_ENVIADOS + MAX_RECEBIDOS;
+const DESAFIO_TAM  = 5;      // metade de uma bateria: desafio é outra coisa, e cabe num intervalo
+const XP_VITORIA   = 30;     // bônus de quem vence, além do XP normal da bateria
+/* A liga fecha no fim de sábado e a semana nova começa no domingo — que é a
+   mesma virada que o XP da semana já usa desde sempre, então não existem duas
+   contagens diferentes correndo no app.
+
+   O prêmio de cada liga é anunciado ANTES, na própria tela: sem saber o que
+   está em jogo, ninguém corre atrás. E ele nunca é XP — prêmio que dá XP
+   corrompe o ranking de onde veio, porque quem ganhou a semana passada larga
+   na frente na seguinte e em três semanas ninguém alcança. Congelar ofensiva
+   protege o que a pessoa construiu em vez de dar pontos, e é por isso que é o
+   prêmio certo. */
+const LIGAS = [
+  { id:"bronze", nome:"Bronze",  emoji:"🥉", cor:"#a9713f", gelos:1 },
+  { id:"prata",  nome:"Prata",   emoji:"🥈", cor:"#8b95a3", gelos:2 },
+  { id:"ouro",   nome:"Ouro",    emoji:"🥇", cor:"#d4a017", gelos:3 }
+];
+const MAX_GELOS = 2;    // guardados de uma vez: acumular dez faria a ofensiva não significar nada
+function fimDaLiga(){
+  /* o próximo domingo, 00:00, no fuso de quem está usando */
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + ((7 - d.getDay()) % 7 || 7));
+  return d.getTime();
+}
+function faltaParaFechar(){
+  const ms = fimDaLiga() - Date.now();
+  const h = Math.floor(ms / 3600000), m = Math.floor(ms % 3600000 / 60000);
+  return { ms, h, m, horas: ms / 3600000,
+           txt: h >= 1 ? `${h}h ${String(m).padStart(2,"0")}min` : `${m} min` };
+}
+const GENTE_DE_MENTIRA = [
+  { nome:"",               emoji:"🧫", xp:1240, sem:340, pod:3, des:7, eu:true, ativa:true,
+    ofensiva:5, feitos:186, dias:22, conq:["primeira","redonda","of3","cem","sete"] },
+  { nome:"Yasmin",         emoji:"🦠", xp:1180, sem:420, pod:2, des:5, ativa:true,
+    ofensiva:12, feitos:174, dias:19, conq:["primeira","redonda","of3","of7","cem","virou"] },
+  { nome:"Marina",         emoji:"🧠", xp:960,  sem:310, pod:1, des:4, ativa:true, ocupada:true,
+    ofensiva:4, feitos:141, dias:16, conq:["primeira","of3","cem"] },
+  { nome:"Pedro Henrique", emoji:"💊", xp:815,  sem:290, pod:0, des:6, ativa:true,
+    ofensiva:2, feitos:120, dias:13, conq:["primeira","cem","rapida"] },
+  { nome:"Ana Beatriz",    emoji:"🫀", xp:640,  sem:180, pod:1, des:2, ativa:true,
+    ofensiva:7, feitos:98,  dias:11, conq:["primeira","redonda","of3","of7"] },
+  { nome:"Gustavo",        emoji:"🔬", xp:410,  sem:120, pod:0, des:1, ativa:true, ocupada:true,
+    ofensiva:1, feitos:62,  dias:8,  conq:["primeira","of3"] },
+  { nome:"Letícia",        emoji:"🩺", xp:250,  sem:60,  pod:0, des:0, ativa:true,
+    ofensiva:3, feitos:38,  dias:5,  conq:["primeira","of3"] },
+  { nome:"Rafael",         emoji:"🦴", xp:180,  sem:20,  pod:0, des:0, ativa:true,
+    ofensiva:1, feitos:26,  dias:3,  conq:["primeira"] },
+  { nome:"Camila",         emoji:"🧬", xp:730,  sem:0,   pod:2, des:3, ativa:false,
+    ofensiva:0, feitos:110, dias:14, conq:["primeira","redonda","of3","cem"] },
+  { nome:"João Vitor",     emoji:"🩻", xp:520,  sem:0,   pod:0, des:2, ativa:false,
+    ofensiva:0, feitos:79,  dias:9,  conq:["primeira","of3"] },
+  { nome:"Beatriz Alves",  emoji:"🧪", xp:95,   sem:0,   pod:0, des:0, ativa:false,
+    ofensiva:0, feitos:14,  dias:2,  conq:["primeira"] }
+];
+function maqueteDoGrupo(){
+  const medalha = i => i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}º`;
+  /* a sua linha usa o seu apelido e o seu emoji de verdade — só os outros nomes
+     são inventados, e é assim que dá para julgar se a tela fica boa com você nela */
+  GENTE_DE_MENTIRA.forEach(p => { if(p.eu){
+    p.nome = (S.apelido || "").trim() || "Você";
+    p.emoji = S.emoji || "🧫";
+  }});
+  const minhaLiga = LIGAS[1];       // na maquete, você está na prata
+  const falta = faltaParaFechar();
+  const todos = GENTE_DE_MENTIRA.slice()
+    .sort((a, b) => (a.eu ? -1 : b.eu ? 1 : 0) || a.nome.localeCompare(b.nome, "pt-BR"));
+  const liga = GENTE_DE_MENTIRA.filter(p => p.ativa)
+    .sort((a, b) => b.sem - a.sem).slice(0, TAM_LIGA);
+  const eu = todos.find(p => p.eu);
+  montarTela(`
+  <div class="hero"><h1>Seu grupo ⚔️</h1>
+    <div class="sub">Medicina 2º ano · ${GENTE_DE_MENTIRA.length} pessoas</div>
+  </div>
+  <div class="cardz maquete">
+    <b>Exemplo, com gente inventada</b>
+    <p class="muted" style="margin:6px 0 0">${N.ligado
+      ? "Seu grupo ainda não tem ninguém além de você. Assim que a turma entrar, esta tela fica com os nomes de verdade."
+      : "Nesta versão você estuda só neste aparelho, sem conta e sem grupo."}
+      Ranking e desafio ainda não existem — os números são de mentira, só para decidir o desenho.
+      Toque num nome ou numa espadinha para ver como cada tela vai ficar.</p>
+  </div>
+
+  <div class="ligaTopo" style="--lc:${minhaLiga.cor}">
+    <span class="ligaEmoji">${minhaLiga.emoji}</span>
+    <div><b>Liga ${minhaLiga.nome}</b><span>fecha no fim de sábado</span></div>
+  </div>
+  ${falta.horas <= 24 ? `<div class="ligaConta ${falta.horas <= 1 ? "urgente" : ""}">
+    ⏳ A liga fecha em <b>${falta.txt}</b>${falta.horas <= 1
+      ? " — é agora ou fica para a semana que vem." : ""}</div>` : ""}
+  <div class="ligaPremio">🎁 Quem ficar em <b>primeiro</b> na ${minhaLiga.emoji} ${minhaLiga.nome}
+    leva <b>${plural(minhaLiga.gelos, "congelamento de ofensiva", "congelamentos de ofensiva")}</b>
+    e sobe para a ${LIGAS[2].emoji} ${LIGAS[2].nome}.</div>
+  <div class="cardz" style="padding:6px 14px">
+    ${liga.map((p, i) => `
+      <div class="gpLinha ${p.eu ? "souEu" : ""} ${i < 2 ? "sobe" : i >= liga.length - 2 ? "desce" : ""}">
+        <button class="gpQuem" data-pessoa="${todos.indexOf(p)}">
+          <span class="gpPos ${i < 3 ? "podio" : ""}">${medalha(i)}</span>
+          <span class="gpIc">${p.emoji}</span>
+          <span class="gpTx"><b>${esc(p.nome)}${(p.eu && p.nome !== "Você") ? " · você" : ""}</b>
+            <span>${p.sem} XP nesta semana</span></span>
+        </button>
+        <span class="gpMove">${i < 2 ? "↑ sobe" : i >= liga.length - 2 ? "↓ desce" : ""}</span>
+      </div>`).join("")}
+  </div>
+  <button class="btn ghost sm" id="verFim" style="width:100%;margin-top:10px">
+    Ver como fica o fim da semana</button>
+  <p class="muted" style="margin:10px 2px 0">A liga tem no máximo <b>${TAM_LIGA} pessoas</b> e só
+    entra quem estudou nesta semana. Numa turma de cinquenta isso vira umas seis ligas — seis
+    primeiros lugares por semana, em vez de um. As duas primeiras sobem para a
+    ${LIGAS[2].emoji} Ouro, as duas últimas caem para a ${LIGAS[0].emoji} Bronze.</p>
+
+  <div class="secao">Todo mundo do grupo</div>
+  <div class="cardz" style="padding:6px 14px">
+    ${todos.map((p, i) => `
+      <div class="gpLinha ${p.eu ? "souEu" : ""}">
+        <button class="gpQuem" data-pessoa="${i}">
+          <span class="gpIc">${p.emoji}</span>
+          <span class="gpTx"><b>${esc(p.nome)}${(p.eu && p.nome !== "Você") ? " · você" : ""}</b>
+            <span>⭐ ${p.xp} · 🥇 ${p.pod} · ⚔️ ${p.des}</span></span>
+        </button>
+        ${p.eu ? "" : (p.ocupada
+          ? `<button class="gpDes ocupada" disabled title="${esc(p.nome)} já está com dois desafios em andamento" aria-label="${esc(p.nome)} não pode ser desafiada agora">⏳</button>`
+          : `<button class="gpDes" data-desafiar="${i}" aria-label="Desafiar ${esc(p.nome)}">⚔️</button>`)}
+      </div>`).join("")}
+  </div>
+  <p class="muted" style="margin:14px 2px">Aqui está a turma inteira. A espadinha desafia direto,
+    sem passar pelo perfil, e vale para qualquer pessoa do grupo — esteja ela na sua liga ou não.
+    O ⏳ é quem já está com <b>dois desafios em andamento</b> e por isso não aceita mais um agora.
+    Em que liga cada pessoa está não aparece aqui: isso é assunto dela.</p>`);
+
+  document.getElementById("verFim").onclick = () => caixaFimDaLiga(minhaLiga, 2, liga);
+  document.querySelectorAll("[data-pessoa]").forEach(b => b.onclick = () => {
+    const p = todos[+b.dataset.pessoa];
+    if(p.eu){ aba = "perfil"; return telaPerfil(); }
+    caixaPerfilDeOutra(p, todos.indexOf(p));
+  });
+  document.querySelectorAll("[data-desafiar]").forEach(b => b.onclick = () => {
+    caixaDesafio(todos[+b.dataset.desafiar]);
+  });
+}
+
+/* O que a pessoa vê ao abrir o app depois que a liga fechou. Duas telas em
+   sequência: primeiro o resultado da semana que acabou, com o prêmio; depois a
+   liga nova, já com quem está nela. Duas e não uma porque são dois assuntos —
+   fechar o que passou e abrir o que vem —, e amontoar os dois numa tela só faz
+   a pessoa dar OK sem ler nenhum. */
+function caixaFimDaLiga(ligaVelha, posicao, pessoas){
+  const subiu = posicao <= 2, caiu = posicao >= pessoas.length - 1;
+  const nova = subiu ? LIGAS[Math.min(LIGAS.indexOf(ligaVelha) + 1, LIGAS.length - 1)]
+             : caiu  ? LIGAS[Math.max(LIGAS.indexOf(ligaVelha) - 1, 0)]
+             : ligaVelha;
+  const premio = posicao === 1 ? ligaVelha.gelos : 0;
+  const medalha = posicao === 1 ? "🥇" : posicao === 2 ? "🥈" : posicao === 3 ? "🥉" : `${posicao}º`;
+  abrirCaixa(`
+    <div class="fimTopo">
+      <div class="fimMedalha">${medalha}</div>
+      <h3>${posicao === 1 ? "Você ganhou a semana!" : `Você ficou em ${posicao}º`}</h3>
+      <p class="cxSub">Liga ${ligaVelha.nome} · semana encerrada</p>
+    </div>
+    <div class="fimNums">
+      <div><b>${pessoas[posicao-1] ? pessoas[posicao-1].sem : 0}</b><span>XP na semana</span></div>
+      <div><b>${posicao}º</b><span>de ${pessoas.length}</span></div>
+      <div><b>${subiu ? "↑" : caiu ? "↓" : "="}</b><span>${subiu ? "subiu" : caiu ? "desceu" : "ficou"}</span></div>
+    </div>
+    ${premio ? `<div class="fimPremio">🧊 <b>${plural(premio, "congelamento de ofensiva", "congelamentos de ofensiva")}</b>
+      <span>Guarde para a semana de prova ou a viagem — congelado, o dia sem estudar não quebra a
+      sua sequência. Dá para ter até ${MAX_GELOS} guardados.</span></div>`
+      : `<div class="fimPremio semPremio">Sem prêmio desta vez <span>Só o primeiro lugar leva
+        congelamento. Você está a ${Math.max(1, (pessoas[0] ? pessoas[0].sem : 0) - (pessoas[posicao-1] ? pessoas[posicao-1].sem : 0))} XP de distância.</span></div>`}`,
+    `<button class="btn" id="proxima">Ver a liga da semana nova</button>`);
+  document.getElementById("proxima").onclick = () => caixaLigaNova(nova, ligaVelha);
+}
+function caixaLigaNova(nova, velha){
+  const gente = GENTE_DE_MENTIRA.filter(p => p.ativa).slice(0, TAM_LIGA);
+  abrirCaixa(`
+    <div class="fimTopo" style="--lc:${nova.cor}">
+      <div class="fimMedalha">${nova.emoji}</div>
+      <h3>Liga ${nova.nome}</h3>
+      <p class="cxSub">${nova === velha ? "você continua aqui" : "semana nova, liga nova"}</p>
+    </div>
+    <p class="muted" style="margin:0 0 4px">Quem está com você nesta semana. A ordem começa zerada
+      para todo mundo — o XP da semana passada não vem junto.</p>
+    <div class="cardz" style="padding:2px 12px">
+      ${gente.map(p => `<div class="gpLinha ${p.eu ? "souEu" : ""}">
+        <span class="gpIc">${p.emoji}</span>
+        <span class="gpTx"><b>${esc(p.nome)}${(p.eu && p.nome !== "Você") ? " · você" : ""}</b>
+          <span>0 XP nesta semana</span></span>
+      </div>`).join("")}
+    </div>
+    <div class="ligaPremio" style="margin-top:12px">🎁 O primeiro lugar desta liga leva
+      <b>${plural(nova.gelos, "congelamento de ofensiva", "congelamentos de ofensiva")}</b>
+      e sobe de liga. As duas últimas descem.</div>`,
+    `<button class="btn" id="bora">Bora estudar</button>`);
+  document.getElementById("bora").onclick = () => { fecharCaixa(); aba = "inicio"; telaInicio(); };
+}
+
+/* Perfil de outra pessoa do grupo. Mostra o que ela conquistou e o que ela ainda
+   não conquistou — mas o que falta aparece só como cadeado, sem nome nem
+   descrição, igual ao próprio perfil. Descobrir a conquista é parte da graça, e
+   ninguém deve descobri-la olhando o perfil alheio. */
+function caixaPerfilDeOutra(p, idx){
+  const tem = new Set(p.conq || []);
+  abrirCaixa(`
+    <div class="pfTopo" style="padding-top:0">
+      <div class="pfFoto pfEmoji">${p.emoji}</div>
+      <h1>${esc(p.nome)}</h1>
+      <p class="pfSub">Medicina 2º ano</p>
+    </div>
+    <div class="pfNums">
+      <div class="pfN"><b>⭐ ${p.xp}</b><span>XP desde o começo</span></div>
+      <div class="pfN"><b>🔥 ${p.ofensiva}</b><span>ofensiva</span></div>
+      <div class="pfN"><b>✏️ ${p.feitos}</b><span>exercícios respondidos</span></div>
+      <div class="pfN"><b>📅 ${p.dias}</b><span>dias estudados</span></div>
+    </div>
+    <div class="pfMenor">
+      <div><b>⚔️ ${p.des}</b><span>desafios ganhos</span></div>
+      <div><b>🥇 ${p.pod}</b><span>semanas em primeiro</span></div>
+      <div><b>⭐ ${p.sem}</b><span>XP nesta semana</span></div>
+    </div>
+    <div class="secao" style="margin-top:18px">Conquistas · ${tem.size} de ${CONQUISTAS.length}</div>
+    <div class="selos">
+      ${CONQUISTAS.map(c => tem.has(c.id)
+        ? `<div class="selo tem"><span class="fig">${c.emoji}</span><span class="nm">${esc(c.nome)}</span></div>`
+        : `<div class="selo"><span class="fig">🔒</span><span class="nm">?</span></div>`).join("")}
+    </div>
+    <p class="muted" style="margin-top:12px">O que ela ainda não conquistou aparece trancado para
+      você também — ninguém descobre conquista espiando o perfil dos outros.</p>`,
+    p.ocupada
+      ? `<button class="btn ghost" disabled>⏳ ${esc(p.nome)} já tem dois desafios em andamento</button>`
+      : `<button class="btn" id="des">⚔️ Desafiar ${esc(p.nome)}</button>`);
+  const bd = document.getElementById("des");
+  if(bd) bd.onclick = () => caixaDesafio(p);
+}
+
+/* A tela do desafio. O ponto do desenho: as duas fazem exatamente a mesma
+   bateria, nas mesmas questões e na mesma ordem, senão não dá para comparar. */
+function caixaDesafio(p){
+  const nome = esc(p.nome);
+  abrirCaixa(`
+    <h3>⚔️ Desafiar ${nome}</h3>
+    <p class="cxSub">Vocês duas fazem a mesma bateria</p>
+    <div class="desLinha"><span class="desIc">${S.emoji || "🧫"}</span>
+      <b>${esc((S.apelido || "").trim() || "Você")}</b><span class="desVs">vs</span>
+      <b>${nome}</b><span class="desIc">${p.emoji}</span></div>
+    <p style="margin:16px 0 0;font-weight:700">Como vai funcionar</p>
+    <ul class="desLista">
+      <li><b>Os mesmos ${DESAFIO_TAM} exercícios</b> para as duas, na mesma ordem — sorteados do que
+        vocês duas já têm no grupo, não escolhidos por quem desafia. É metade de uma bateria: cabe
+        num intervalo entre aulas e não se confunde com a sessão normal.</li>
+      <li>Ganha quem <b>acertar mais</b>. Empatou no acerto, ganha quem fez em <b>menos tempo</b>.</li>
+      <li>${nome} tem <b>48 horas</b> para responder. Passou disso, o desafio expira sem vencedor.</li>
+      <li>As duas ganham o <b>XP normal</b> da bateria, com bônus de sequência. Quem vence leva
+        <b>${XP_VITORIA} de bônus</b>, e tudo isso <b>conta no ranking</b>.</li>
+      <li>Desafio <b>não gasta a espera de ${ESPERA_MIN} minutos</b> — é o outro jeito de pontuar
+        enquanto ela corre.</li>
+    </ul>
+    <p style="margin:16px 0 0;font-weight:700">O que segura o abuso</p>
+    <ul class="desLista">
+      <li>Você pode ter <b>um desafio mandado</b> e <b>um recebido</b> ao mesmo tempo. Para mandar
+        outro, o seu tem que ser respondido primeiro.</li>
+      <li><b>${HORAS_ENTRE_DESAFIOS} horas</b> entre um desafio e o próximo, valendo tanto para
+        mandar quanto para receber.</li>
+      <li>Quem já está com os dois em andamento aparece com ⏳ e não pode ser desafiada.</li>
+      <li>As questões são sorteadas, então não dá para combinar uma bateria fácil com alguém.</li>
+    </ul>
+    <p class="muted" style="margin:14px 0 0">Sobre o que quer disputar?</p>
+    <div class="desEsc">
+      <button class="minibt on">O que eu estou estudando</button>
+      <button class="minibt">Uma matéria específica</button>
+    </div>`,
+    `<button class="btn" id="mandar">Mandar o desafio</button>
+     <div style="height:8px"></div>
+     <button class="btn ghost" id="cancela">Agora não</button>`);
+  document.getElementById("mandar").onclick = () => {
+    fecharCaixa();
+    abrirCaixa(`<h3>Ainda não dá 🙂</h3>
+      <p class="cxSub">Esta é a maquete do desafio</p>
+      <p style="margin:14px 0 0">O desenho está aqui para você aprovar ou mudar, mas mandar o
+      desafio de verdade precisa da parte do servidor que ainda não existe: um lugar onde as duas
+      pessoas leem a mesma bateria e escrevem o resultado. É o mesmo pedaço que faz o ranking
+      funcionar.</p>`, `<button class="btn ghost" id="ok">Entendi</button>`);
+    document.getElementById("ok").onclick = fecharCaixa;
+  };
+  document.getElementById("cancela").onclick = fecharCaixa;
+}
+
+/* ============================================================
+   TELA: Perfil
+   ============================================================ */
+function telaPerfil(){
+  virarODia();
+  const u = (N.ligado && N.usuario) ? N.usuario : null;
+  const apelido = (S.apelido || "").trim();
+  const nome = apelido || (u && (u.displayName || (u.email || "").split("@")[0])) || "Você";
+  const emoji = S.emoji || "🧠";
+  const ganhas = conquistasGanhas();
+  const ids = new Set(ganhas.map(c => c.id));
+  const respondidas = totalRespondidas();
+  const diasEstudados = Object.keys(S.historico || {}).length;
+
+  const foto = (u && u.photoURL)
+    ? `<img class="pfFoto" src="${esc(u.photoURL)}" alt="">`
+    : `<div class="pfFoto pfEmoji">${esc(emoji)}</div>`;
+
+  const corpo = `
+  <div class="pfTopo">
+    ${foto}
+    <h1>${esc(nome)} ${esc(emoji)}</h1>
+    ${u ? `<p class="pfSub">${esc(u.email || "")}${N.grupoNome ? " · " + esc(N.grupoNome) : ""}</p>` : ""}
+  </div>
+
+  <div class="cardz">
+    <div class="pfNums">
+      <div class="pfN"><b>⭐ ${S.xp}</b><span>XP desde o começo</span></div>
+      <div class="pfN"><b>🔥 ${S.ofensiva}</b><span>ofensiva</span></div>
+      <div class="pfN"><b>✏️ ${respondidas}</b><span>exercícios respondidos</span></div>
+      <div class="pfN"><b>📅 ${diasEstudados}</b><span>${diasEstudados === 1 ? "dia estudado" : "dias estudados"}</span></div>
+    </div>
+    <div class="pfMenor">
+      <div><b>⚔️ —</b><span>desafios ganhos</span></div>
+      <div><b>🥇 —</b><span>semanas em primeiro</span></div>
+      <div><b>🥈 —</b><span>semanas em segundo</span></div>
+    </div>
+    <p class="muted" style="margin:12px 0 0">Desafio e ranking ainda não existem — por isso os
+      traços. Nesta semana você fez <b>${S.xpSemana} XP</b>; esse número zera todo domingo, o
+      total nunca zera.</p>
+  </div>
+
+  <div class="secao">Conquistas · ${ganhas.length} de ${CONQUISTAS.length}</div>
+  <div class="cardz">
+    <div class="selos">
+      ${CONQUISTAS.map(c => ids.has(c.id)
+        ? `<button class="selo tem" data-conq="${c.id}"><span class="fig">${c.emoji}</span>
+             <span class="nm">${esc(c.nome)}</span></button>`
+        : `<button class="selo" data-conq="${c.id}"><span class="fig">🔒</span>
+             <span class="nm">?</span></button>`).join("")}
+    </div>
+    <p class="muted" style="margin-top:14px">Conquista trancada não mostra nem o desenho nem o
+      nome — só a pista, se você tocar nela. Descobrir faz parte.</p>
+  </div>`;
+
+  aba = "perfil";
+  montarTela(corpo, { manterRolagem:true, comNav:true });
+  document.querySelectorAll("[data-conq]").forEach(b => b.onclick = () => {
+    const c = CONQUISTAS.find(x => x.id === b.dataset.conq);
+    if(ids.has(c.id)) caixaAviso(`${c.emoji} ${esc(c.nome)}`, esc(c.desc), "conquista destrancada");
+    else caixaAviso("🔒 Ainda trancada", esc(c.dica), "a dica é tudo o que dá para ver");
   });
 }
 
@@ -1083,7 +2226,7 @@ function telaEstudar(rolagemAnterior){
 /* ============================================================
    TELA: Ajustes
    ============================================================ */
-function telaAjustes(){
+function telaAjustes(op){
   aba = "ajustes";
   /* Quem está usando o app precisa saber em qual conta está e conseguir sair.
      Sem isso, quem tem mais de uma conta — ou empresta o celular — fica preso. */
@@ -1132,36 +2275,25 @@ function telaAjustes(){
   ${conta}
   ${identidade}
 
+  <div class="secao">Como estudar</div>
   <div class="cardz">
-    <label class="f">Exercícios por dia</label>
-    <select id="meta">
-      ${[5,10,15,20,30].map(n => `<option value="${n}" ${n===S.meta?"selected":""}>${n} por dia ${
-        n<=5?"(uns 2 min)":n<=10?"(uns 5 min)":n<=20?"(uns 10 min)":"(uns 15 min)"}</option>`).join("")}
+    <label class="f">Misturar quantas provas de cada matéria</label>
+    <select id="horizonte">
+      ${[[1,"só a próxima prova de cada matéria"],[2,"as duas próximas"],
+         [3,"as três próximas"],[0,"tudo o que ainda vai cair"]]
+        .map(o => `<option value="${o[0]}" ${o[0]===(S.horizonte==null?1:S.horizonte)?"selected":""}>${o[1]}</option>`).join("")}
     </select>
-
-    <label class="f">Tempo por questão</label>
-    <select id="cronq">
-      ${[[0,"Sem cronômetro"],[45,"45 segundos"],[60,"1 minuto"],[90,"1 min e 30"],[120,"2 minutos"]]
-        .map(o => `<option value="${o[0]}" ${o[0]===S.segPorQuestao?"selected":""}>${o[1]}</option>`).join("")}
-    </select>
-    <p class="muted" style="margin-top:6px">O tempo é somado para a sessão inteira: numa sessão de
-      ${S.meta} questões a ${S.segPorQuestao || 0}s, você tem ${S.segPorQuestao ? mmss(S.segPorQuestao*S.meta) : "—"} no total.
-      Pode gastar mais numa e menos noutra. O que sobrar sem resposta conta como erro.</p>
-
-    <label class="f">Espera entre sessões</label>
-    <select id="espera">
-      ${[[0,"Sem espera"],[15,"15 minutos"],[30,"30 minutos"],[60,"1 hora"],[180,"3 horas"]]
-        .map(o => `<option value="${o[0]}" ${o[0]===S.esperaMin?"selected":""}>${o[1]}</option>`).join("")}
-    </select>
-    <p class="muted" style="margin-top:6px">Segura a vontade de maratonar. Dá para furar a espera se precisar.</p>
+    <p class="muted" style="margin-top:6px">Vale no “um pouco de tudo”. Cadastrando o ano inteiro,
+      sem isso você começaria a receber em fevereiro o conteúdo de dezembro — e em medicina uma
+      coisa se entende depois da outra. Escolher a matéria no 🎯 ignora este limite.</p>
     ${S.recorde ? `<p class="muted" style="margin-top:10px">🏅 Seu recorde: <b>${S.recorde}s por questão</b> numa sessão sem erro.</p>` : ""}
     ${window.VERSAO_BUILD ? `<p class="muted" style="margin-top:10px">Versão do app:
       <b>${esc(window.VERSAO_BUILD)}</b></p>` : ""}
-    <p class="muted" style="margin-top:10px">⭐ XP total desde o começo: <b>${S.xp}</b> · nesta semana: <b>${S.xpSemana}</b>.
-      O ranking usa só o da semana, que zera todo domingo.</p>
   </div>
 
-  <div class="secao">Datas das provas</div>
+
+
+  <div class="secao" id="secDatas">Datas das provas</div>
   <div class="cardz" style="padding:6px 14px 14px">
     ${CURSO.disciplinas.map(d => {
       const provas = provasDaDisciplina(d);
@@ -1221,23 +2353,17 @@ function telaAjustes(){
     <p class="muted" style="margin-top:12px">Exporte e me mande o arquivo — eu corrijo as questões e devolvo o app atualizado.</p>
   </div>` : ""}
 
-  <div class="secao">Seu progresso</div>
-  <div class="cardz">
-    <p class="muted" style="margin:0">Fica guardado neste navegador. Use os botões para levar para outro aparelho.</p>
-    <div class="rowb">
-      <button class="btn ghost sm" id="exp">Salvar</button>
-      <button class="btn ghost sm" id="imp">Carregar</button>
-    </div>
-    <p style="margin-top:14px"><span class="linkish" id="zerar">zerar todo o progresso</span></p>
-  </div>
-  <input type="file" id="arq" accept="application/json" class="hide">`;
+  <p style="text-align:center;margin:22px 0 6px">
+    <span class="linkish" id="zerar">zerar todo o progresso</span></p>`;
 
   /* Ajustes se redesenha inteiro a cada mexida — no apelido, no emoji, na data de
      uma prova. Sem isto, cada clique jogava a página de volta para o topo. */
-  montarTela(corpo, { manterRolagem: true });
-  $("#meta").onchange = e => { S.meta = +e.target.value; salvar(); telaAjustes(); };
-  $("#cronq").onchange = e => { S.segPorQuestao = +e.target.value; salvar(); telaAjustes(); };
-  $("#espera").onchange = e => { S.esperaMin = +e.target.value; salvar(); };
+  montarTela(corpo, { manterRolagem: !(op && op.irPara) });
+  if(op && op.irPara === "datas"){
+    const alvo = $("#secDatas");
+    if(alvo) requestAnimationFrame(() => alvo.scrollIntoView({ block:"start" }));
+  }
+  $("#horizonte").onchange = e => { S.horizonte = +e.target.value; salvar(); agendarSincronia(); telaAjustes(); };
   document.querySelectorAll("[data-data]").forEach(inp => inp.onchange = e => {
     const k = inp.dataset.data;
     if(e.target.value) S.datas[k] = e.target.value; else delete S.datas[k];
@@ -1271,33 +2397,32 @@ function telaAjustes(){
     a.href = URL.createObjectURL(b); a.download = "fixaai-reportes-" + hoje() + ".txt"; a.click();
   };
   if($("#limpaRep")) $("#limpaRep").onclick = () => {
-    if(confirm("Limpar a lista de questões reportadas?")){ S.reportes = []; salvar(); telaAjustes(); }
+    caixaConfirma("Limpar os reportes?",
+      "A lista de questões que você reportou some deste aparelho. As questões em si não mudam.",
+      "Limpar", () => { S.reportes = []; salvar(); telaAjustes(); }, true);
   };
-  $("#zerar").onclick = () => { if(confirm("Apagar todo o progresso?")){ S = padrao(); localStorage.removeItem(KEY); salvar(); telaAjustes(); } };
+  $("#zerar").onclick = () => caixaConfirma("Apagar todo o progresso?",
+    "Some tudo: caixas de revisão, XP, ofensiva, histórico e conquistas. Não dá para desfazer.",
+    "Apagar tudo", () => { S = padrao(); localStorage.removeItem(KEY); salvar(); telaAjustes(); }, true);
   const bSair = $("#sairConta");
   if(bSair) bSair.onclick = () => {
-    if(confirm("Sair da conta? Seu progresso fica salvo e volta quando você entrar de novo.")) sairDaConta();
+    caixaConfirma("Sair da conta?",
+      "Seu progresso fica salvo na conta e volta quando você entrar de novo.", "Sair", sairDaConta);
   };
   const bTroca = $("#trocarGrupo");
-  if(bTroca) bTroca.onclick = () => {
-    if(!confirm("Entrar em outro grupo com um código diferente?")) return;
-    localStorage.removeItem(CHAVE_GRUPO);
-    localStorage.removeItem(CHAVE_CACHE);
-    N.grupo = null;
-    telaConvite();
-  };
-  $("#exp").onclick = () => {
-    const b = new Blob([JSON.stringify(S)], {type:"application/json"});
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(b); a.download = "fixaai-progresso-" + hoje() + ".json"; a.click();
-  };
-  $("#imp").onclick = () => $("#arq").click();
-  $("#arq").onchange = e => {
-    const f = e.target.files[0]; if(!f) return;
-    const r = new FileReader();
-    r.onload = () => { try{ S = { ...padrao(), ...JSON.parse(r.result) }; salvar(); telaAjustes(); }catch(err){ alert("Arquivo inválido."); } };
-    r.readAsText(f);
-  };
+  if(bTroca) bTroca.onclick = () => caixaConfirma("Usar outro código?",
+    "Você sai deste grupo neste aparelho e digita o código de outro. Seu progresso continua na conta.",
+    "Usar outro código", () => {
+      localStorage.removeItem(CHAVE_GRUPO);
+      localStorage.removeItem(CHAVE_CACHE);
+      N.grupo = null;
+      telaConvite();
+    });
+  /* Salvar e carregar o progresso num arquivo saíram daqui. Existiam de quando o
+     app era um arquivo solto e cada aparelho vivia por conta. Hoje o progresso
+     mora na conta: entrar com o mesmo Google no tablet já traz tudo, e manter
+     dois caminhos para a mesma coisa só dá chance de a pessoa carregar um
+     arquivo velho por cima do que estava certo. */
 }
 
 /* ============================================================
@@ -1310,10 +2435,40 @@ const mmss = seg => Math.floor(Math.max(0,seg)/60) + ":" + String(Math.floor(Mat
 
 function pararRelogio(){ if(relogio){ clearInterval(relogio); relogio = null; } }
 
+/* O cronômetro para enquanto a explicação está na tela.
+
+   O tempo existe para medir quanto se leva para RESOLVER, e ler por que a
+   resposta é aquela não é resolver — é a parte que mais vale a pena da sessão,
+   e correr contra o relógio aqui é o incentivo errado. Ao tocar em Continuar o
+   relógio volta do ponto em que parou: o fim da sessão é empurrado para a
+   frente pelo tanto que ficou parado, então nada de tempo é perdido nem
+   ganhado.
+
+   O que impede de usar a pausa para consultar a resposta em outro lugar é que
+   ela só existe DEPOIS de responder — nunca antes. */
+function pausarRelogio(){
+  if(!SES || !SES.fim || SES.pausa) return;
+  SES.pausa = Date.now();
+  pararRelogio();
+  const el = document.querySelector("#cron");
+  if(el) el.classList.add("parado");
+}
+function voltarRelogio(){
+  if(!SES || !SES.fim || !SES.pausa) return;
+  SES.fim += Date.now() - SES.pausa;
+  SES.pausa = null;
+  const el = document.querySelector("#cron");
+  if(el) el.classList.remove("parado");
+  tocarRelogio();
+}
 function tocarRelogio(){
   pararRelogio();
   if(!SES || !SES.fim) return;
   const passo = () => {
+    /* a sessão pode ter sido abandonada entre dois tiques — sair da bateria,
+       trocar de tela, zerar o progresso. Sem esta guarda o relógio continuava
+       batendo em cima de uma sessão que não existe mais. */
+    if(!SES || !SES.fim || SES.pausa){ pararRelogio(); return; }
     const falta = Math.round((SES.fim - Date.now())/1000);
     const el = document.querySelector("#cron");
     if(el){
@@ -1342,33 +2497,64 @@ function encerrarPorTempo(){
 
 function iniciarSessao(){
   const { fila, modo } = montarSessao();
-  if(!fila.length){ alert("Não há exercícios com esse foco agora. Tente outro modo em Estudar."); return; }
+  if(!fila.length){
+    caixaAviso("Nada para estudar aqui",
+      "Este recorte está sem exercício disponível agora. Tente outro modo na aba Estudar.");
+    return;
+  }
   const furou = !!(S.proximaSessao && Date.now() < S.proximaSessao);   // começou antes da espera acabar
+  const foco = focoValeRanking();
   SES = { fila, i:0, acertos:0, total:fila.length, respondido:false, vistos:[], estourou:0, log:[],
-          inicio:Date.now(), valeRanking: !furou, xpAntes: S.xpSemana, modo };
+          inicio:Date.now(), valeRanking: !furou && foco.vale, xpAntes: S.xpSemana, modo,
+          motivoSemRanking: furou ? "a espera entre sessões ainda não acabou" : foco.porque };
   SES.fim = S.segPorQuestao ? Date.now() + S.segPorQuestao * 1000 * fila.length : null;
   /* A espera é disparada AQUI, no clique, e não no fim da bateria. Dois motivos:
      1) quem estuda fora do ranking enquanto espera não pode zerar o relógio do ranking;
-     2) desistir da bateria no meio e recomeçar não devolve a chance de nota cheia. */
-  if(!furou && S.esperaMin > 0){ S.proximaSessao = Date.now() + S.esperaMin * 60000; salvar(); }
+     2) desistir da bateria no meio e recomeçar não devolve a chance de nota cheia.
+
+     E ela só corre para a sessão que de fato vale ranking. Estava correndo em
+     qualquer sessão, o que era incoerente e a Isabela pegou: ela fez uma bateria
+     de um assunto só, que já saía avisada como fora do ranking, e mesmo assim
+     ficou meia hora sem poder fazer uma que valesse. Cobrava o preço do ranking
+     por uma sessão que não dava o prêmio dele. */
+  if(SES.valeRanking && S.esperaMin > 0){ S.proximaSessao = Date.now() + S.esperaMin * 60000; salvar(); }
   render();
   tocarRelogio();
 }
 
+/* A barra de progresso virou dez blocos, um por exercício. Barra lisa mostra que
+   você avançou, mas não quantos faltam — e saber que faltam dois muda o ânimo
+   de quem está na oitava questão. */
+function barraHTML(){
+  const total = SES.total || SES.fila.length;
+  const feitos = (SES.vistos || []).length;
+  let blocos = "";
+  for(let i = 0; i < total; i++) blocos += `<i class="${i < feitos ? "ok" : ""}"></i>`;
+  return `<div class="bar" id="barra">${blocos}</div>`;
+}
+/* O raio fica ao lado do cronômetro e só aparece a partir do segundo acerto
+   seguido, que é quando o bônus começa de fato. */
+function raioHTML(){
+  const n = SES.seq || 0;
+  if(n < 2) return "";
+  return `<div class="raio" id="raio" title="${n} acertos seguidos">⚡ ×${multiploDaSequencia(n).toFixed(1).replace(".", ",")}</div>`;
+}
 function render(){
   if(SES.i >= SES.fila.length) return telaFim();
   const it = SES.fila[SES.i];
-  const pc = Math.round(100 * SES.i / SES.fila.length);
   montarTela('<div class="q" id="q"></div>', {
     topo: `<div class="topbar">
              <button class="xbtn" id="sair">✕</button>
              ${(SES.log && SES.log.length) ? `<button class="xbtn" id="voltarQ" title="Rever as questões que já passaram" aria-label="Rever as questões anteriores">‹</button>` : ""}
-             <div class="bar"><i style="width:${pc}%"></i></div>
+             ${barraHTML()}
              ${SES.valeRanking === false ? `<div class="semrank" title="Fora do horário: vale só para o seu XP total">sem ranking</div>` : ""}
+             <div class="raiobox">${raioHTML()}</div>
              ${SES.fim ? `<div class="cron" id="cron">⏱ --:--</div>` : `<div class="flame">🔥 ${S.ofensiva}</div>`}
            </div>`,
     rodape: "", comNav:false });
-  $("#sair").onclick = () => { if(confirm("Sair da sessão? O que você já respondeu fica salvo.")){ pararRelogio(); telaInicio(); } };
+  $("#sair").onclick = () => caixaConfirma("Sair da bateria?",
+    "O que você já respondeu fica salvo — as questões que sobraram voltam na próxima vez.",
+    "Sair", () => { pararRelogio(); aba = "inicio"; telaInicio(); });
   const bv = $("#voltarQ"); if(bv) bv.onclick = () => telaRever(SES.log.length - 1);
   SES.respondido = false;
   if(SES.fim) tocarRelogio();
@@ -1425,7 +2611,7 @@ function concluir(it, acertou, textoExtra){
   SES.respondido = true;
   if(!SES.vistos) SES.vistos = [];
   virarODia();
-  registrar(it.id, acertou);
+  const ganho = registrar(it.id, acertou);
   const primeiraVez = !SES.vistos.includes(it.id);   // repetição do erro não conta como acerto de primeira
   if(primeiraVez) SES.vistos.push(it.id);
   if(acertou && primeiraVez) SES.acertos++;
@@ -1440,23 +2626,33 @@ function concluir(it, acertou, textoExtra){
   const exp = textoExtra || it.exp || it.just || "";
   if(!SES.log) SES.log = [];
   SES.log.push({ id: it.id, acertou, exp });     // guarda para a pessoa poder reler depois
-  rodapeFeedback(it, acertou, exp);
-  const barra = document.querySelector(".bar > i");
-  if(barra) barra.style.width = Math.round(100*(SES.i+1)/SES.fila.length) + "%";
+  pausarRelogio();                       // agora é hora de ler, não de correr
+  rodapeFeedback(it, acertou, exp, null, ganho);
+  const barra = $("#barra");
+  if(barra) barra.outerHTML = barraHTML();
+  const cx = document.querySelector(".raiobox");
+  if(cx) cx.innerHTML = raioHTML();
 }
 
 /* ---------- rodapé de feedback e reporte de problema ---------- */
 function avancar(it, acertou){
   if(!acertou && SES.fila.filter(x => x.id === it.id).length < 2) SES.fila.push(it);
-  SES.i++; render();
+  SES.i++;
+  voltarRelogio();
+  render();
 }
-function rodapeFeedback(it, acertou, exp, aviso){
+function rodapeFeedback(it, acertou, exp, aviso, ganho){
   const jaReportou = (S.reportes || []).some(r => r.id === it.id);
+  const seq = SES ? (SES.seq || 0) : 0;
+  const selo = (ganho == null) ? "" : `<span class="xpg">+${ganho} XP${
+    seq >= 2 ? ` <b>⚡ ${seq} seguidas</b>` : ""}</span>`;
   $(".foot").innerHTML = `
     ${aviso ? `<div class="fb good"><p>${aviso}</p></div>` : `
     <div class="fb ${acertou?"good":"bad"}">
-      <h3>${acertou ? "✅ Isso aí!" : "❌ Quase"}</h3>
+      <h3>${acertou ? "✅ Isso aí!" : "❌ Quase"}${selo}</h3>
       ${exp ? `<p>${exp}</p>` : ""}
+      ${(!acertou && ganho != null && SES && SES.perdeuSeq)
+        ? `<p class="perdeu">A sequência de ${SES.perdeuSeq} zerou.</p>` : ""}
     </div>`}
     <div class="acoes">
       <button class="btn ${acertou?"":"danger"}" id="prox">Continuar</button>
@@ -1892,21 +3088,30 @@ function telaFim(){
   const bateuMeta = S.feitosHoje >= S.meta;
   const respondidas = SES.vistos.length - SES.estourou;
   const segMedio = respondidas > 0 ? Math.round((Date.now() - SES.inicio) / 1000 / respondidas) : null;
-  // bônus de velocidade: SÓ para sessão sem nenhum erro. Rapidez com erro é chute, não domínio.
+  /* Bônus de tempo: só para quem acertou a sessão inteira. Rapidez com erro é
+     chute, não domínio — uma questão errada apaga o bônus por completo. Duas
+     faixas fixas, para dar para saber de cabeça o que se está perseguindo. */
   const semErro = SES.total > 0 && SES.acertos === SES.total;
-  let bonus = 0;
-  if(SES.valeRanking !== false && SES.fim && !SES.estourou && semErro){
-    const total = S.segPorQuestao * 1000 * SES.total;
-    const usado = Date.now() - SES.inicio;
-    const sobra = Math.max(0, Math.min(1, 1 - usado / total));       // 0 = usou tudo, 1 = instantâneo
-    const baseSessao = S.xpSemana - SES.xpAntes;
-    bonus = Math.round(baseSessao * sobra * 0.5);                    // no máximo +50% da sessão
-    if(bonus > 0) S.xpSemana += bonus;
+  let bonus = 0, faixaBonus = null;
+  if(SES.valeRanking !== false && !SES.estourou && semErro && segMedio != null){
+    faixaBonus = BONUS_TEMPO.find(f => segMedio < f.seg) || null;
+    if(faixaBonus){ bonus = faixaBonus.xp; S.xp += bonus; S.xpSemana += bonus;
+                    SES.xpGanho = (SES.xpGanho || 0) + bonus; }
   }
   let novoRecorde = false;
   if(segMedio && !SES.estourou && SES.acertos === SES.total && SES.total >= 5){
     if(!S.recorde || segMedio < S.recorde){ S.recorde = segMedio; novoRecorde = true; }
   }
+  /* marcos que não dá para recalcular depois: uma vez acontecidos, ficam */
+  S.marcos = S.marcos || {};
+  if(semErro) S.marcos.perfeitas = (S.marcos.perfeitas || 0) + 1;
+  S.marcos.ofensivaMax = Math.max(S.marcos.ofensivaMax || 0, S.ofensiva || 0);
+  const prox = provaMaisProxima();
+  if(prox && prox.dias <= 1) S.marcos.vespera = true;
+  const antesDasConquistas = S.marcos.conquistas || [];
+  const agora = conquistasGanhas().map(c => c.id);
+  const novasConquistas = agora.filter(id => !antesDasConquistas.includes(id));
+  S.marcos.conquistas = agora;
   const faltaEspera = S.proximaSessao ? Math.max(0, Math.round((S.proximaSessao - Date.now())/1000)) : 0;
   salvar();
 
@@ -1918,14 +3123,19 @@ function telaFim(){
             ? plural(SES.estourou, "questão ficou sem resposta e contou como erro", "questões ficaram sem resposta e contaram como erro") + ". Elas voltam amanhã."
             : bateuMeta ? "Meta do dia batida. Volta amanhã que o app já separa o que precisa revisar."
                         : "Faltam " + (S.meta - S.feitosHoje) + " para bater a meta de hoje."}</p>
+      <div class="fimGrade">
+        <div><b>${SES.acertos}/${SES.total}</b><span>acertos de primeira</span></div>
+        <div><b>⚡ ${SES.maiorSeq || 0}</b><span>maior sequência</span></div>
+        <div><b>⭐ ${SES.xpGanho || 0}</b><span>XP nesta rodada</span></div>
+        <div><b>${segMedio != null ? segMedio + "s" : "—"}</b><span>por questão</span></div>
+      </div>
       <div>
-        <span class="pill">✅ ${SES.acertos}/${SES.total} de primeira</span>
-        ${segMedio ? `<span class="pill">⏱ ${segMedio}s por questão</span>` : ""}
-        <span class="pill">🔥 ${S.ofensiva} de ofensiva</span>
-        <span class="pill">⭐ ${S.xpSemana} XP na semana</span>
-        ${bonus ? `<span class="pill" style="color:var(--gold)">⚡ +${bonus} de bônus por velocidade</span>` : ""}
-        ${(!bonus && SES.fim && !SES.estourou && !semErro && SES.valeRanking !== false)
-          ? `<span class="pill muted">o bônus de velocidade pede a sessão inteira sem erro</span>` : ""}
+        ${bonus ? `<span class="pill" style="color:var(--gold)">⏱ +${bonus} de bônus por velocidade —
+          menos de ${faixaBonus.seg}s por questão, sem errar nenhuma</span>` : ""}
+        ${(!bonus && !SES.estourou && !semErro && SES.valeRanking !== false)
+          ? `<span class="pill muted">o bônus de tempo pede a sessão inteira sem erro</span>` : ""}
+        ${(!bonus && semErro && segMedio != null && SES.valeRanking !== false)
+          ? `<span class="pill muted">a ${segMedio}s por questão — o bônus começa abaixo de ${BONUS_TEMPO[BONUS_TEMPO.length-1].seg}s</span>` : ""}
       </div>
       ${SES.modo === "treino" ? `<p class="muted" style="margin-top:16px">Você já viu tudo o que havia de novo e nada estava vencendo:
         esta foi uma sessão de <b>treino livre</b>, com exercícios repetidos. Treina bem, mas o "dominado" quase não anda —
@@ -1933,6 +3143,14 @@ function telaFim(){
       ${SES.valeRanking === false ? `<p class="muted" style="margin-top:16px">Esta sessão entrou só no seu XP total —
         para valer no ranking, é preciso respeitar a espera entre sessões.</p>` : ""}
       ${novoRecorde ? `<p style="margin-top:16px;font-weight:800;color:var(--gold)">🏅 Novo recorde de tempo, sem errar nenhuma!</p>` : ""}
+      ${novasConquistas.length ? `<div class="novaConq">
+        <b>${novasConquistas.length === 1 ? "Conquista nova!" : novasConquistas.length + " conquistas novas!"}</b>
+        ${novasConquistas.map(id => {
+          const c = CONQUISTAS.find(x => x.id === id);
+          return `<div class="cq"><span class="sel">${c.emoji}</span>
+            <span class="cqtx"><b>${esc(c.nome)}</b><span>${esc(c.desc)}</span></span></div>`;
+        }).join("")}
+      </div>` : ""}
       ${faltaEspera > 0 ? `<p class="muted" style="margin-top:18px">A próxima sessão que vale ranking libera em <b>${mmss(faltaEspera)}</b> —
         a espera começou a correr quando você abriu esta bateria, então o tempo que você levou aqui já está descontado.</p>`
         : (S.esperaMin > 0 && SES.valeRanking === false
@@ -2152,8 +3370,9 @@ function bancoGuardado(){
 
 /* ---------- progresso na nuvem ---------- */
 const CAMPOS_SINC = ["prog","xp","xpSemana","semana","ofensiva","ultimoDia","dia",
-                     "feitosHoje","meta","segPorQuestao","esperaMin","recorde",
-                     "datas","foco","historico","reportes","apelido","emoji"];
+                     "feitosHoje","recorde",
+                     "datas","foco","historico","reportes","apelido","emoji",
+                     "horizonte","marcos","congelados"];
 
 function juntarProgresso(local, remoto){
   /* Mesma conta em dois aparelhos: fica o mais adiantado de cada questão,
@@ -2179,14 +3398,18 @@ function juntarProgresso(local, remoto){
   const aparelhoNovo = !Object.keys(local.prog || {}).length
                     && !Object.keys(local.datas || {}).length
                     && !(local.apelido || "").trim();
+  /* marcos são acumulados: o que foi conquistado num aparelho vale nos dois */
+  const m = { ...(remoto.marcos || {}), ...(local.marcos || {}) };
+  m.perfeitas   = Math.max((local.marcos||{}).perfeitas   || 0, (remoto.marcos||{}).perfeitas   || 0);
+  m.ofensivaMax = Math.max((local.marcos||{}).ofensivaMax || 0, (remoto.marcos||{}).ofensivaMax || 0);
+  m.vespera     = !!((local.marcos||{}).vespera || (remoto.marcos||{}).vespera);
+  m.conquistas  = [...new Set([ ...((local.marcos||{}).conquistas || []),
+                                ...((remoto.marcos||{}).conquistas || []) ])];
+  fora.marcos = m;
   ["apelido","emoji"].forEach(k => {
     fora[k] = aparelhoNovo ? (remoto[k] || local[k] || "") : (local[k] || remoto[k] || "");
   });
-  if(aparelhoNovo){
-    ["meta","segPorQuestao","esperaMin"].forEach(k => {
-      if(remoto[k] !== undefined) fora[k] = remoto[k];
-    });
-  }
+  fora.meta = SESSAO; fora.segPorQuestao = SEG_POR_QUESTAO; fora.esperaMin = ESPERA_MIN;
   return fora;
 }
 
@@ -2533,17 +3756,26 @@ async function telaAdmin(aviso){
       const agora = porProva[k].length;
       const nota = !antes ? "novo" : agora === antes ? "sem mudança no total"
                  : agora > antes ? "+" + (agora - antes) : String(agora - antes);
-      return `  • ${nomeDisc(discId)} ${nomeProva(discId, provaId)}: ${agora} exercícios (${nota})`;
-    }).join("\n");
+      return `<li><b>${esc(nomeDisc(discId))} ${esc(nomeProva(discId, provaId))}</b>: ${agora} exercícios (${nota})</li>`;
+    }).join("");
     const some = Object.keys(jaPublicado).filter(k => !porProva[k]);
     const aviso = some.length
-      ? "\n\nContinua no ar, sem ser tocado: " + some.join(", ")
+      ? `<p class="muted" style="margin:10px 0 0">Continua no ar, sem ser tocado: ${esc(some.join(", "))}.</p>`
       : "";
-    if(!confirm(
-        `Publicar no grupo "${dono.nome}"?\n\n${resumo}${aviso}\n\n` +
-        "Cada prova acima é substituída pela versão do arquivo. Quem já estuda " +
-        "recebe as questões novas na próxima vez que abrir o app."))
-      return telaAdmin();
+    const querPublicar = await new Promise(resolve => {
+      abrirCaixa(`<h3>Publicar no grupo?</h3>
+        <p class="cxSub">${esc(dono.nome)}</p>
+        <ul class="desLista" style="margin-top:12px">${resumo}</ul>
+        ${aviso}
+        <p class="muted" style="margin:10px 0 0">Cada prova acima é substituída pela versão do
+          arquivo. Quem já estuda recebe as questões novas na próxima vez que abrir o app.</p>`,
+        `<button class="btn" id="pubSim">Publicar</button>
+         <div style="height:8px"></div>
+         <button class="btn ghost" id="pubNao">Cancelar</button>`);
+      document.getElementById("pubSim").onclick = () => { fecharCaixa(); resolve(true); };
+      document.getElementById("pubNao").onclick = () => { fecharCaixa(); resolve(false); };
+    });
+    if(!querPublicar) return telaAdmin();
     try{
       for(const k of Object.keys(porProva)){
         await N.api.setDoc(ref("grupos", dono.id, "banco", k), {
