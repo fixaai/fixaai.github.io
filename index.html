@@ -131,6 +131,8 @@ button{font-family:inherit;font-size:inherit;cursor:pointer;border:none;backgrou
 .emj{height:44px;border:1px solid var(--line);border-radius:12px;background:var(--card);
   font-size:21px;line-height:1;display:grid;place-items:center}
 .emj.on{border-color:var(--brand);background:rgba(31,157,85,.10);box-shadow:0 0 0 2px rgba(31,157,85,.18)}
+.novoConv{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.novoConv select{flex:1 1 0;min-width:0;margin:0}
 .countdown{background:linear-gradient(135deg,var(--purple),#8e7ff0);color:#fff;border:none}
 .countdown b{font-size:30px;font-weight:800;display:block;line-height:1.1}
 .countdown small{opacity:.92;font-size:13px;font-weight:600}
@@ -366,8 +368,8 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.VERSAO_BUILD = "1db62c7";</script>
-<script>window.VERSAO_BANCO = "3a48e5bb67e0";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.VERSAO_BUILD = "c5a32f1";</script>
+<script>window.VERSAO_BANCO = "f46f80d15d9a";</script>
 
 <script>
 "use strict";
@@ -632,20 +634,41 @@ function progresso(lista){
    app — e deve poder: a contagem regressiva vale mesmo antes de existir banco.
    Por isso todo lugar que procura uma prova aceita não encontrá-la e monta uma
    prova de mentirinha só com o nome. */
-const PROVAS_PADRAO = ["p1","p2","p3","p4","p5"];
+/* A grade de provas varia por disciplina: Microbiologia tem 5 teóricas e 2
+   práticas, Parasitologia tem 2 e 2, as outras 3 teóricas. O id da prática leva
+   "pr" para nunca colidir com o da teórica. */
+function gradeDe(disc){
+  const g = (disc && disc.grade) || {};
+  return { t: g.t == null ? 3 : g.t, p: g.p || 0 };
+}
+function vagasDeProva(disc){
+  const g = gradeDe(disc);
+  const vagas = [];
+  for(let i = 1; i <= g.t; i++) vagas.push({ id:"p" + i,  nome:"P" + i });
+  for(let i = 1; i <= g.p; i++) vagas.push({ id:"pr" + i, nome:"Prática " + i });
+  return vagas;
+}
 function provaDe(disc, provaId){
   const achada = disc && (disc.provas || []).find(p => p.id === provaId);
-  return achada || { id: provaId, nome: String(provaId || "").toUpperCase() };
+  if(achada) return achada;
+  const vaga = disc && vagasDeProva(disc).find(p => p.id === provaId);
+  return vaga || { id: provaId, nome: String(provaId || "").toUpperCase() };
 }
 function provasDaDisciplina(disc){
-  /* As que já têm questão vêm primeiro, com o subtítulo do conteúdo; depois as
-     vagas de P1 a P5 que ainda não existem, para dar para marcar a data. */
-  const tem = (disc.provas || []).map(p => ({ ...p, temBanco:true }));
-  const faltando = PROVAS_PADRAO
-    .filter(id => !tem.some(p => p.id === id))
-    .map(id => ({ id, nome: id.toUpperCase(), temBanco:false }));
-  return tem.concat(faltando).sort((a,b) =>
-    PROVAS_PADRAO.indexOf(a.id) - PROVAS_PADRAO.indexOf(b.id));
+  /* As que já têm questão entram com o subtítulo do conteúdo; as outras vagas da
+     grade entram vazias, só para dar para marcar a data. Uma prova publicada fora
+     da grade (aconteceu de a professora acrescentar uma) não pode sumir da lista:
+     ela é acrescentada no fim. */
+  const vagas = vagasDeProva(disc);
+  const ordem = vagas.map(v => v.id);
+  const daGrade = vagas.map(v => {
+    const com = (disc.provas || []).find(p => p.id === v.id);
+    return com ? { ...v, ...com, temBanco:true } : { ...v, temBanco:false };
+  });
+  const foraDaGrade = (disc.provas || [])
+    .filter(p => !ordem.includes(p.id))
+    .map(p => ({ ...p, temBanco:true }));
+  return daGrade.concat(foraDaGrade);
 }
 function provaJaPassou(discId, provaId){
   const d = (S.datas || {})[discId + "/" + provaId];
@@ -733,14 +756,33 @@ function montarSessao(){
 /* ============================================================
    Estrutura das telas
    ============================================================ */
+/* Redesenhar a tela inteira é como o app funciona: mexeu num ajuste, a tela é
+   montada de novo do zero — e a rolagem voltava para o topo. Quem estava mexendo
+   lá embaixo, nas datas de prova, perdia o lugar a cada clique.
+
+   Quem quiser manter a posição passa `manterRolagem:true` para montarTela. A tela
+   de estudar já tinha um jeito próprio de fazer isso, herdado de quando o
+   problema apareceu nos filtros; os dois convivem sem brigar porque este só age
+   quando é pedido. */
 function montarTela(corpo, opcoes){
   const o = opcoes || {};
   const comNav = o.comNav !== false;
+  const area0 = areaRolavel();
+  const guardado = (o.manterRolagem && area0) ? area0.scrollTop : 0;
   app.innerHTML = (o.topo || "")
     + '<div class="rolagem">' + corpo + '<div style="height:18px"></div></div>'
     + (o.rodape !== undefined ? '<div class="foot">' + o.rodape + "</div>" : "")
     + (comNav ? navHTML() : "");
   if(comNav) ligarNav();
+  if(guardado){
+    /* dois quadros: no primeiro o navegador ainda não calculou a altura do
+       conteúdo novo, e o scrollTop sairia cortado no que coubesse */
+    const area = areaRolavel();
+    if(area){
+      area.scrollTop = guardado;
+      requestAnimationFrame(() => { area.scrollTop = guardado; });
+    }
+  }
   ligarCue();
 }
 function navHTML(){
@@ -1073,7 +1115,7 @@ function telaAjustes(){
   <div class="secao">Como você aparece</div>
   <div class="cardz">
     <label class="f">Seu apelido</label>
-    <input id="apelido" maxlength="14" autocomplete="off" placeholder="Iza"
+    <input id="apelido" maxlength="14" autocomplete="off" placeholder=""
       value="${esc(apelido)}">
     <label class="f" style="margin-top:14px">Seu emoji</label>
     <div class="emojis">
@@ -1190,7 +1232,9 @@ function telaAjustes(){
   </div>
   <input type="file" id="arq" accept="application/json" class="hide">`;
 
-  montarTela(corpo);
+  /* Ajustes se redesenha inteiro a cada mexida — no apelido, no emoji, na data de
+     uma prova. Sem isto, cada clique jogava a página de volta para o topo. */
+  montarTela(corpo, { manterRolagem: true });
   $("#meta").onchange = e => { S.meta = +e.target.value; salvar(); telaAjustes(); };
   $("#cronq").onchange = e => { S.segPorQuestao = +e.target.value; salvar(); telaAjustes(); };
   $("#espera").onchange = e => { S.esperaMin = +e.target.value; salvar(); };
@@ -2348,9 +2392,14 @@ async function telaAdmin(aviso){
   let nMembros = "—";
   try{ nMembros = (await N.api.getDocs(cole("grupos", dono.id, "membros"))).size; }catch(e){}
   let nQuestoes = 0;
+  const jaPublicado = {};        // "imuno_p3" -> quantos exercícios estão no ar
   try{
     const q = await N.api.getDocs(cole("grupos", dono.id, "banco"));
-    q.forEach(d => nQuestoes += ((d.data().itens || []).length));
+    q.forEach(d => {
+      const n = (d.data().itens || []).length;
+      jaPublicado[d.id] = n;
+      nQuestoes += n;
+    });
   }catch(e){}
 
   const vencMs = convite ? emMilissegundos(convite.expiraEm) : 0;
@@ -2371,15 +2420,33 @@ async function telaAdmin(aviso){
         </p>
         <div class="asbtns">
           <button class="minibt" id="bLiga">${convite.ativo ? "Desativar" : "Reativar"}</button>
-          <button class="minibt" id="bNovo">Gerar outro</button>
         </div>`
-      : `<p class="muted" style="margin:8px 0 10px">Ainda não existe convite para este grupo.</p>
-         <button class="minibt" id="bNovo" style="width:100%">Gerar código</button>`}
+      : `<p class="muted" style="margin:8px 0 10px">Ainda não existe convite para este grupo.</p>`}
+
+      <div class="novoConv">
+        <b style="font-size:13px">${convite ? "Gerar outro código" : "Gerar o código"}</b>
+        <div class="asbtns" style="margin-top:8px">
+          <select id="quantos">
+            ${[30,60,100,200,500].map(n => `<option value="${n}" ${n===60?"selected":""}>até ${n} pessoas</option>`).join("")}
+          </select>
+          <select id="valeAte">
+            ${[[7,"vale 7 dias"],[21,"vale 21 dias"],[60,"vale 2 meses"],[365,"vale 1 ano"]]
+              .map(o => `<option value="${o[0]}" ${o[0]===21?"selected":""}>${o[1]}</option>`).join("")}
+          </select>
+        </div>
+        <button class="minibt" id="bNovo" style="width:100%;margin-top:8px">Gerar código novo</button>
+        <p class="muted" style="margin:10px 0 0;font-size:12.5px">
+          <b>O grupo não tem limite de gente.</b> O limite é do código: ele serve para o código
+          não virar senha eterna se vazar. Gerar um código novo desativa o anterior e
+          <b>não mexe nas questões</b> — quem já entrou continua dentro, com o progresso.
+          É assim que os calouros do ano que vem entram: código novo, mesmo grupo, mesmo banco.</p>
+      </div>
     </div>
 
     <div class="cx">
       <b>Quem já entrou</b>
-      <p class="muted" style="margin:8px 0 0">${nMembros} ${nMembros === 1 ? "pessoa" : "pessoas"}</p>
+      <p class="muted" style="margin:8px 0 0">${nMembros} ${nMembros === 1 ? "pessoa" : "pessoas"} ·
+        sem limite de tamanho</p>
     </div>
 
     <div class="cx">
@@ -2387,10 +2454,10 @@ async function telaAdmin(aviso){
       <p class="muted" style="margin:8px 0 10px">
         ${nQuestoes ? nQuestoes + " exercícios no ar" : "Nenhuma ainda — publique o banco abaixo."}</p>
       <input type="file" id="arq" accept="application/json,.json" style="display:none">
-      <div class="asbtns">
-        <button class="minibt" id="bPubArq">Publicar de um arquivo</button>
-        <button class="minibt" id="bPubWeb">Publicar do banco.json</button>
-      </div>
+      <button class="minibt" id="bPubArq" style="width:100%">Publicar de um arquivo</button>
+      <p class="muted" style="margin:10px 0 0;font-size:12.5px">O arquivo do banco não fica
+        hospedado no site — se ficasse, qualquer pessoa com o endereço baixaria as questões
+        sem precisar de convite. Ele vem do seu computador, só na hora de publicar.</p>
     </div>
 
     <div class="cx">
@@ -2419,11 +2486,13 @@ async function telaAdmin(aviso){
       .toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "").slice(0, 6);
     const ano = new Date().getFullYear();
     const codigo = `${base}${ano}-${sorteioCodigo()}`;
+    const quantos = +($("#quantos") || {}).value || 60;
+    const dias    = +($("#valeAte") || {}).value || 21;
     try{
       if(convite) await N.api.updateDoc(ref("convites", convite.codigo), { ativo:false });
       await N.api.setDoc(ref("convites", codigo), {
-        grupo: dono.id, ativo:true, usos:0, maxUsos:60,
-        expiraEm: N.api.Timestamp.fromMillis(Date.now() + 21 * 864e5),
+        grupo: dono.id, ativo:true, usos:0, maxUsos: quantos,
+        expiraEm: N.api.Timestamp.fromMillis(Date.now() + dias * 864e5),
         criadoEm: N.api.serverTimestamp()
       });
       await N.api.updateDoc(ref("grupos", dono.id), { convite: codigo });
@@ -2444,6 +2513,37 @@ async function telaAdmin(aviso){
       const ruim = acharListaAninhada(porProva[k], k);
       if(ruim) return telaAdmin("Uma questão tem lista dentro de lista, que o Firestore não aceita: " + ruim);
     }
+    /* Publicar substitui o que está no ar. Enquanto existir um grupo só, errar
+       aqui é chato; com vários grupos, é publicar a prova de uma turma na turma
+       errada. Então antes de gravar o app diz, em português, para qual grupo vai
+       e o que exatamente vai mudar — e espera a confirmação. */
+    const nomeDisc = id => {
+      const d = (curso.disciplinas || []).find(x => x.id === id);
+      return d ? d.nome : id;
+    };
+    const nomeProva = (discId, provaId) => {
+      const d = (curso.disciplinas || []).find(x => x.id === discId);
+      const p = d && (d.provas || []).find(x => x.id === provaId);
+      return p ? p.nome : String(provaId || "").toUpperCase();
+    };
+    const resumo = Object.keys(porProva).sort().map(k => {
+      const corte = k.lastIndexOf("_");
+      const discId = k.slice(0, corte), provaId = k.slice(corte + 1);
+      const antes = (jaPublicado[k] || 0);
+      const agora = porProva[k].length;
+      const nota = !antes ? "novo" : agora === antes ? "sem mudança no total"
+                 : agora > antes ? "+" + (agora - antes) : String(agora - antes);
+      return `  • ${nomeDisc(discId)} ${nomeProva(discId, provaId)}: ${agora} exercícios (${nota})`;
+    }).join("\n");
+    const some = Object.keys(jaPublicado).filter(k => !porProva[k]);
+    const aviso = some.length
+      ? "\n\nContinua no ar, sem ser tocado: " + some.join(", ")
+      : "";
+    if(!confirm(
+        `Publicar no grupo "${dono.nome}"?\n\n${resumo}${aviso}\n\n` +
+        "Cada prova acima é substituída pela versão do arquivo. Quem já estuda " +
+        "recebe as questões novas na próxima vez que abrir o app."))
+      return telaAdmin();
     try{
       for(const k of Object.keys(porProva)){
         await N.api.setDoc(ref("grupos", dono.id, "banco", k), {
@@ -2465,14 +2565,6 @@ async function telaAdmin(aviso){
     try{ await publicar(JSON.parse(await f.text())); }
     catch(e){ telaAdmin("Não consegui ler esse arquivo: " + e.message); }
   };
-  $("#bPubWeb").onclick = async () => {
-    try{
-      const r = await fetch("banco.json?v=" + Date.now(), { cache:"no-store" });
-      if(!r.ok) throw new Error("não achei o banco.json aqui do lado");
-      await publicar(await r.json());
-    }catch(e){ telaAdmin("Não consegui buscar o banco.json: " + e.message); }
-  };
-
   $("#bIr").onclick = () => abrirComGrupo(dono.id);
   $("#bSair").onclick = sairDaConta;
 }

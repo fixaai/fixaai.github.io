@@ -14,8 +14,8 @@
      É o que garante o que a Isabela pediu: questão nova aparece sozinha,
      sem ninguém baixar arquivo. Sem internet, usa a última cópia salva.
 */
-const VERSAO_APP   = "b504e4a1d170";
-const VERSAO_BANCO = "3a48e5bb67e0";
+const VERSAO_APP   = "c404da83afd9";
+const VERSAO_BANCO = "f46f80d15d9a";
 const CACHE_APP   = "fixaai-app-" + VERSAO_APP;
 const CACHE_BANCO = "fixaai-banco";
 
