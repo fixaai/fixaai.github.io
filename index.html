@@ -116,6 +116,21 @@ button{font-family:inherit;font-size:inherit;cursor:pointer;border:none;backgrou
 .pv .dias{flex:0 0 auto;text-align:center;font-size:20px;font-weight:800;color:var(--purple);line-height:1}
 .pv .dias small{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;opacity:.8}
 .pv .dias.perto{color:var(--wrong)}
+/* datas de prova: a disciplina abre e mostra P1 a P5 */
+.provasDe{padding:2px 0 12px 46px;border-bottom:1px solid var(--line)}
+.provasDe:last-child{border-bottom:none}
+.linhaProva{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:10px}
+.linhaProva .f{flex:0 0 100%;margin:0 0 2px}
+.linhaProva .subp{font-weight:600;color:var(--ink-2);text-transform:none;letter-spacing:0}
+.linhaProva input[type=date]{flex:1 1 150px;margin:0}
+.linhaProva .quando{flex:0 0 auto;font-size:12px;font-weight:700;color:var(--ink-2)}
+.linhaProva .quando.perto{color:var(--wrong)}
+.linhaProva .quando.passou{color:var(--ink-2);opacity:.6;text-decoration:line-through}
+/* escolha do emoji */
+.emojis{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:6px}
+.emj{height:44px;border:1px solid var(--line);border-radius:12px;background:var(--card);
+  font-size:21px;line-height:1;display:grid;place-items:center}
+.emj.on{border-color:var(--brand);background:rgba(31,157,85,.10);box-shadow:0 0 0 2px rgba(31,157,85,.18)}
 .countdown{background:linear-gradient(135deg,var(--purple),#8e7ff0);color:#fff;border:none}
 .countdown b{font-size:30px;font-weight:800;display:block;line-height:1.1}
 .countdown small{opacity:.92;font-size:13px;font-weight:600}
@@ -351,8 +366,8 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.VERSAO_BUILD = "dd574a2";</script>
-<script>window.VERSAO_BANCO = "512843b70a99";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.VERSAO_BUILD = "1db62c7";</script>
+<script>window.VERSAO_BANCO = "3a48e5bb67e0";</script>
 
 <script>
 "use strict";
@@ -476,6 +491,8 @@ const padrao = () => ({
   v:3, prog:{}, ofensiva:0, ultimoDia:null, dia:null, feitosHoje:0, xp:0, meta:10,
   segPorQuestao:90, esperaMin:30, proximaSessao:null, recorde:null,
   xpSemana:0, semana:null,
+  apelido:"", emoji:"",                         // como a pessoa quer ser chamada
+                                                // emoji vazio = ainda não escolheu
   datas:{},                                     // "fisio/p3" -> "2026-08-26"
   foco:{ disc:null, prova:null, tops:[], tipos:[], soRevisao:false, soErros:false },
   reportes:[],
@@ -483,6 +500,12 @@ const padrao = () => ({
 });
 let S = carregar();
 let aba = "inicio";
+let discAberta = null;      // qual disciplina está aberta na lista de datas de prova
+
+/* Emojis para a pessoa escolher. Coisa de faculdade de medicina, sem cara de
+   app de banco: órgão, bicho, vidraria, estudo. */
+const EMOJIS = ["🧠","🫀","🫁","🦴","🦷","👁️","🩺","💊","💉","🩹","🧫","🦠","🧬","🔬",
+                "🧪","🩸","🌡️","⚕️","📚","✏️","🎓","☕","🌱","⭐"];
 
 function carregar(){
   try{
@@ -549,11 +572,26 @@ function virarODia(){
 /* ---------- consultas ---------- */
 function itensDoFoco(){
   const f = S.foco;
-  return CURSO.itens.filter(i =>
+  const base = CURSO.itens.filter(i =>
     (!f.disc  || i.disc  === f.disc)  &&
     (!f.prova || i.prova === f.prova) &&
     (!(f.tops || []).length || f.tops.includes(i.top)) &&
     (!f.tipos.length || f.tipos.includes(i.t)));
+  /* No "um pouco de tudo", prova que já aconteceu sai da mistura: depois da
+     prova de micro, continuar recebendo questão de micro no meio do sorteio só
+     rouba tempo do que ainda vai cair. Quem quiser revisar o que já passou
+     escolhe aquela disciplina de propósito — e aí o filtro não se aplica.
+     Se TODAS as provas marcadas já passaram, é melhor devolver tudo do que
+     devolver nada. */
+  if(f.disc || f.prova) return base;
+  const futuras = base.filter(i => !provaJaPassou(i.disc, i.prova));
+  return futuras.length ? futuras : base;
+}
+function quantoFicouDeFora(){
+  const f = S.foco;
+  if(f.disc || f.prova) return 0;
+  const n = CURSO.itens.filter(i => provaJaPassou(i.disc, i.prova)).length;
+  return n < CURSO.itens.length ? n : 0;
 }
 function vencidos(lista){ const h = hoje(); return (lista || CURSO.itens).filter(i => S.prog[i.id] && S.prog[i.id].venc <= h); }
 function errados(lista){ return (lista || CURSO.itens).filter(i => S.prog[i.id] && S.prog[i.id].erros > 0)
@@ -590,6 +628,30 @@ function progresso(lista){
   lista.forEach(i => { const p = S.prog[i.id]; soma += p ? Math.min(p.caixa, 4)/4 : 0; });
   return Math.round(100 * soma / lista.length);
 }
+/* A pessoa pode marcar a data de uma prova que ainda não tem questão nenhuma no
+   app — e deve poder: a contagem regressiva vale mesmo antes de existir banco.
+   Por isso todo lugar que procura uma prova aceita não encontrá-la e monta uma
+   prova de mentirinha só com o nome. */
+const PROVAS_PADRAO = ["p1","p2","p3","p4","p5"];
+function provaDe(disc, provaId){
+  const achada = disc && (disc.provas || []).find(p => p.id === provaId);
+  return achada || { id: provaId, nome: String(provaId || "").toUpperCase() };
+}
+function provasDaDisciplina(disc){
+  /* As que já têm questão vêm primeiro, com o subtítulo do conteúdo; depois as
+     vagas de P1 a P5 que ainda não existem, para dar para marcar a data. */
+  const tem = (disc.provas || []).map(p => ({ ...p, temBanco:true }));
+  const faltando = PROVAS_PADRAO
+    .filter(id => !tem.some(p => p.id === id))
+    .map(id => ({ id, nome: id.toUpperCase(), temBanco:false }));
+  return tem.concat(faltando).sort((a,b) =>
+    PROVAS_PADRAO.indexOf(a.id) - PROVAS_PADRAO.indexOf(b.id));
+}
+function provaJaPassou(discId, provaId){
+  const d = (S.datas || {})[discId + "/" + provaId];
+  return !!d && difDias(hoje(), d) < 0;
+}
+
 function provasFuturas(){
   const h = hoje();
   const lista = [];
@@ -599,7 +661,7 @@ function provasFuturas(){
     if(dias < 0) return;
     const [discId, provaId] = chave.split("/");
     const disc = discPorId[discId]; if(!disc) return;
-    const prova = (disc.provas || []).find(p => p.id === provaId);
+    const prova = provaDe(disc, provaId);
     const its = itensDaProva(discId, provaId);
     lista.push({ dias, data, disc, prova, chave, discId, provaId,
                  total: its.length, pc: progresso(its),
@@ -617,7 +679,7 @@ function provaMaisProxima(){
     if(!melhor || dias < melhor.dias){
       const [discId, provaId] = chave.split("/");
       const disc = discPorId[discId]; if(!disc) return;
-      melhor = { dias, disc, prova:(disc.provas||[]).find(p => p.id === provaId) };
+      melhor = { dias, disc, prova: provaDe(disc, provaId) };
     }
   });
   return melhor;
@@ -709,10 +771,11 @@ function telaInicio(){
   const quem = (N.ligado && N.usuario)
     ? `<p class="quemSou">Você está como <b>${esc(N.usuario.displayName || N.usuario.email || "")}</b>${
         N.grupoNome ? " · " + esc(N.grupoNome) : ""}</p>` : "";
+  const apelido = (S.apelido || "").trim();
   const corpo = `
   <div class="hero">
     <div class="sub">Bom estudo</div>
-    <h1>Fixa aí 🧠</h1>
+    <h1>Fixa aí${apelido ? ", " + esc(apelido) : ""} ${esc(S.emoji || "🧠")}</h1>
   </div>
   ${quem}
 
@@ -766,6 +829,13 @@ function telaInicio(){
     <span class="tx"><b>${esc(nomeDoFoco())}</b><span>${esc(resumoTipos())} · toque para trocar</span></span>
     <span class="ck" style="border:none;color:var(--ink-2)">›</span>
   </button>
+  ${(() => {
+    const fora = quantoFicouDeFora();
+    if(!fora) return "";
+    return `<p class="muted" style="margin:-4px 2px 14px;font-size:13px">
+      ${plural(fora, "exercício de prova que já passou está", "exercícios de provas que já passaram estão")}
+      fora da mistura. Para revisar, escolha a disciplina no 🎯 acima.</p>`;
+  })()}
 
   <div class="stats">
     <div class="stat"><b>🔥 ${S.ofensiva}</b><span>ofensiva</span></div>
@@ -997,9 +1067,28 @@ function telaAjustes(){
       sua conta — ao entrar de novo, ele volta de onde parou.</p>
   </div>`;
 
+  const apelido = (S.apelido || "").trim();
+  const emojiAtual = S.emoji || "🧠";
+  const identidade = `
+  <div class="secao">Como você aparece</div>
+  <div class="cardz">
+    <label class="f">Seu apelido</label>
+    <input id="apelido" maxlength="14" autocomplete="off" placeholder="Iza"
+      value="${esc(apelido)}">
+    <label class="f" style="margin-top:14px">Seu emoji</label>
+    <div class="emojis">
+      ${EMOJIS.map(e => `<button class="emj ${e === emojiAtual ? "on" : ""}"
+        data-emoji="${e}" aria-label="Escolher ${e}">${e}</button>`).join("")}
+    </div>
+    <p class="muted" style="margin-top:12px">Na tela inicial vai aparecer
+      <b>Fixa aí${apelido ? ", " + esc(apelido) : ""} ${esc(emojiAtual)}</b>.
+      Isso viaja com a sua conta: escolheu no celular, aparece no tablet também.</p>
+  </div>`;
+
   const corpo = `
   <div class="hero"><h1>Ajustes</h1></div>
   ${conta}
+  ${identidade}
 
   <div class="cardz">
     <label class="f">Exercícios por dia</label>
@@ -1031,12 +1120,44 @@ function telaAjustes(){
   </div>
 
   <div class="secao">Datas das provas</div>
-  <div class="cardz">
-    ${CURSO.disciplinas.filter(d => d.provas.length).map(d => d.provas.map(p => `
-      <label class="f">${esc(d.nome)} ${esc(p.nome)}</label>
-      <input type="date" data-data="${d.id}/${p.id}" value="${S.datas[d.id+"/"+p.id] || ""}">`).join("")).join("")}
+  <div class="cardz" style="padding:6px 14px 14px">
+    ${CURSO.disciplinas.map(d => {
+      const provas = provasDaDisciplina(d);
+      const marcadas = provas.filter(p => S.datas[d.id + "/" + p.id]);
+      const proxima = marcadas
+        .map(p => ({ p, dias: difDias(hoje(), S.datas[d.id + "/" + p.id]) }))
+        .filter(x => x.dias >= 0).sort((a,b) => a.dias - b.dias)[0];
+      const resumo = proxima
+        ? `${proxima.p.nome} ${proxima.dias === 0 ? "é hoje" : "em " + plural(proxima.dias, "dia", "dias")}`
+        : marcadas.length
+          ? plural(marcadas.length, "prova já marcada, todas já passaram", "provas já marcadas, todas já passaram")
+          : "nenhuma data marcada";
+      const aberta = discAberta === d.id;
+      return `
+      <button class="pv" data-disc-abre="${d.id}">
+        <span class="ic">${d.emoji}</span>
+        <span class="tx"><b>${esc(d.nome)}</b><span>${esc(resumo)}</span></span>
+        <span class="ck" style="border:none;color:var(--ink-2)">${aberta ? "⌄" : "›"}</span>
+      </button>
+      ${aberta ? `<div class="provasDe">
+        ${provas.map(p => {
+          const k = d.id + "/" + p.id;
+          const data = S.datas[k] || "";
+          const dias = data ? difDias(hoje(), data) : null;
+          return `<div class="linhaProva">
+            <label class="f" for="dt_${d.id}_${p.id}">${esc(p.nome)}${
+              p.sub ? ` <span class="subp">${esc(p.sub)}</span>`
+                    : p.temBanco ? "" : ` <span class="subp">sem questões ainda</span>`}</label>
+            <input type="date" id="dt_${d.id}_${p.id}" data-data="${k}" value="${data}">
+            ${data ? `<span class="quando ${dias < 0 ? "passou" : dias <= 3 ? "perto" : ""}">${
+              dias < 0 ? "já passou" : dias === 0 ? "é hoje" : "faltam " + plural(dias, "dia", "dias")}</span>` : ""}
+          </div>`;
+        }).join("")}
+      </div>` : ""}`;
+    }).join("")}
     <p class="muted" style="margin-top:12px">Com a data marcada, o app encurta os intervalos na reta final,
-      para nada ficar sem revisar antes da prova.</p>
+      para nada ficar sem revisar antes da prova. E prova que já passou sai do
+      “um pouco de tudo” — para revisar, é só escolher a disciplina no 🎯 da tela inicial.</p>
   </div>
 
   ${(S.reportes && S.reportes.length) ? `
@@ -1076,7 +1197,22 @@ function telaAjustes(){
   document.querySelectorAll("[data-data]").forEach(inp => inp.onchange = e => {
     const k = inp.dataset.data;
     if(e.target.value) S.datas[k] = e.target.value; else delete S.datas[k];
-    salvar();
+    salvar(); agendarSincronia(); telaAjustes();
+  });
+  document.querySelectorAll("[data-disc-abre]").forEach(b => b.onclick = () => {
+    discAberta = (discAberta === b.dataset.discAbre) ? null : b.dataset.discAbre;
+    telaAjustes();
+  });
+  /* O apelido salva enquanto se digita, mas só redesenha a tela ao sair do
+     campo — redesenhar a cada letra tiraria o cursor do lugar. */
+  const iApel = $("#apelido");
+  if(iApel){
+    iApel.oninput = () => { S.apelido = iApel.value.slice(0, 14); salvar(); };
+    iApel.onblur  = () => { agendarSincronia(); telaAjustes(); };
+    iApel.onkeydown = ev => { if(ev.key === "Enter") iApel.blur(); };
+  }
+  document.querySelectorAll("[data-emoji]").forEach(b => b.onclick = () => {
+    S.emoji = b.dataset.emoji; salvar(); agendarSincronia(); telaAjustes();
   });
   if($("#expRep")) $("#expRep").onclick = () => {
     const linhas = S.reportes.map(r => {
@@ -1210,7 +1346,9 @@ const ROTULO_FONTE = {
   lista:"📚 Lista de questões da professora",
   aula:"🖥️ Slide da aula",
   audio:"🎧 Áudio da revisão da professora",
-  elaborada:"✍️ Elaborada a partir do material"
+  elaborada:"✍️ Elaborada a partir do material",
+  corrigido:"✅ Resposta sua, com visto da professora",
+  livro:"📖 Livro-texto, conferido na bibliografia"
 };
 function blocoFonte(it){
   const f = it.fonte;
@@ -1796,31 +1934,38 @@ async function nuvemCarregar(){
   N.db   = fs.getFirestore(app);
   N.api  = { ...au, ...fs };
   N.ligado = true;
-  /* Se a pessoa está voltando de um redirecionamento, é aqui que o login se
-     completa. Precisa ser antes de qualquer decisão de tela. */
-  try{
-    const r = await N.api.getRedirectResult(N.auth);
-    N.voltouDeRedirecionamento = !!(r && r.user);
-  }catch(e){ N.erroRedirecionamento = traduzErro(e); }
-  sessionStorage.removeItem("fixaai_redirecionando");
+  /* Quem estava no meio de um redirecionamento de uma versão antiga do app
+     ainda pode voltar por aqui. Recolhemos o resultado para não deixar essa
+     pessoa presa, mas nenhum caminho novo produz redirecionamento. */
+  if(sessionStorage.getItem("fixaai_redirecionando")){
+    sessionStorage.removeItem("fixaai_redirecionando");
+    try{ await N.api.getRedirectResult(N.auth); }
+    catch(e){ N.erroRedirecionamento = traduzErro(e); }
+  }
   return true;
 }
 
 /* ---------- entrar e sair ----------
 
-   Pop-up funciona bem no computador e no Android. No iPhone — e principalmente
-   num app adicionado à tela de início — o Safari costuma bloquear, e a janela
-   simplesmente não abre. Por isso: iOS vai direto de redirecionamento, e em
-   qualquer outro lugar o pop-up cai para redirecionamento se falhar.
-   Sem isso, quem usa iPhone não entra. */
-function ehIOS(){
-  return /iPad|iPhone|iPod/.test(navigator.userAgent)
-      || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)   // iPad recente
-      || /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-}
-function instaladoNaTela(){
-  return window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
-}
+   AQUI MORAVA O BUG DO "SAÍ DA CONTA E NÃO CONSIGO MAIS ENTRAR".
+
+   A versão anterior mandava iPhone, Safari e app instalado na tela de início
+   entrarem por `signInWithRedirect`. Esse caminho está quebrado para nós, e a
+   quebra é silenciosa: o redirecionamento passa por um iframe hospedado em
+   fixaai-59643.firebaseapp.com, que é um domínio DIFERENTE do endereço do app
+   (fixaai.github.io). Chrome 115+, Safari 16.1+ e Firefox 109+ bloqueiam o
+   acesso a armazenamento de terceiros, o iframe não consegue guardar o estado,
+   e a pessoa volta do Google exatamente para a tela de login — sem erro nenhum
+   na tela e sem erro nenhum no console.
+
+   A documentação do próprio Firebase lista `signInWithPopup` como a alternativa
+   recomendada para esse caso, porque o pop-up é uma janela de verdade: ela
+   devolve a credencial por postMessage para quem a abriu, sem depender de
+   armazenamento de terceiros. Então é pop-up em toda plataforma, sem exceção.
+
+   Se algum dia o app ganhar domínio próprio e o authDomain passar a ser o mesmo
+   endereço, o redirecionamento volta a funcionar e pode ser reconsiderado. Até
+   lá, oferecê-lo seria oferecer um caminho que não chega a lugar nenhum. */
 
 function provedorGoogle(){
   const p = new N.api.GoogleAuthProvider();
@@ -1829,21 +1974,9 @@ function provedorGoogle(){
 }
 
 async function entrarComGoogle(){
-  const p = provedorGoogle();
-  if(ehIOS() || instaladoNaTela()){
-    sessionStorage.setItem("fixaai_redirecionando", "1");
-    return N.api.signInWithRedirect(N.auth, p);      // não retorna: a página sai
-  }
-  try{
-    await N.api.signInWithPopup(N.auth, p);
-  }catch(e){
-    const c = (e && e.code) || "";
-    if(/popup-blocked|popup-closed-by-user|operation-not-supported|cancelled-popup|web-storage-unsupported/.test(c)){
-      sessionStorage.setItem("fixaai_redirecionando", "1");
-      return N.api.signInWithRedirect(N.auth, p);
-    }
-    throw e;
-  }
+  /* Chamado direto do clique, sem nenhum await antes: navegador só deixa abrir
+     janela enquanto o gesto da pessoa ainda está "quente". */
+  return N.api.signInWithPopup(N.auth, provedorGoogle());
 }
 /* Não existe entrada por e-mail e senha, de propósito. Ter um campo de senha
    fazia o navegador oferecer "salvar senha neste site", o que dá a impressão de
@@ -1976,7 +2109,7 @@ function bancoGuardado(){
 /* ---------- progresso na nuvem ---------- */
 const CAMPOS_SINC = ["prog","xp","xpSemana","semana","ofensiva","ultimoDia","dia",
                      "feitosHoje","meta","segPorQuestao","esperaMin","recorde",
-                     "datas","foco","historico","reportes"];
+                     "datas","foco","historico","reportes","apelido","emoji"];
 
 function juntarProgresso(local, remoto){
   /* Mesma conta em dois aparelhos: fica o mais adiantado de cada questão,
@@ -1994,6 +2127,22 @@ function juntarProgresso(local, remoto){
   fora.historico = { ...(remoto.historico || {}), ...(local.historico || {}) };
   fora.datas     = { ...(remoto.datas || {}), ...(local.datas || {}) };
   if(remoto.recorde) fora.recorde = Math.min(local.recorde || 1e9, remoto.recorde);
+  /* Apelido, emoji e ajustes de estudo viajam com a conta. A regra é simples:
+     num aparelho recém-instalado, tudo vem da nuvem — é o tablet novo que tem
+     que ficar igual ao celular. Num aparelho já em uso, o que está aqui é o que
+     a pessoa acabou de escolher aqui, e não pode ser sobrescrito por um valor
+     antigo que estava lá em cima. */
+  const aparelhoNovo = !Object.keys(local.prog || {}).length
+                    && !Object.keys(local.datas || {}).length
+                    && !(local.apelido || "").trim();
+  ["apelido","emoji"].forEach(k => {
+    fora[k] = aparelhoNovo ? (remoto[k] || local[k] || "") : (local[k] || remoto[k] || "");
+  });
+  if(aparelhoNovo){
+    ["meta","segPorQuestao","esperaMin"].forEach(k => {
+      if(remoto[k] !== undefined) fora[k] = remoto[k];
+    });
+  }
   return fora;
 }
 
@@ -2115,8 +2264,14 @@ function traduzErro(e){
          + "falta liberá-lo em Authentication → Settings → Authorized domains.";
   if(/operation-not-allowed|configuration-not-found/.test(c))
     return "Esta forma de entrar não está ligada no Firebase. Ative em Authentication → Sign-in method.";
-  if(/popup-closed|cancelled-popup/.test(c)) return "A janela do Google fechou antes de terminar. Tente de novo.";
-  if(/popup-blocked/.test(c))       return "O navegador bloqueou a janela do Google. Libere os pop-ups para este site.";
+  if(/popup-closed|cancelled-popup/.test(c))
+    return "A janela do Google fechou antes de terminar. É só tocar de novo em Entrar com Google.";
+  if(/popup-blocked/.test(c))
+    return "O navegador bloqueou a janela do Google. Libere os pop-ups para este endereço e tente de novo — "
+         + "no iPhone fica em Ajustes → Safari → Bloquear pop-ups.";
+  if(/operation-not-supported|web-storage-unsupported/.test(c))
+    return "Este navegador está com o armazenamento bloqueado, então o login não consegue se completar. "
+         + "Saia da navegação privada, ou abra o app no Safari ou no Chrome normal.";
   if(/too-many-requests/.test(c))   return "Muitas tentativas seguidas. Espere um minuto e tente de novo.";
   if(/network-request-failed|unavailable/.test(c))
                                     return "Sem conexão com o servidor. Confira sua internet.";
