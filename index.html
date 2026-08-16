@@ -216,6 +216,15 @@ button{font-family:inherit;font-size:inherit;cursor:pointer;border:none;backgrou
 .entrada .btg:hover{border-color:var(--brand)}
 .entrada .btg .g{width:20px;height:20px;flex:0 0 20px}
 .entrada .obs{font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:18px}
+.euRow{display:flex;gap:12px;align-items:center}
+.euFoto{width:46px;height:46px;border-radius:50%;flex:0 0 46px;object-fit:cover;background:var(--line)}
+.euLetra{display:grid;place-items:center;font-size:20px;font-weight:900;color:#fff;background:var(--brand)}
+.euTx{display:flex;flex-direction:column;min-width:0;gap:1px}
+.euTx b{font-size:15px}
+.euTx span{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.euTx .euGrupo{color:var(--brand);font-weight:700;margin-top:3px}
+.quemSou{font-size:12.5px;color:var(--muted);margin:-4px 0 12px}
+.quemSou b{color:var(--ink-2)}
 .entrada .versao{font-size:11px;color:var(--muted);opacity:.6;margin-top:22px;letter-spacing:.04em}
 .entrada .erro{background:var(--wrong-soft);border:2px solid var(--wrong);color:var(--wrong);
   border-radius:12px;padding:11px 13px;font-size:13.5px;font-weight:700;margin-bottom:14px;text-align:left}
@@ -342,7 +351,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.VERSAO_BUILD = "b73aed3";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.VERSAO_BUILD = "0395280";</script>
 <script>window.VERSAO_BANCO = "512843b70a99";</script>
 
 <script>
@@ -697,11 +706,15 @@ function telaInicio(){
   const nVenc = vencidos(pool).length, nNovos = novos(pool).length;
   const prontas = CURSO.disciplinas.filter(d => d.provas.length);
 
+  const quem = (N.ligado && N.usuario)
+    ? `<p class="quemSou">Você está como <b>${esc(N.usuario.displayName || N.usuario.email || "")}</b>${
+        N.grupoNome ? " · " + esc(N.grupoNome) : ""}</p>` : "";
   const corpo = `
   <div class="hero">
     <div class="sub">Bom estudo</div>
     <h1>Fixa aí 🧠</h1>
   </div>
+  ${quem}
 
   ${(() => {
     const futuras = provasFuturas();
@@ -960,8 +973,33 @@ function telaEstudar(rolagemAnterior){
    ============================================================ */
 function telaAjustes(){
   aba = "ajustes";
+  /* Quem está usando o app precisa saber em qual conta está e conseguir sair.
+     Sem isso, quem tem mais de uma conta — ou empresta o celular — fica preso. */
+  const u = N.ligado ? N.usuario : null;
+  const nomeGrupo = (N.ligado && N.grupoNome) ? N.grupoNome : null;
+  const conta = !u ? "" : `
+  <div class="secao">Sua conta</div>
+  <div class="cardz">
+    <div class="euRow">
+      ${u.photoURL ? `<img class="euFoto" src="${esc(u.photoURL)}" alt="">`
+                   : `<div class="euFoto euLetra">${esc((u.displayName || u.email || "?").trim()[0].toUpperCase())}</div>`}
+      <div class="euTx">
+        <b>${esc(u.displayName || "Sem nome")}</b>
+        <span>${esc(u.email || "")}</span>
+        ${nomeGrupo ? `<span class="euGrupo">👥 ${esc(nomeGrupo)}</span>` : ""}
+      </div>
+    </div>
+    <div class="asbtns" style="margin-top:12px">
+      <button class="minibt" id="trocarGrupo">Usar outro código</button>
+      <button class="minibt" id="sairConta">Sair da conta</button>
+    </div>
+    <p class="muted" style="margin:10px 0 0;font-size:12.5px">Seu progresso fica salvo na
+      sua conta — ao entrar de novo, ele volta de onde parou.</p>
+  </div>`;
+
   const corpo = `
   <div class="hero"><h1>Ajustes</h1></div>
+  ${conta}
 
   <div class="cardz">
     <label class="f">Exercícios por dia</label>
@@ -1056,6 +1094,18 @@ function telaAjustes(){
     if(confirm("Limpar a lista de questões reportadas?")){ S.reportes = []; salvar(); telaAjustes(); }
   };
   $("#zerar").onclick = () => { if(confirm("Apagar todo o progresso?")){ S = padrao(); localStorage.removeItem(KEY); salvar(); telaAjustes(); } };
+  const bSair = $("#sairConta");
+  if(bSair) bSair.onclick = () => {
+    if(confirm("Sair da conta? Seu progresso fica salvo e volta quando você entrar de novo.")) sairDaConta();
+  };
+  const bTroca = $("#trocarGrupo");
+  if(bTroca) bTroca.onclick = () => {
+    if(!confirm("Entrar em outro grupo com um código diferente?")) return;
+    localStorage.removeItem(CHAVE_GRUPO);
+    localStorage.removeItem(CHAVE_CACHE);
+    N.grupo = null;
+    telaConvite();
+  };
   $("#exp").onclick = () => {
     const b = new Blob([JSON.stringify(S)], {type:"application/json"});
     const a = document.createElement("a");
@@ -2304,6 +2354,10 @@ async function telaAdmin(aviso){
 /* ---------- abrir o app já com grupo ---------- */
 async function abrirComGrupo(g){
   telaCarregando("Baixando as questões");
+  try{
+    const gd = await N.api.getDoc(ref("grupos", g));
+    if(gd.exists()) N.grupoNome = gd.data().nome || null;
+  }catch(e){ N.grupoNome = null; }
   let curso = null;
   try{ curso = await lerBancoDoGrupo(g); }catch(e){ curso = null; }
   if(curso && curso.itens.length){ guardarBanco(curso); }
