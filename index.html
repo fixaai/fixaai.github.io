@@ -351,7 +351,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.VERSAO_BUILD = "0395280";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.VERSAO_BUILD = "dd574a2";</script>
 <script>window.VERSAO_BANCO = "512843b70a99";</script>
 
 <script>
@@ -1845,10 +1845,11 @@ async function entrarComGoogle(){
     throw e;
   }
 }
-async function entrarComEmail(email, senha, criando){
-  if(criando) await N.api.createUserWithEmailAndPassword(N.auth, email, senha);
-  else        await N.api.signInWithEmailAndPassword(N.auth, email, senha);
-}
+/* Não existe entrada por e-mail e senha, de propósito. Ter um campo de senha
+   fazia o navegador oferecer "salvar senha neste site", o que dá a impressão de
+   que o app quer a senha do e-mail da pessoa — e criava um beco sem saída para
+   quem digitava um endereço já cadastrado pelo Google. Com o Google, nenhuma
+   senha passa por aqui. */
 async function sairDaConta(){
   try{ await N.api.signOut(N.auth); }catch(e){}
   localStorage.removeItem(CHAVE_GRUPO);
@@ -2044,39 +2045,14 @@ function telaEntrar(erro){
       <svg class="g" viewBox="0 0 48 48" aria-hidden="true"><path fill="#4285F4" d="M45 24c0-1.6-.1-2.7-.4-3.9H24v7.1h12c-.2 1.8-1.5 4.6-4.4 6.4l6.7 5.2C42.2 35 45 30 45 24z"/><path fill="#34A853" d="M24 46c5.9 0 10.9-2 14.5-5.3l-6.9-5.4C29.8 36.6 27.2 37.5 24 37.5c-5.8 0-10.8-3.9-12.5-9.3l-7.1 5.5C8 41.2 15.4 46 24 46z"/><path fill="#FBBC05" d="M11.5 28.2c-.5-1.4-.7-2.8-.7-4.2s.3-2.9.7-4.2l-7.1-5.6C3 17 2 20.4 2 24s1 7 2.4 9.8l7.1-5.6z"/><path fill="#EA4335" d="M24 10.5c4.1 0 6.9 1.8 8.5 3.3l6.2-6C34.9 4.3 29.9 2 24 2 15.4 2 8 6.8 4.4 14.2l7.1 5.6c1.7-5.4 6.7-9.3 12.5-9.3z"/></svg>
       Entrar com Google
     </button>
-    <button class="btg" id="bEmail">✉️ Entrar com e-mail</button>
-    <p class="obs">Entrar só identifica você. Para ver as questões, você precisa
-      do código de convite do seu grupo.</p>`);
+    <p class="obs">O app <b>não pede nem guarda senha</b>. Quem confere quem você é
+      é o próprio Google — nós recebemos só o seu nome e e-mail.<br><br>
+      Entrar só identifica você. Para ver as questões, você precisa do código de
+      convite do seu grupo.</p>`);
   $("#bGoogle").onclick = async () => {
     try{ await entrarComGoogle(); }
     catch(e){ telaEntrar(traduzErro(e)); }
   };
-  $("#bEmail").onclick = () => telaEmail();
-}
-
-function telaEmail(erro, criando){
-  molduraEntrada(`
-    <h1>${criando ? "Criar conta" : "Entrar com e-mail"}</h1>
-    <p class="sub">${criando ? "Escolha uma senha de pelo menos 6 caracteres."
-                             : "Use o e-mail e a senha que você cadastrou."}</p>
-    ${erro ? `<div class="erro">${esc(erro)}</div>` : ""}
-    <input class="resposta" id="cEmail" type="email" inputmode="email" autocomplete="email"
-      autocapitalize="off" autocorrect="off" placeholder="seu e-mail" style="margin-bottom:10px">
-    <input class="resposta" id="cSenha" type="password" autocomplete="current-password"
-      placeholder="sua senha" style="margin-bottom:14px">
-    <button class="btn" id="bVai">${criando ? "Criar conta" : "Entrar"}</button>
-    <button class="sair" id="bTroca">${criando ? "Já tenho conta" : "Ainda não tenho conta"}</button>
-    <button class="sair" id="bVolta" style="display:block;margin:8px auto 0">Voltar</button>`);
-  const vai = async () => {
-    const e = $("#cEmail").value.trim(), sn = $("#cSenha").value;
-    if(!e || !sn) return telaEmail("Preencha o e-mail e a senha.", criando);
-    try{ await entrarComEmail(e, sn, criando); }
-    catch(err){ telaEmail(traduzErro(err), criando); }
-  };
-  $("#bVai").onclick = vai;
-  $("#cSenha").onkeydown = ev => { if(ev.key === "Enter") vai(); };
-  $("#bTroca").onclick = () => telaEmail(null, !criando);
-  $("#bVolta").onclick = () => telaEntrar();
 }
 
 function telaConvite(erro){
@@ -2141,11 +2117,6 @@ function traduzErro(e){
     return "Esta forma de entrar não está ligada no Firebase. Ative em Authentication → Sign-in method.";
   if(/popup-closed|cancelled-popup/.test(c)) return "A janela do Google fechou antes de terminar. Tente de novo.";
   if(/popup-blocked/.test(c))       return "O navegador bloqueou a janela do Google. Libere os pop-ups para este site.";
-  if(/invalid-email/.test(c))       return "Esse e-mail não parece válido.";
-  if(/weak-password/.test(c))       return "A senha precisa ter pelo menos 6 caracteres.";
-  if(/email-already-in-use/.test(c))return "Já existe conta com esse e-mail. Tente entrar em vez de criar.";
-  if(/invalid-credential|wrong-password|user-not-found/.test(c))
-                                    return "E-mail ou senha não conferem.";
   if(/too-many-requests/.test(c))   return "Muitas tentativas seguidas. Espere um minuto e tente de novo.";
   if(/network-request-failed|unavailable/.test(c))
                                     return "Sem conexão com o servidor. Confira sua internet.";
