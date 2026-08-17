@@ -599,7 +599,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "0bf74df";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "42479b1";</script>
 <script>window.VERSAO_BANCO = "6d5776ea7153";</script>
 
 <script>
@@ -773,6 +773,7 @@ const padrao = () => ({
   proximaSessao:null, recorde:null,
   xpSemana:0, semana:null,
   congelados:[], gelos:0,                       // dias congelados, e congelamentos guardados
+  desafioEmCurso:null,                          // desafio começado e não terminado
   desafiosVistos:[], desafiosGanhos:0,          // desafios já contados, e quantos venci
   nivel:"bronze", sala:null, semanaSala:null,   // onde eu jogo esta semana
   semanaPassada:null, ligaVista:null,           // retrato da semana que fechou, e se já vi o resultado
@@ -1784,7 +1785,13 @@ async function telaGrupo(){
   const desafios = await lerDesafios();
   const ganhos = acertarContasDosDesafios(desafios);
   const euUid = N.usuario ? N.usuario.uid : null;
-  const aResponder = desafios.filter(d => desafioAberto(d) && d.para === euUid && !d.resPara);
+  /* Desafios em que falta EU responder — mandados por mim ou recebidos.
+
+     Antes esta lista só trazia os recebidos, e isso era um beco sem saída: quem
+     mandava o desafio não ganhava em lugar nenhum um jeito de responder as
+     próprias cinco questões, então o desafio nunca fechava. Quem manda responde
+     na hora, e se largar no meio encontra o desafio aqui esperando. */
+  const aResponder = desafios.filter(d => desafioAberto(d) && !d["res" + meuLado(d)]);
   const placar = CACHE_PLACAR || {};
   const naLiga = minhaLiga(placar, semanaAtual);
   const meuNivel = nivelDe(S.nivel);
@@ -1846,10 +1853,14 @@ async function telaGrupo(){
   <div class="cardz" style="padding:6px 14px">
     ${aResponder.map(d => {
       const h = Math.max(0, Math.round((emMilissegundos(d.expiraEm) - Date.now()) / 3600000));
+      const euMandei = d.de === euUid;
+      const outra = euMandei ? (nome(CACHE_MEMBROS.find(m => m.uid === d.para) || {}) || "alguém")
+                             : (d.nomeDe || "alguém");
       return `<div class="gpLinha">
-        <span class="gpIc">${esc(d.emojiDe || "👤")}</span>
-        <span class="gpTx"><b>${esc(d.nomeDe || "alguém")} te desafiou</b>
-          <span>${DESAFIO_TAM} exercícios · ${plural(h, "hora", "horas")} para responder</span></span>
+        <span class="gpIc">${euMandei ? "⚔️" : esc(d.emojiDe || "👤")}</span>
+        <span class="gpTx"><b>${euMandei ? `Seu desafio para ${esc(outra)}` : `${esc(outra)} te desafiou`}</b>
+          <span>${euMandei ? "falta você responder" : DESAFIO_TAM + " exercícios"} ·
+            ${plural(h, "hora", "horas")} para responder</span></span>
         <button class="minibt" data-jogar="${esc(d.id)}">Responder</button>
       </div>`;
     }).join("")}
@@ -1904,7 +1915,21 @@ async function telaGrupo(){
      ${ganhos.length === 1 ? "levou" : "levou"} ${ganhos.length * XP_VITORIA} de bônus.`);
   document.querySelectorAll("[data-jogar]").forEach(b => b.onclick = () => {
     const d = desafios.find(x => x.id === b.dataset.jogar);
-    if(d) jogarDesafio(d);
+    if(!d) return;
+    if(d.de === euUid) return jogarDesafio(d);      // é o meu, largado no meio
+    /* Recebido: aceitar não obriga a responder agora. Quem está no ônibus, ou no
+       meio de outra coisa, precisa poder guardar para depois sem perder o
+       desafio — ele fica esperando aqui até as 48 horas acabarem. */
+    const h = Math.max(0, Math.round((emMilissegundos(d.expiraEm) - Date.now()) / 3600000));
+    abrirCaixa(`<h3>⚔️ ${esc(d.nomeDe || "Alguém")} te desafiou</h3>
+      <p class="cxSub">${DESAFIO_TAM} exercícios, os mesmos que ${esc(d.nomeDe || "ela")} respondeu</p>
+      <p style="margin:14px 0 0">Ganha quem acertar mais. Empatou no acerto, ganha quem fez em
+        menos tempo. Você tem <b>${plural(h, "hora", "horas")}</b> para responder.</p>`,
+      `<button class="btn" id="agora">Responder agora</button>
+       <div style="height:8px"></div>
+       <button class="btn ghost" id="depois">Responder mais tarde</button>`);
+    document.getElementById("agora").onclick = () => jogarDesafio(d);
+    document.getElementById("depois").onclick = fecharCaixa;
   });
 
   document.querySelectorAll("[data-quem]").forEach(b => b.onclick = () => {
@@ -1921,17 +1946,18 @@ async function telaGrupo(){
     const impede = porQueNaoPossoDesafiar(desafios, m.uid);
     if(impede) return caixaAviso("Agora não dá", esc(impede));
     caixaConfirma(`⚔️ Desafiar ${esc(nome(m))}?`,
-      `${DESAFIO_TAM} exercícios sorteados, os mesmos para as duas, na mesma ordem. Ganha quem `
-      + `acertar mais — empatou, ganha quem fez em menos tempo. Ela tem 48 horas para responder. `
+      `${DESAFIO_TAM} exercícios sorteados, os mesmos para as duas, na mesma ordem. `
+      + `<b>Você responde agora</b>, e ${esc(nome(m))} tem 48 horas para responder as mesmas. `
+      + `Ganha quem acertar mais — empatou, ganha quem fez em menos tempo. `
       + `Quem vence leva ${XP_VITORIA} de bônus, e isso conta no ranking.`,
-      "Mandar o desafio", async () => {
+      "Mandar e responder agora", async () => {
         try{
-          await criarDesafio(m.uid, nome(m));
-          CACHE_MEMBROS = null;
-          await telaGrupo();
-          caixaAviso("Desafio enviado ⚔️",
-            `${esc(nome(m))} tem 48 horas para responder. Assim que ela responder, o resultado `
-            + "aparece aqui na aba do grupo.");
+          /* Manda e já cai na bateria. Quem desafia responde na hora — esperar a
+             outra pessoa para só então responder deixaria o desafio parado nas
+             duas pontas, e ninguém lembraria de voltar. */
+          const d = await criarDesafio(m.uid, nome(m));
+          CACHE_MEMBROS = null; CACHE_DESAFIOS = null;
+          jogarDesafio(d);
         }catch(e){ caixaAviso("Não consegui mandar", esc(traduzErro(e))); }
       });
   });
@@ -2490,6 +2516,9 @@ function pararRelogio(){ if(relogio){ clearInterval(relogio); relogio = null; } 
    O que impede de usar a pausa para consultar a resposta em outro lugar é que
    ela só existe DEPOIS de responder — nunca antes. */
 function pausarRelogio(){
+  /* No desafio o relógio não para. Ele é o critério de desempate, e pausar
+     enquanto se lê a explicação abriria a mesma porta de sair e voltar. */
+  if(SES && SES.desafio) return;
   if(!SES || !SES.fim || SES.pausa) return;
   SES.pausa = Date.now();
   pararRelogio();
@@ -2683,6 +2712,11 @@ function concluir(it, acertou, textoExtra){
     if(S.ultimoDia !== h){ S.ofensiva = (S.ultimoDia && difDias(S.ultimoDia,h) === 1) ? S.ofensiva + 1 : 1; S.ultimoDia = h; }
   }
   S.historico[hoje()] = (S.historico[hoje()] || 0) + 1;
+  /* O andamento do desafio fica guardado a cada resposta: quem fechar o app no
+     meio volta com os acertos que já tinha e o tempo que sobrou. */
+  if(SES.desafio) S.desafioEmCurso = { id:SES.desafio.id, fim:SES.fim, acertos:SES.acertos,
+    feitas:SES.vistos.slice(), seq:SES.seq || 0, xpDaSeq:SES.xpDaSeq || 0,
+    maiorSeq:SES.maiorSeq || 0, xpGanho:SES.xpGanho || 0 };
   salvar();
 
   const exp = textoExtra || it.exp || it.just || "";
@@ -3863,41 +3897,89 @@ async function criarDesafio(alvoUid, alvoNome){
   if(pool.length < DESAFIO_TAM) throw new Error("Não há exercícios suficientes no grupo.");
   const itens = embaralhar(pool.slice()).slice(0, DESAFIO_TAM).map(i => i.id);
   const id = "d" + Date.now().toString(36) + sorteioCodigo().toLowerCase();
-  await N.api.setDoc(ref("grupos", N.grupo, "desafios", id), {
+  const dados = {
     de: N.usuario.uid, para: alvoUid,
     nomeDe: (S.apelido || "").trim() || N.usuario.displayName || "alguém",
     emojiDe: S.emoji || "🧠",
     itens, resDe: null, resPara: null,
     criadoEm: N.api.serverTimestamp(),
     expiraEm: N.api.Timestamp.fromMillis(Date.now() + 48 * 3600000)
-  });
+  };
+  await N.api.setDoc(ref("grupos", N.grupo, "desafios", id), dados);
   CACHE_DESAFIOS = null;
+  return { id, ...dados, criadoEm: Date.now(),
+           expiraEm: { toMillis: () => Date.now() + 48 * 3600000 } };
 }
-/* Começa a bateria do desafio: as cinco questões daquele documento, na ordem
-   gravada, sem embaralhar. */
-function jogarDesafio(d){
+/* Começa — ou retoma — a bateria do desafio.
+
+   O relógio do desafio é de parede: começa a correr quando a pessoa abre a
+   bateria e não para mais, nem quando ela sai do app, nem enquanto ela lê a
+   explicação. Sair no meio não devolve tempo nenhum.
+
+   Sem isso existia uma saída larga: sair do desafio, procurar a resposta com
+   calma, e voltar com o cronômetro zerado. Como o tempo é o critério de
+   desempate, isso não seria só trapaça de conteúdo — seria trapaça de placar.
+
+   Quem volta dentro do tempo continua de onde parou, com o que já acertou e com
+   o tempo que sobrou. Quem volta depois do fim recebe o que tinha acertado até
+   sair, e o tempo máximo — como se tivesse errado as últimas e usado a bateria
+   inteira. É o mesmo resultado de quem simplesmente deixou o relógio acabar na
+   tela, que é como tem que ser. */
+function duracaoDoDesafio(fila){
+  return (SEG_POR_QUESTAO * 1000) * (fila.length || DESAFIO_TAM);
+}
+async function jogarDesafio(d){
   const fila = d.itens.map(id => porId[id]).filter(Boolean);
   if(fila.length < 2){
     return caixaAviso("Não deu para montar",
       "As questões deste desafio não estão mais no banco do grupo. Ele vai expirar sozinho.");
   }
   fecharCaixa();
-  SES = { fila, i:0, acertos:0, total:fila.length, respondido:false, vistos:[], estourou:0,
-          log:[], inicio:Date.now(), valeRanking:true, xpAntes:S.xpSemana, modo:"desafio",
-          seq:0, xpDaSeq:0, maiorSeq:0, xpGanho:0, desafio:d };
-  SES.fim = S.segPorQuestao ? Date.now() + S.segPorQuestao * 1000 * fila.length : null;
+  const emCurso = (S.desafioEmCurso && S.desafioEmCurso.id === d.id) ? S.desafioEmCurso : null;
+  const duracao = duracaoDoDesafio(fila);
+  const fim = emCurso ? emCurso.fim : Date.now() + duracao;
+
+  if(fim <= Date.now()){
+    /* o tempo acabou enquanto a pessoa estava fora */
+    const acertos = emCurso ? (emCurso.acertos || 0) : 0;
+    SES = { fila, i:fila.length, acertos, total:fila.length, respondido:true, vistos:fila.map(i => i.id),
+            estourou: fila.length - (emCurso ? (emCurso.feitas || []).length : 0), log:[],
+            inicio: fim - duracao, fim, valeRanking:true, xpAntes:S.xpSemana, modo:"desafio",
+            seq:0, xpDaSeq:0, maiorSeq: emCurso ? (emCurso.maiorSeq || 0) : 0,
+            xpGanho:0, desafio:d };
+    await gravarResultadoDoDesafio(duracao);
+    S.desafioEmCurso = null; salvar();
+    SES = null;
+    return caixaAviso("O tempo deste desafio acabou",
+      `Você tinha ${plural(acertos, "acerto", "acertos")} de ${fila.length} quando saiu, e foi isso `
+      + "que valeu. O relógio do desafio não para quando você fecha o app — é o que impede sair, "
+      + "procurar a resposta e voltar.");
+  }
+
+  const feitas = emCurso ? (emCurso.feitas || []) : [];
+  SES = { fila, i:feitas.length, acertos: emCurso ? (emCurso.acertos || 0) : 0,
+          total:fila.length, respondido:false, vistos: feitas.slice(), estourou:0, log:[],
+          inicio: fim - duracao, fim, valeRanking:true, xpAntes:S.xpSemana, modo:"desafio",
+          seq: emCurso ? (emCurso.seq || 0) : 0, xpDaSeq: emCurso ? (emCurso.xpDaSeq || 0) : 0,
+          maiorSeq: emCurso ? (emCurso.maiorSeq || 0) : 0,
+          xpGanho: emCurso ? (emCurso.xpGanho || 0) : 0, desafio:d };
+  S.desafioEmCurso = { id:d.id, fim, acertos:SES.acertos, feitas:feitas.slice(),
+                       seq:SES.seq, xpDaSeq:SES.xpDaSeq, maiorSeq:SES.maiorSeq, xpGanho:SES.xpGanho };
+  salvar();
   render(); tocarRelogio();
 }
-async function gravarResultadoDoDesafio(){
+async function gravarResultadoDoDesafio(msForcado){
   const d = SES && SES.desafio;
   if(!d || !N.ligado) return;
   const campo = "res" + meuLado(d);
   const dados = {};
-  dados[campo] = { acertos: SES.acertos, ms: Math.max(0, Date.now() - SES.inicio) };
+  dados[campo] = { acertos: SES.acertos,
+                   ms: msForcado != null ? msForcado : Math.max(0, Date.now() - SES.inicio) };
   try{
     await N.api.updateDoc(ref("grupos", N.grupo, "desafios", d.id), dados);
     d[campo] = dados[campo];
     CACHE_DESAFIOS = null;
+    S.desafioEmCurso = null; salvar();      // acabou: não há mais o que retomar
   }catch(e){}
 }
 /* O bônus de vitória é dado pelo aparelho de quem venceu, na primeira vez que
