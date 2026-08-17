@@ -256,6 +256,13 @@ button{font-family:inherit;font-size:inherit;cursor:pointer;border:none;backgrou
   padding:6px 10px;margin-top:2px}
 .sugestao b{font-weight:800}
 .naoFecha{font-style:normal}
+.caixaGoogle{display:flex;justify-content:center;min-height:44px;margin-bottom:10px}
+.caixaGoogle:empty{display:none}
+.desFim{margin-top:18px;border:1px solid var(--line);border-radius:14px;padding:14px;font-size:26px;line-height:1}
+.desFim b{display:block;font-size:16px;font-weight:800;margin-top:8px}
+.desFim span{display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin-top:6px;line-height:1.45}
+.desFim.ganhou{border-color:var(--gold);background:rgba(212,160,23,.08)}
+.desFim.perdeu{border-color:var(--line);opacity:.9}
 .maquete{border-style:dashed;border-color:var(--gold)}
 .maquete>b{font-size:14px;color:var(--gold)}
 .gpDes{flex:0 0 38px;height:38px;border-radius:50%;border:1px solid var(--line);
@@ -593,7 +600,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.VERSAO_BUILD = "5ae104d";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "535d3b8";</script>
 <script>window.VERSAO_BANCO = "6d5776ea7153";</script>
 
 <script>
@@ -766,6 +773,7 @@ const padrao = () => ({
   proximaSessao:null, recorde:null,
   xpSemana:0, semana:null,
   congelados:[], gelos:0,                       // dias congelados, e congelamentos guardados
+  desafiosVistos:[], desafiosGanhos:0,          // desafios já contados, e quantos venci
   nivel:"bronze", sala:null, semanaSala:null,   // onde eu jogo esta semana
   semanaPassada:null, ligaVista:null,           // retrato da semana que fechou, e se já vi o resultado
   pod1:0, pod2:0,                               // semanas em primeiro e em segundo
@@ -1748,6 +1756,10 @@ async function telaGrupo(){
 
   const semanaAtual = S.semana || domingoDa(hoje());
   const resultado = await fecharSemanaSePreciso();
+  const desafios = await lerDesafios();
+  const ganhos = acertarContasDosDesafios(desafios);
+  const euUid = N.usuario ? N.usuario.uid : null;
+  const aResponder = desafios.filter(d => desafioAberto(d) && d.para === euUid && !d.resPara);
   const placar = CACHE_PLACAR || {};
   const naLiga = minhaLiga(placar, semanaAtual);
   const meuNivel = nivelDe(S.nivel);
@@ -1805,6 +1817,41 @@ async function telaGrupo(){
         vale ranking — assim ninguém ocupa cadeira sem jogar. Faça uma e volte aqui.</p>
     </div>`}
 
+  ${aResponder.length ? `<div class="secao">⚔️ Desafios esperando você</div>
+  <div class="cardz" style="padding:6px 14px">
+    ${aResponder.map(d => {
+      const h = Math.max(0, Math.round((emMilissegundos(d.expiraEm) - Date.now()) / 3600000));
+      return `<div class="gpLinha">
+        <span class="gpIc">${esc(d.emojiDe || "👤")}</span>
+        <span class="gpTx"><b>${esc(d.nomeDe || "alguém")} te desafiou</b>
+          <span>${DESAFIO_TAM} exercícios · ${plural(h, "hora", "horas")} para responder</span></span>
+        <button class="minibt" data-jogar="${esc(d.id)}">Responder</button>
+      </div>`;
+    }).join("")}
+  </div>` : ""}
+
+  ${(() => {
+    const meus = desafios.filter(d => !desafioAberto(d) || d["res" + meuLado(d)]);
+    if(!meus.length) return "";
+    return `<div class="secao">Seus desafios</div>
+    <div class="cardz" style="padding:6px 14px">
+      ${meus.slice(0, 8).map(d => {
+        const dela = d["res" + outroLado(d)], meu = d["res" + meuLado(d)];
+        const venc = quemVenceu(d);
+        const nomeDela = d.de === euUid ? "sua adversária" : (d.nomeDe || "alguém");
+        const situacao = !meu ? "expirou sem você responder"
+          : !dela ? (desafioVencido(d) ? "expirou sem resposta dela" : "esperando a resposta dela")
+          : venc === euUid ? `você venceu · ${meu.acertos} × ${dela.acertos}`
+          : venc === "empate" ? `empate · ${meu.acertos} × ${dela.acertos}`
+          : `você perdeu · ${meu.acertos} × ${dela.acertos}`;
+        return `<div class="gpLinha">
+          <span class="gpIc">${venc === euUid ? "🏆" : venc === "empate" ? "🤝" : "⚔️"}</span>
+          <span class="gpTx"><b>${esc(nomeDela)}</b><span>${esc(situacao)}</span></span>
+        </div>`;
+      }).join("")}
+    </div>`;
+  })()}
+
   <div class="secao">Todo mundo do grupo</div>
   <div class="cardz" style="padding:6px 14px">
     ${lista.map(m => {
@@ -1814,7 +1861,8 @@ async function telaGrupo(){
         <button class="gpQuem" data-quem="${esc(m.uid)}">
           <span class="gpIc">${esc(cara(m))}</span>
           <span class="gpTx"><b>${esc(nome(m))}${souEu ? " · você" : ""}</b>
-            <span>${p ? `⭐ ${p.xp || 0} · ✏️ ${p.feitos || 0} · 🔥 ${p.ofensiva || 0} · 🏅 ${(p.conquistas || []).length}${
+            <span>${p ? `⭐ ${p.xp || 0} XP · ✏️ ${p.feitos || 0} · 🔥 ${p.ofensiva || 0} · ⚔️ ${p.desafios || 0} · ${
+                          plural((p.conquistas || []).length, "conquista", "conquistas")}${
                           naoFecha(p) ? ` <span class="naoFecha" title="${esc(naoFecha(p))}">⚠️</span>` : ""}`
                        : "ainda não estudou por aqui"}</span></span>
         </button>
@@ -1822,14 +1870,17 @@ async function telaGrupo(){
       </div>`;
     }).join("")}
   </div>
-  <div class="cardz maquete" style="margin-top:14px">
-    <b>Falta o desafio</b>
-    <p class="muted" style="margin:6px 0 10px">A liga já é de verdade. O que ainda não existe é o
-      desafio entre duas pessoas — a espadinha do lado de cada nome ainda não manda nada.</p>
-    <button class="minibt" id="verMaquete" style="width:100%">Ver a maquete com gente inventada</button>
-  </div>`);
-  document.getElementById("verMaquete").onclick = () => maqueteDoGrupo();
+  <p class="muted" style="margin:14px 2px 0">A espadinha desafia direto: ${DESAFIO_TAM} exercícios
+    sorteados, os mesmos para as duas, 48 horas para responder. Ganha quem acerta mais; empatou,
+    ganha quem fez em menos tempo. Vale ${XP_VITORIA} de bônus e não gasta a espera entre baterias.</p>`);
   if(resultado) caixaResultadoDaSemana(resultado);
+  else if(ganhos.length) caixaAviso(`🏆 ${plural(ganhos.length, "desafio ganho", "desafios ganhos")}`,
+    `Você venceu ${plural(ganhos.length, "um desafio", "desafios")} enquanto estava fora, e
+     ${ganhos.length === 1 ? "levou" : "levou"} ${ganhos.length * XP_VITORIA} de bônus.`);
+  document.querySelectorAll("[data-jogar]").forEach(b => b.onclick = () => {
+    const d = desafios.find(x => x.id === b.dataset.jogar);
+    if(d) jogarDesafio(d);
+  });
 
   document.querySelectorAll("[data-quem]").forEach(b => b.onclick = () => {
     const m = CACHE_MEMBROS.find(x => x.uid === b.dataset.quem);
@@ -1840,9 +1891,24 @@ async function telaGrupo(){
     caixaPerfilDoGrupo(m, nome(m), cara(m), daSemana(m));
   });
   document.querySelectorAll("[data-desafiar]").forEach(b => b.onclick = () => {
-    caixaAviso("⚔️ Desafio",
-      `Ainda não dá para desafiar — é a próxima coisa da fila. A ideia é as duas pessoas fazerem `
-      + `a mesma bateria de ${DESAFIO_TAM} e comparar acerto e tempo.`);
+    const m = CACHE_MEMBROS.find(x => x.uid === b.dataset.desafiar);
+    if(!m) return;
+    const impede = porQueNaoPossoDesafiar(desafios, m.uid);
+    if(impede) return caixaAviso("Agora não dá", esc(impede));
+    caixaConfirma(`⚔️ Desafiar ${esc(nome(m))}?`,
+      `${DESAFIO_TAM} exercícios sorteados, os mesmos para as duas, na mesma ordem. Ganha quem `
+      + `acertar mais — empatou, ganha quem fez em menos tempo. Ela tem 48 horas para responder. `
+      + `Quem vence leva ${XP_VITORIA} de bônus, e isso conta no ranking.`,
+      "Mandar o desafio", async () => {
+        try{
+          await criarDesafio(m.uid, nome(m));
+          CACHE_MEMBROS = null;
+          await telaGrupo();
+          caixaAviso("Desafio enviado ⚔️",
+            `${esc(nome(m))} tem 48 horas para responder. Assim que ela responder, o resultado `
+            + "aparece aqui na aba do grupo.");
+        }catch(e){ caixaAviso("Não consegui mandar", esc(traduzErro(e))); }
+      });
   });
 }
 
@@ -2255,7 +2321,7 @@ function telaPerfil(){
       <div class="pfN"><b>📅 ${diasEstudados}</b><span>${diasEstudados === 1 ? "dia estudado" : "dias estudados"}</span></div>
     </div>
     <div class="pfMenor">
-      <div><b>⚔️ —</b><span>desafios ganhos</span></div>
+      <div><b>⚔️ ${S.desafiosGanhos || 0}</b><span>desafios ganhos</span></div>
       <div><b>🥇 ${S.pod1 || 0}</b><span>semanas em primeiro</span></div>
       <div><b>🥈 ${S.pod2 || 0}</b><span>semanas em segundo</span></div>
     </div>
@@ -2728,7 +2794,9 @@ function iniciarSessao(){
      de um assunto só, que já saía avisada como fora do ranking, e mesmo assim
      ficou meia hora sem poder fazer uma que valesse. Cobrava o preço do ranking
      por uma sessão que não dava o prêmio dele. */
-  if(SES.valeRanking && S.esperaMin > 0){ S.proximaSessao = Date.now() + S.esperaMin * 60000; salvar(); }
+  if(SES.valeRanking && !SES.desafio && S.esperaMin > 0){
+    S.proximaSessao = Date.now() + S.esperaMin * 60000; salvar();
+  }
   render();
   tocarRelogio();
 }
@@ -3349,6 +3417,7 @@ function telaFim(){
   /* Vaga na liga só depois de uma bateria que vale ranking — é o que impede
      cadeira ocupada por quem não jogou. */
   if(SES.valeRanking !== false && SES.total > 0) entrarNaLiga();
+  if(SES.desafio) gravarResultadoDoDesafio();
   const faltaEspera = S.proximaSessao ? Math.max(0, Math.round((S.proximaSessao - Date.now())/1000)) : 0;
   salvar();
 
@@ -3380,6 +3449,22 @@ function telaFim(){
       ${SES.valeRanking === false ? `<p class="muted" style="margin-top:16px">Esta sessão entrou só no seu XP total —
         para valer no ranking, é preciso respeitar a espera entre sessões.</p>` : ""}
       ${novoRecorde ? `<p style="margin-top:16px;font-weight:800;color:var(--gold)">🏅 Novo recorde de tempo, sem errar nenhuma!</p>` : ""}
+      ${SES.desafio ? (() => {
+        const d = SES.desafio, meu = "res" + meuLado(d), dela = "res" + outroLado(d);
+        const nomeDela = d.de === (N.usuario && N.usuario.uid) ? "sua adversária" : esc(d.nomeDe || "quem te desafiou");
+        if(!d[dela]) return `<div class="desFim">⚔️ <b>Resultado enviado</b>
+          <span>Você fez ${SES.acertos} de ${SES.total}. Falta ${nomeDela} responder — quando ela
+          responder, o resultado aparece na aba do grupo.</span></div>`;
+        const venc = quemVenceu(d);
+        const eu = N.usuario && N.usuario.uid;
+        return `<div class="desFim ${venc === eu ? "ganhou" : venc === "empate" ? "" : "perdeu"}">
+          ${venc === eu ? "🏆" : venc === "empate" ? "🤝" : "⚔️"}
+          <b>${venc === eu ? "Você venceu!" : venc === "empate" ? "Empate" : "Você perdeu essa"}</b>
+          <span>${SES.acertos} × ${d[dela].acertos} em acertos${
+            d[meu] && d[dela] && d[meu].acertos === d[dela].acertos
+              ? ` · ${Math.round(d[meu].ms/1000)}s contra ${Math.round(d[dela].ms/1000)}s` : ""}.
+            ${venc === eu ? `Você leva ${XP_VITORIA} de bônus.` : ""}</span></div>`;
+      })() : ""}
       ${novasConquistas.length ? `<div class="novaConq">
         <b>${novasConquistas.length === 1 ? "Conquista nova!" : novasConquistas.length + " conquistas novas!"}</b>
         ${novasConquistas.map(id => {
@@ -3466,6 +3551,61 @@ async function nuvemCarregar(){
    endereço, o redirecionamento volta a funcionar e pode ser reconsiderado. Até
    lá, oferecê-lo seria oferecer um caminho que não chega a lugar nenhum. */
 
+/* ---------- entrar sem sair do endereço do app ----------
+
+   O caminho antigo mandava a pessoa para fixaai-59643.firebaseapp.com e trazia
+   de volta. Dois endereços diferentes — e o Safari do iPhone separa o
+   armazenamento por site, então o pedaço do login que rodava lá não enxergava o
+   que tinha sido guardado aqui. O resultado era a tela "missing initial state",
+   que a Yasmin viu, e não havia jeito de contornar de dentro do app.
+
+   Agora quem cuida da identificação é a biblioteca do próprio Google, rodando
+   NESTA página. Ela devolve um bilhete assinado (o "credential"), e o Firebase
+   aceita esse bilhete direto. Nenhum momento do login sai de fixaai.github.io,
+   então a separação de armazenamento deixa de importar — no iPhone, no Android
+   e no computador igualmente.
+
+   O caminho antigo continua no código como reserva: se a biblioteca do Google
+   não carregar (rede ruim, bloqueador de anúncios), aparece o botão de sempre.
+   Ficar sem nenhuma forma de entrar seria pior do que qualquer um dos dois. */
+function carregarGoogle(){
+  if(window.__gsiPromessa) return window.__gsiPromessa;
+  window.__gsiPromessa = new Promise((ok, falhou) => {
+    if(!window.GOOGLE_CLIENT_ID) return falhou(new Error("sem client id"));
+    if(window.google && google.accounts && google.accounts.id) return ok();
+    const t = setTimeout(() => falhou(new Error("demorou")), 6000);
+    const sc = document.createElement("script");
+    sc.src = "https://accounts.google.com/gsi/client";
+    sc.async = true; sc.defer = true;
+    sc.onload = () => { clearTimeout(t); ok(); };
+    sc.onerror = () => { clearTimeout(t); falhou(new Error("não carregou")); };
+    document.head.appendChild(sc);
+  });
+  return window.__gsiPromessa;
+}
+async function botaoDoGoogle(onde, aoFalhar){
+  try{
+    await carregarGoogle();
+    google.accounts.id.initialize({
+      client_id: window.GOOGLE_CLIENT_ID,
+      auto_select: false,
+      callback: async (resp) => {
+        try{
+          telaCarregando("Entrando");
+          const cred = N.api.GoogleAuthProvider.credential(resp.credential);
+          await N.api.signInWithCredential(N.auth, cred);
+        }catch(e){ telaEntrar(traduzErro(e)); }
+      }
+    });
+    const largura = Math.min(360, Math.max(240, onde.getBoundingClientRect().width || 300));
+    google.accounts.id.renderButton(onde, {
+      type:"standard", theme:"outline", size:"large", shape:"pill",
+      text:"signin_with", logo_alignment:"center", locale:"pt-BR", width: Math.round(largura)
+    });
+    return true;
+  }catch(e){ aoFalhar && aoFalhar(); return false; }
+}
+
 function provedorGoogle(){
   const p = new N.api.GoogleAuthProvider();
   p.setCustomParameters({ prompt: "select_account" });
@@ -3473,8 +3613,9 @@ function provedorGoogle(){
 }
 
 async function entrarComGoogle(){
-  /* Chamado direto do clique, sem nenhum await antes: navegador só deixa abrir
-     janela enquanto o gesto da pessoa ainda está "quente". */
+  /* Reserva, para quando a biblioteca do Google não carrega. Chamado direto do
+     clique, sem nenhum await antes: navegador só deixa abrir janela enquanto o
+     gesto da pessoa ainda está "quente". */
   return N.api.signInWithPopup(N.auth, provedorGoogle());
 }
 /* Não existe entrada por e-mail e senha, de propósito. Ter um campo de senha
@@ -3483,6 +3624,9 @@ async function entrarComGoogle(){
    quem digitava um endereço já cadastrado pelo Google. Com o Google, nenhuma
    senha passa por aqui. */
 async function sairDaConta(){
+  /* sem isto o Google reentra sozinho com a mesma conta na próxima abertura,
+     e quem tem duas contas nunca consegue trocar */
+  try{ if(window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect(); }catch(e){}
   try{ await N.api.signOut(N.auth); }catch(e){}
   localStorage.removeItem(CHAVE_GRUPO);
   localStorage.removeItem(CHAVE_CACHE);
@@ -3610,7 +3754,8 @@ const CAMPOS_SINC = ["prog","xp","xpSemana","semana","ofensiva","ultimoDia","dia
                      "feitosHoje","recorde",
                      "datas","foco","historico","reportes","apelido","emoji",
                      "horizonte","marcos","congelados",
-                     "nivel","sala","semanaSala","semanaPassada","ligaVista","pod1","pod2","gelos"];
+                     "nivel","sala","semanaSala","semanaPassada","ligaVista","pod1","pod2","gelos",
+                     "desafiosVistos","desafiosGanhos"];
 
 function juntarProgresso(local, remoto){
   /* Mesma conta em dois aparelhos: fica o mais adiantado de cada questão,
@@ -3684,7 +3829,8 @@ async function publicarPlacar(){
     sala: (S.semanaSala === (S.semana || domingoDa(hoje())) && S.sala != null) ? S.sala : -1,
     semanaSala: S.semanaSala || "",
     semanaPassada: S.semanaPassada || null,
-    pod1: Math.max(0, S.pod1 || 0), pod2: Math.max(0, S.pod2 || 0), desafios: 0,
+    pod1: Math.max(0, S.pod1 || 0), pod2: Math.max(0, S.pod2 || 0),
+    desafios: Math.max(0, S.desafiosGanhos || 0),
     /* Exercícios respondidos e dias estudados andam junto com o XP de propósito:
        XP alto com pouco exercício respondido não fecha, e o grupo inteiro vê.
        Como o servidor não consegue recalcular XP sem plano pago, é isto que
@@ -3873,6 +4019,131 @@ async function fecharSemanaSePreciso(){
            lider: gente[0] ? gente[0].xpSemana : 0 };
 }
 
+/* ============================================================
+   DESAFIO
+
+   Duas pessoas fazem a MESMA bateria de cinco, na mesma ordem. As cinco são
+   sorteadas na hora de criar e ficam gravadas no documento — quem desafia não
+   escolhe, senão dava para montar uma bateria fácil combinada.
+
+   Ganha quem acerta mais; empatou, ganha quem levou menos tempo. Quem vence
+   leva XP_VITORIA além do XP normal da bateria, e isso conta no ranking. O
+   desafio não gasta a espera de 30 minutos: é o outro jeito de pontuar enquanto
+   ela corre, que foi o motivo de a Isabela querer que ele valesse ranking.
+   ============================================================ */
+let CACHE_DESAFIOS = null;
+function ehMeuDesafio(d){
+  const eu = N.usuario && N.usuario.uid;
+  return d.de === eu || d.para === eu;
+}
+function meuLado(d){ return d.de === (N.usuario && N.usuario.uid) ? "De" : "Para"; }
+function outroLado(d){ return meuLado(d) === "De" ? "Para" : "De"; }
+function desafioVencido(d){ return emMilissegundos(d.expiraEm) < Date.now(); }
+function desafioAberto(d){
+  return !desafioVencido(d) && (!d.resDe || !d.resPara);
+}
+function quemVenceu(d){
+  if(!d.resDe || !d.resPara) return null;
+  if(d.resDe.acertos !== d.resPara.acertos)
+    return d.resDe.acertos > d.resPara.acertos ? d.de : d.para;
+  if(d.resDe.ms !== d.resPara.ms) return d.resDe.ms < d.resPara.ms ? d.de : d.para;
+  return "empate";
+}
+async function lerDesafios(){
+  if(!N.ligado || !N.usuario || !N.grupo) return [];
+  try{
+    const col = cole("grupos", N.grupo, "desafios");
+    const [a, b] = await Promise.all([
+      N.api.getDocs(N.api.query(col, N.api.where("de", "==", N.usuario.uid))),
+      N.api.getDocs(N.api.query(col, N.api.where("para", "==", N.usuario.uid)))
+    ]);
+    const fora = [];
+    a.forEach(d => fora.push({ id:d.id, ...d.data() }));
+    b.forEach(d => fora.push({ id:d.id, ...d.data() }));
+    CACHE_DESAFIOS = fora.sort((x, y) => emMilissegundos(y.criadoEm) - emMilissegundos(x.criadoEm));
+    return CACHE_DESAFIOS;
+  }catch(e){ return CACHE_DESAFIOS || []; }
+}
+/* Por que não dá para mandar mais um agora. Devolve o motivo em português, ou
+   null se pode. As três travas são as que a Isabela desenhou. */
+function porQueNaoPossoDesafiar(lista, alvoUid){
+  const eu = N.usuario && N.usuario.uid;
+  const abertos = (lista || []).filter(d => desafioAberto(d));
+  if(abertos.filter(d => d.de === eu).length >= MAX_ENVIADOS)
+    return "Você já tem um desafio esperando resposta. Quando ele for respondido, dá para mandar outro.";
+  const ultimo = (lista || []).filter(d => d.de === eu)
+    .map(d => emMilissegundos(d.criadoEm)).sort((a, b) => b - a)[0];
+  if(ultimo && Date.now() - ultimo < HORAS_ENTRE_DESAFIOS * 3600000){
+    const faltam = Math.ceil((HORAS_ENTRE_DESAFIOS * 3600000 - (Date.now() - ultimo)) / 3600000);
+    return `Falta ${plural(faltam, "hora", "horas")} para você poder mandar outro desafio.`;
+  }
+  if(alvoUid && abertos.some(d => (d.de === alvoUid || d.para === alvoUid)))
+    return "Vocês duas já têm um desafio em andamento.";
+  return null;
+}
+async function criarDesafio(alvoUid, alvoNome){
+  const pool = CURSO.itens.filter(i => i && i.id);
+  if(pool.length < DESAFIO_TAM) throw new Error("Não há exercícios suficientes no grupo.");
+  const itens = embaralhar(pool.slice()).slice(0, DESAFIO_TAM).map(i => i.id);
+  const id = "d" + Date.now().toString(36) + sorteioCodigo().toLowerCase();
+  await N.api.setDoc(ref("grupos", N.grupo, "desafios", id), {
+    de: N.usuario.uid, para: alvoUid,
+    nomeDe: (S.apelido || "").trim() || N.usuario.displayName || "alguém",
+    emojiDe: S.emoji || "🧠",
+    itens, resDe: null, resPara: null,
+    criadoEm: N.api.serverTimestamp(),
+    expiraEm: N.api.Timestamp.fromMillis(Date.now() + 48 * 3600000)
+  });
+  CACHE_DESAFIOS = null;
+}
+/* Começa a bateria do desafio: as cinco questões daquele documento, na ordem
+   gravada, sem embaralhar. */
+function jogarDesafio(d){
+  const fila = d.itens.map(id => porId[id]).filter(Boolean);
+  if(fila.length < 2){
+    return caixaAviso("Não deu para montar",
+      "As questões deste desafio não estão mais no banco do grupo. Ele vai expirar sozinho.");
+  }
+  fecharCaixa();
+  SES = { fila, i:0, acertos:0, total:fila.length, respondido:false, vistos:[], estourou:0,
+          log:[], inicio:Date.now(), valeRanking:true, xpAntes:S.xpSemana, modo:"desafio",
+          seq:0, xpDaSeq:0, maiorSeq:0, xpGanho:0, desafio:d };
+  SES.fim = S.segPorQuestao ? Date.now() + S.segPorQuestao * 1000 * fila.length : null;
+  render(); tocarRelogio();
+}
+async function gravarResultadoDoDesafio(){
+  const d = SES && SES.desafio;
+  if(!d || !N.ligado) return;
+  const campo = "res" + meuLado(d);
+  const dados = {};
+  dados[campo] = { acertos: SES.acertos, ms: Math.max(0, Date.now() - SES.inicio) };
+  try{
+    await N.api.updateDoc(ref("grupos", N.grupo, "desafios", d.id), dados);
+    d[campo] = dados[campo];
+    CACHE_DESAFIOS = null;
+  }catch(e){}
+}
+/* O bônus de vitória é dado pelo aparelho de quem venceu, na primeira vez que
+   ele vê o desafio fechado. `desafiosVistos` guarda quais já foram contados,
+   para o bônus não repetir a cada abertura do app. */
+function acertarContasDosDesafios(lista){
+  const eu = N.usuario && N.usuario.uid;
+  const vistos = new Set(S.desafiosVistos || []);
+  let mudou = false, ganhos = [];
+  (lista || []).forEach(d => {
+    if(desafioAberto(d) || vistos.has(d.id)) return;
+    const venc = quemVenceu(d);
+    vistos.add(d.id); mudou = true;
+    if(venc === eu){
+      S.xp += XP_VITORIA; S.xpSemana += XP_VITORIA;
+      S.desafiosGanhos = (S.desafiosGanhos || 0) + 1;
+      ganhos.push(d);
+    }
+  });
+  if(mudou){ S.desafiosVistos = [...vistos].slice(-200); salvar(); publicarPlacar(); }
+  return ganhos;
+}
+
 let sincPendente = null, sincUltimo = 0;
 function agendarSincronia(){
   /* Escrever a cada questão gastaria cota à toa. Uma escrita a cada 15s,
@@ -3911,7 +4182,8 @@ function telaEntrar(erro){
     <h1>Fixa aí</h1>
     <p class="sub">Um pouco todo dia, em vez de tudo na véspera.</p>
     ${erro ? `<div class="erro">${esc(erro)}</div>` : ""}
-    <button class="btg" id="bGoogle">
+    <div id="caixaGoogle" class="caixaGoogle"></div>
+    <button class="btg hide" id="bGoogle">
       <svg class="g" viewBox="0 0 48 48" aria-hidden="true"><path fill="#4285F4" d="M45 24c0-1.6-.1-2.7-.4-3.9H24v7.1h12c-.2 1.8-1.5 4.6-4.4 6.4l6.7 5.2C42.2 35 45 30 45 24z"/><path fill="#34A853" d="M24 46c5.9 0 10.9-2 14.5-5.3l-6.9-5.4C29.8 36.6 27.2 37.5 24 37.5c-5.8 0-10.8-3.9-12.5-9.3l-7.1 5.5C8 41.2 15.4 46 24 46z"/><path fill="#FBBC05" d="M11.5 28.2c-.5-1.4-.7-2.8-.7-4.2s.3-2.9.7-4.2l-7.1-5.6C3 17 2 20.4 2 24s1 7 2.4 9.8l7.1-5.6z"/><path fill="#EA4335" d="M24 10.5c4.1 0 6.9 1.8 8.5 3.3l6.2-6C34.9 4.3 29.9 2 24 2 15.4 2 8 6.8 4.4 14.2l7.1 5.6c1.7-5.4 6.7-9.3 12.5-9.3z"/></svg>
       Entrar com Google
     </button>
@@ -3923,6 +4195,14 @@ function telaEntrar(erro){
     try{ await entrarComGoogle(); }
     catch(e){ telaEntrar(traduzErro(e)); }
   };
+  const caixa = $("#caixaGoogle");
+  const mostrarReserva = () => {
+    const b = $("#bGoogle");
+    if(b) b.classList.remove("hide");
+    if(caixa) caixa.remove();
+  };
+  if(caixa && window.GOOGLE_CLIENT_ID) botaoDoGoogle(caixa, mostrarReserva);
+  else mostrarReserva();
 }
 
 function telaConvite(erro){
