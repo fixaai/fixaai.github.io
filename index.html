@@ -263,8 +263,7 @@ button{font-family:inherit;font-size:inherit;cursor:pointer;border:none;backgrou
 .desFim span{display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin-top:6px;line-height:1.45}
 .desFim.ganhou{border-color:var(--gold);background:rgba(212,160,23,.08)}
 .desFim.perdeu{border-color:var(--line);opacity:.9}
-.maquete{border-style:dashed;border-color:var(--gold)}
-.maquete>b{font-size:14px;color:var(--gold)}
+
 .gpDes{flex:0 0 38px;height:38px;border-radius:50%;border:1px solid var(--line);
   background:var(--bg);font-size:17px;display:grid;place-items:center}
 
@@ -600,7 +599,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "535d3b8";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "0bf74df";</script>
 <script>window.VERSAO_BANCO = "6d5776ea7153";</script>
 
 <script>
@@ -766,6 +765,7 @@ window.addEventListener("resize", ligarCue);
 const SESSAO         = 10;    // exercícios por sessão
 const SEG_POR_QUESTAO = 90;   // 1 min e 30 por questão, somado para a sessão inteira
 const ESPERA_MIN     = 30;    // minutos entre sessões que valem ranking
+const MIN_ATE_VOLTAR = 25;    // quanto uma questão errada descansa antes de voltar
 
 const padrao = () => ({
   v:4, prog:{}, ofensiva:0, ultimoDia:null, dia:null, feitosHoje:0, xp:0,
@@ -950,7 +950,16 @@ function quantoFicouDeFora(){
   const n = CURSO.itens.filter(i => !dentro.has(i.disc + "/" + i.prova)).length;
   return n < CURSO.itens.length ? n : 0;
 }
-function vencidos(lista){ const h = hoje(); return (lista || CURSO.itens).filter(i => S.prog[i.id] && S.prog[i.id].venc <= h); }
+function vencidos(lista){
+  const h = hoje(), agora = Date.now();
+  return (lista || CURSO.itens).filter(i => {
+    const p = S.prog[i.id];
+    if(!p || p.venc > h) return false;
+    /* questão errada há pouco ainda está "descansando": entra na fila quando o
+       relógio dela vira, o que acontece antes da próxima bateria liberar */
+    return !p.voltaEm || p.voltaEm <= agora;
+  });
+}
 function errados(lista){ return (lista || CURSO.itens).filter(i => S.prog[i.id] && S.prog[i.id].erros > 0)
   .sort((a,b) => (S.prog[b.id].erros - S.prog[a.id].erros) || (S.prog[a.id].caixa - S.prog[b.id].caixa)); }
 function vistos(lista){ return (lista || CURSO.itens).filter(i => S.prog[i.id]); }
@@ -1217,7 +1226,18 @@ function registrar(id, acertou){
       p.venc = addDias(h, intervalo);
     }
   }else{
-    p.caixa = 0; p.erros++; p.venc = addDias(h, 1);
+    /* Errou: volta HOJE, na próxima bateria — não amanhã, e não nesta mesma.
+
+       Deixar para o dia seguinte é tarde demais para o que acabou de escapar, e
+       repetir na mesma bateria é cedo demais: três minutos depois de ler a
+       resposta, o que responde é a memória curta, e ela não prova nada. O meio
+       termo é o intervalo entre uma bateria e a seguinte. Por isso a espera aqui
+       é um pouco MENOR que a espera entre sessões que valem ranking: quando a
+       próxima liberar, a questão errada já está de volta na fila, na frente das
+       questões novas. */
+    p.caixa = 0; p.erros++;
+    p.venc = h;
+    p.voltaEm = Date.now() + MIN_ATE_VOLTAR * 60000;
   }
   S.prog[id] = p;
 
@@ -1725,11 +1745,16 @@ function caixaCalendario(desloc, lado){
 let CACHE_MEMBROS = null;
 async function telaGrupo(){
   aba = "grupo";
-  /* Sem conta — e também enquanto o grupo estiver vazio — vale mais mostrar a
-     maquete com gente inventada do que uma tela em branco: dá para decidir o
-     desenho antes de existir uma pessoa cadastrada. Fica escrito, em cima, que
-     é exemplo, para ninguém confundir com colega de verdade. */
-  if(!N.ligado || !N.grupo) return maqueteDoGrupo();
+  if(!N.ligado || !N.grupo){
+    return montarTela(`
+      <div class="hero"><h1>Seu grupo ⚔️</h1></div>
+      <div class="cardz" style="border-style:dashed">
+        <b style="font-size:15px">Esta é a versão sem conta</b>
+        <p class="muted" style="margin:6px 0 0">Aqui você estuda só neste aparelho, sem entrar com
+          o Google e sem grupo. Liga, ranking e desafio aparecem na versão que roda no endereço
+          do app.</p>
+      </div>`);
+  }
   if(!CACHE_MEMBROS){
     montarTela(`<div class="hero"><h1>Seu grupo ⚔️</h1></div>
       <p class="muted" style="text-align:center;padding:20px 0">Carregando quem está aqui...</p>`);
@@ -1916,59 +1941,37 @@ async function telaGrupo(){
    são inventados e estão marcados como tal. Serve para decidir o desenho —
    ordem, o que aparece em cada linha, onde fica o botão de desafiar — antes de
    existir uma pessoa cadastrada para olhar. */
-/* A turma inteira, e a liga da semana.
+/* A liga da semana, e por que ela é assim.
 
-   Ideia da Isabela, e é a coisa mais bem pensada do desenho todo: numa sala de
-   cinquenta, o ranking único deixa quarenta e cinco pessoas olhando de longe
-   para sempre os mesmos três nomes. Então o ranking da semana não é a sala: é
-   uma liga de no máximo oito, montada só com quem estudou naquela semana.
+   Ideia da Isabela: numa sala de cinquenta, um ranking único deixa quarenta e
+   cinco pessoas olhando de longe para sempre os mesmos três nomes. Então o
+   ranking da semana não é a sala inteira: é uma liga de no máximo oito, montada
+   só com quem estudou naquela semana.
 
    Duas consequências, as duas boas. Quem não abriu o app não ocupa vaga, então
    a lista nunca parece um lugar vazio. E cinquenta pessoas viram seis ou sete
-   ligas, o que dá seis ou sete primeiros lugares por semana em vez de um — que
-   é a diferença entre um jogo que dá para ganhar e um placar que só confirma
-   quem já estava na frente.
+   ligas, o que dá seis ou sete primeiros lugares por semana em vez de um.
 
    A lista de todo mundo continua existindo, separada, e é de lá que sai o
    desafio: dá para desafiar qualquer pessoa do grupo, esteja ela na sua liga
-   ou não. */
-const TAM_LIGA = 8;
-/* Desafio pontua no ranking — sem isso ninguém desafiaria ninguém, e a Isabela
-   está certa nisso. O que impede de virar fábrica de XP entre duas amigas são
-   três travas juntas: pouca gente ativa por vez, um desafio novo por dia, e a
-   bateria sorteada do banco em vez de escolhida por quem desafia. Vencer ainda
-   exige acertar dez questões — que é exatamente o que a gente quer premiar. */
-/* Dois em andamento, mas não dois seus: um que você mandou e um que te mandaram.
-   Assim ninguém enche a turma de convites, e continua valendo a pena responder
-   rápido — só liberando o seu é que dá para mandar outro. */
-const MAX_ENVIADOS  = 1;     // desafios que você mandou e ainda estão de pé
-const MAX_RECEBIDOS = 1;     // desafios que te mandaram e você ainda não respondeu
-const HORAS_ENTRE_DESAFIOS = 24;
-const MAX_DESAFIOS = MAX_ENVIADOS + MAX_RECEBIDOS;
-const DESAFIO_TAM  = 5;      // metade de uma bateria: desafio é outra coisa, e cabe num intervalo
-const XP_VITORIA   = 30;     // bônus de quem vence, além do XP normal da bateria
-/* A liga fecha no fim de sábado e a semana nova começa no domingo — que é a
-   mesma virada que o XP da semana já usa desde sempre, então não existem duas
-   contagens diferentes correndo no app.
+   ou não.
 
-   O prêmio de cada liga é anunciado ANTES, na própria tela: sem saber o que
-   está em jogo, ninguém corre atrás. E ele nunca é XP — prêmio que dá XP
-   corrompe o ranking de onde veio, porque quem ganhou a semana passada larga
-   na frente na seguinte e em três semanas ninguém alcança. Congelar ofensiva
-   protege o que a pessoa construiu em vez de dar pontos, e é por isso que é o
-   prêmio certo. */
+   Aqui existiu uma maquete com gente inventada, que serviu para a Isabela
+   decidir o desenho antes de a turma entrar. Saiu quando a liga passou a ter
+   gente de verdade: manter nomes de mentira num app em uso só confunde. */
+const TAM_LIGA = 8;
 const LIGAS = [
   { id:"bronze", nome:"Bronze",  emoji:"🥉", cor:"#a9713f", gelos:1 },
   { id:"prata",  nome:"Prata",   emoji:"🥈", cor:"#8b95a3", gelos:2 },
   { id:"ouro",   nome:"Ouro",    emoji:"🥇", cor:"#d4a017", gelos:3 }
 ];
-/* Guardados de uma vez. Era 2, e a Isabela achou o furo: o primeiro lugar do
-   Ouro ganha 3, e o terceiro se perdia na hora de receber. O teto existe para
-   não dar para acumular dez e a ofensiva virar saldo bancário — 3 continua
-   fazendo esse trabalho, e agora o prêmio maior cabe inteiro. */
+/* Congelamentos guardados de uma vez. Três é o prêmio do primeiro lugar do Ouro,
+   então ele cabe inteiro; mais do que isso e a ofensiva viraria saldo bancário. */
 const MAX_GELOS = 3;
+
+/* A liga fecha no fim de sábado e a semana nova começa no domingo — a mesma
+   virada que o XP da semana já usa, para não existirem duas contagens no app. */
 function fimDaLiga(){
-  /* o próximo domingo, 00:00, no fuso de quem está usando */
   const d = new Date();
   d.setHours(0, 0, 0, 0);
   d.setDate(d.getDate() + ((7 - d.getDay()) % 7 || 7));
@@ -1980,122 +1983,17 @@ function faltaParaFechar(){
   return { ms, h, m, horas: ms / 3600000,
            txt: h >= 1 ? `${h}h ${String(m).padStart(2,"0")}min` : `${m} min` };
 }
-const GENTE_DE_MENTIRA = [
-  { nome:"",               emoji:"🧫", xp:1240, sem:340, pod:3, des:7, eu:true, ativa:true,
-    ofensiva:5, feitos:186, dias:22, conq:["primeira","redonda","of3","cem","sete"] },
-  { nome:"Yasmin",         emoji:"🦠", xp:1180, sem:420, pod:2, des:5, ativa:true,
-    ofensiva:12, feitos:174, dias:19, conq:["primeira","redonda","of3","of7","cem","virou"] },
-  { nome:"Marina",         emoji:"🧠", xp:960,  sem:310, pod:1, des:4, ativa:true, ocupada:true,
-    ofensiva:4, feitos:141, dias:16, conq:["primeira","of3","cem"] },
-  { nome:"Pedro Henrique", emoji:"💊", xp:815,  sem:290, pod:0, des:6, ativa:true,
-    ofensiva:2, feitos:120, dias:13, conq:["primeira","cem","rapida"] },
-  { nome:"Ana Beatriz",    emoji:"🫀", xp:640,  sem:180, pod:1, des:2, ativa:true,
-    ofensiva:7, feitos:98,  dias:11, conq:["primeira","redonda","of3","of7"] },
-  { nome:"Gustavo",        emoji:"🔬", xp:410,  sem:120, pod:0, des:1, ativa:true, ocupada:true,
-    ofensiva:1, feitos:62,  dias:8,  conq:["primeira","of3"] },
-  { nome:"Letícia",        emoji:"🩺", xp:250,  sem:60,  pod:0, des:0, ativa:true,
-    ofensiva:3, feitos:38,  dias:5,  conq:["primeira","of3"] },
-  { nome:"Rafael",         emoji:"🦴", xp:180,  sem:20,  pod:0, des:0, ativa:true,
-    ofensiva:1, feitos:26,  dias:3,  conq:["primeira"] },
-  { nome:"Camila",         emoji:"🧬", xp:730,  sem:0,   pod:2, des:3, ativa:false,
-    ofensiva:0, feitos:110, dias:14, conq:["primeira","redonda","of3","cem"] },
-  { nome:"João Vitor",     emoji:"🩻", xp:520,  sem:0,   pod:0, des:2, ativa:false,
-    ofensiva:0, feitos:79,  dias:9,  conq:["primeira","of3"] },
-  { nome:"Beatriz Alves",  emoji:"🧪", xp:95,   sem:0,   pod:0, des:0, ativa:false,
-    ofensiva:0, feitos:14,  dias:2,  conq:["primeira"] }
-];
-function maqueteDoGrupo(){
-  const medalha = i => i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}º`;
-  /* a sua linha usa o seu apelido e o seu emoji de verdade — só os outros nomes
-     são inventados, e é assim que dá para julgar se a tela fica boa com você nela */
-  GENTE_DE_MENTIRA.forEach(p => { if(p.eu){
-    p.nome = (S.apelido || "").trim() || "Você";
-    p.emoji = S.emoji || "🧫";
-  }});
-  const minhaLiga = LIGAS[1];       // na maquete, você está na prata
-  const falta = faltaParaFechar();
-  const todos = GENTE_DE_MENTIRA.slice()
-    .sort((a, b) => (a.eu ? -1 : b.eu ? 1 : 0) || a.nome.localeCompare(b.nome, "pt-BR"));
-  const liga = GENTE_DE_MENTIRA.filter(p => p.ativa)
-    .sort((a, b) => b.sem - a.sem).slice(0, TAM_LIGA);
-  const eu = todos.find(p => p.eu);
-  montarTela(`
-  <div class="hero"><h1>Seu grupo ⚔️</h1>
-    <div class="sub">Medicina 2º ano · ${GENTE_DE_MENTIRA.length} pessoas</div>
-  </div>
-  <div class="cardz maquete">
-    <b>Exemplo, com gente inventada</b>
-    <p class="muted" style="margin:6px 0 0">${N.ligado
-      ? "Seu grupo ainda não tem ninguém além de você. Assim que a turma entrar, esta tela fica com os nomes de verdade."
-      : "Nesta versão você estuda só neste aparelho, sem conta e sem grupo."}
-      Ranking e desafio ainda não existem — os números são de mentira, só para decidir o desenho.
-      Toque num nome ou numa espadinha para ver como cada tela vai ficar.</p>
-  </div>
 
-  <div class="ligaTopo" style="--lc:${minhaLiga.cor}">
-    <span class="ligaEmoji">${minhaLiga.emoji}</span>
-    <div><b>Liga ${minhaLiga.nome}</b><span>fecha no fim de sábado</span></div>
-  </div>
-  ${falta.horas <= 24 ? `<div class="ligaConta ${falta.horas <= 1 ? "urgente" : ""}">
-    ⏳ A liga fecha em <b>${falta.txt}</b>${falta.horas <= 1
-      ? " — é agora ou fica para a semana que vem." : ""}</div>` : ""}
-  <div class="ligaPremio">🎁 Quem ficar em <b>primeiro</b> na ${minhaLiga.emoji} ${minhaLiga.nome}
-    leva <b>${plural(minhaLiga.gelos, "congelamento de ofensiva", "congelamentos de ofensiva")}</b>
-    e sobe para a ${LIGAS[2].emoji} ${LIGAS[2].nome}.</div>
-  <div class="cardz" style="padding:6px 14px">
-    ${liga.map((p, i) => `
-      <div class="gpLinha ${p.eu ? "souEu" : ""} ${i < 2 ? "sobe" : i >= liga.length - 2 ? "desce" : ""}">
-        <button class="gpQuem" data-pessoa="${todos.indexOf(p)}">
-          <span class="gpPos ${i < 3 ? "podio" : ""}">${medalha(i)}</span>
-          <span class="gpIc">${p.emoji}</span>
-          <span class="gpTx"><b>${esc(p.nome)}${(p.eu && p.nome !== "Você") ? " · você" : ""}</b>
-            <span>${p.sem} XP nesta semana</span></span>
-        </button>
-        <span class="gpMove">${i < 2 ? "↑ sobe" : i >= liga.length - 2 ? "↓ desce" : ""}</span>
-      </div>`).join("")}
-  </div>
-  <button class="btn ghost sm" id="verFim" style="width:100%;margin-top:10px">
-    Ver como fica o fim da semana</button>
-  <p class="muted" style="margin:10px 2px 0">A liga tem no máximo <b>${TAM_LIGA} pessoas</b> e só
-    entra quem estudou nesta semana. Numa turma de cinquenta isso vira umas seis ligas — seis
-    primeiros lugares por semana, em vez de um. As duas primeiras sobem para a
-    ${LIGAS[2].emoji} Ouro, as duas últimas caem para a ${LIGAS[0].emoji} Bronze.</p>
-
-  <div class="secao">Todo mundo do grupo</div>
-  <div class="cardz" style="padding:6px 14px">
-    ${todos.map((p, i) => `
-      <div class="gpLinha ${p.eu ? "souEu" : ""}">
-        <button class="gpQuem" data-pessoa="${i}">
-          <span class="gpIc">${p.emoji}</span>
-          <span class="gpTx"><b>${esc(p.nome)}${(p.eu && p.nome !== "Você") ? " · você" : ""}</b>
-            <span>⭐ ${p.xp} · 🥇 ${p.pod} · ⚔️ ${p.des}</span></span>
-        </button>
-        ${p.eu ? "" : (p.ocupada
-          ? `<button class="gpDes ocupada" disabled title="${esc(p.nome)} já está com dois desafios em andamento" aria-label="${esc(p.nome)} não pode ser desafiada agora">⏳</button>`
-          : `<button class="gpDes" data-desafiar="${i}" aria-label="Desafiar ${esc(p.nome)}">⚔️</button>`)}
-      </div>`).join("")}
-  </div>
-  <p class="muted" style="margin:14px 2px">Aqui está a turma inteira. A espadinha desafia direto,
-    sem passar pelo perfil, e vale para qualquer pessoa do grupo — esteja ela na sua liga ou não.
-    O ⏳ é quem já está com <b>dois desafios em andamento</b> e por isso não aceita mais um agora.
-    Em que liga cada pessoa está não aparece aqui: isso é assunto dela.</p>`);
-
-  document.getElementById("verFim").onclick = () => caixaFimDaLiga(minhaLiga, 2, liga);
-  document.querySelectorAll("[data-pessoa]").forEach(b => b.onclick = () => {
-    const p = todos[+b.dataset.pessoa];
-    if(p.eu){ aba = "perfil"; return telaPerfil(); }
-    caixaPerfilDeOutra(p, todos.indexOf(p));
-  });
-  document.querySelectorAll("[data-desafiar]").forEach(b => b.onclick = () => {
-    caixaDesafio(todos[+b.dataset.desafiar]);
-  });
-}
-
-/* O que a pessoa vê ao abrir o app depois que a liga fechou. Duas telas em
-   sequência: primeiro o resultado da semana que acabou, com o prêmio; depois a
-   liga nova, já com quem está nela. Duas e não uma porque são dois assuntos —
-   fechar o que passou e abrir o que vem —, e amontoar os dois numa tela só faz
-   a pessoa dar OK sem ler nenhum. */
+/* Desafio pontua no ranking — sem isso ninguém desafiaria ninguém. O que impede
+   de virar fábrica de XP entre duas amigas são três travas juntas: um desafio
+   mandado por vez, um dia entre um e o próximo, e a bateria sorteada do banco
+   em vez de escolhida por quem desafia. Vencer ainda exige acertar as questões. */
+const MAX_ENVIADOS  = 1;     // desafios que você mandou e ainda estão de pé
+const MAX_RECEBIDOS = 1;     // desafios que te mandaram e você ainda não respondeu
+const HORAS_ENTRE_DESAFIOS = 24;
+const MAX_DESAFIOS = MAX_ENVIADOS + MAX_RECEBIDOS;
+const DESAFIO_TAM  = 5;      // metade de uma bateria: cabe num intervalo entre aulas
+const XP_VITORIA   = 30;     // bônus de quem vence, além do XP normal da bateria
 /* O resultado de verdade, com os números da semana que fechou. */
 function caixaResultadoDaSemana(r){
   const medalha = r.pos === 1 ? "🥇" : r.pos === 2 ? "🥈" : r.pos === 3 ? "🥉" : `${r.pos}º`;
@@ -2120,56 +2018,6 @@ function caixaResultadoDaSemana(r){
   document.getElementById("proxima").onclick = () => {
     fecharCaixa(); aba = "grupo"; telaGrupo();
   };
-}
-
-function caixaFimDaLiga(ligaVelha, posicao, pessoas){
-  const subiu = posicao <= 2, caiu = posicao >= pessoas.length - 1;
-  const nova = subiu ? LIGAS[Math.min(LIGAS.indexOf(ligaVelha) + 1, LIGAS.length - 1)]
-             : caiu  ? LIGAS[Math.max(LIGAS.indexOf(ligaVelha) - 1, 0)]
-             : ligaVelha;
-  const premio = posicao === 1 ? ligaVelha.gelos : 0;
-  const medalha = posicao === 1 ? "🥇" : posicao === 2 ? "🥈" : posicao === 3 ? "🥉" : `${posicao}º`;
-  abrirCaixa(`
-    <div class="fimTopo">
-      <div class="fimMedalha">${medalha}</div>
-      <h3>${posicao === 1 ? "Você ganhou a semana!" : `Você ficou em ${posicao}º`}</h3>
-      <p class="cxSub">Liga ${ligaVelha.nome} · semana encerrada</p>
-    </div>
-    <div class="fimNums">
-      <div><b>${pessoas[posicao-1] ? pessoas[posicao-1].sem : 0}</b><span>XP na semana</span></div>
-      <div><b>${posicao}º</b><span>de ${pessoas.length}</span></div>
-      <div><b>${subiu ? "↑" : caiu ? "↓" : "="}</b><span>${subiu ? "subiu" : caiu ? "desceu" : "ficou"}</span></div>
-    </div>
-    ${premio ? `<div class="fimPremio">🧊 <b>${plural(premio, "congelamento de ofensiva", "congelamentos de ofensiva")}</b>
-      <span>Guarde para a semana de prova ou a viagem — congelado, o dia sem estudar não quebra a
-      sua sequência. Dá para ter até ${MAX_GELOS} guardados.</span></div>`
-      : `<div class="fimPremio semPremio">Sem prêmio desta vez <span>Só o primeiro lugar leva
-        congelamento. Você está a ${Math.max(1, (pessoas[0] ? pessoas[0].sem : 0) - (pessoas[posicao-1] ? pessoas[posicao-1].sem : 0))} XP de distância.</span></div>`}`,
-    `<button class="btn" id="proxima">Ver a liga da semana nova</button>`);
-  document.getElementById("proxima").onclick = () => caixaLigaNova(nova, ligaVelha);
-}
-function caixaLigaNova(nova, velha){
-  const gente = GENTE_DE_MENTIRA.filter(p => p.ativa).slice(0, TAM_LIGA);
-  abrirCaixa(`
-    <div class="fimTopo" style="--lc:${nova.cor}">
-      <div class="fimMedalha">${nova.emoji}</div>
-      <h3>Liga ${nova.nome}</h3>
-      <p class="cxSub">${nova === velha ? "você continua aqui" : "semana nova, liga nova"}</p>
-    </div>
-    <p class="muted" style="margin:0 0 4px">Quem está com você nesta semana. A ordem começa zerada
-      para todo mundo — o XP da semana passada não vem junto.</p>
-    <div class="cardz" style="padding:2px 12px">
-      ${gente.map(p => `<div class="gpLinha ${p.eu ? "souEu" : ""}">
-        <span class="gpIc">${p.emoji}</span>
-        <span class="gpTx"><b>${esc(p.nome)}${(p.eu && p.nome !== "Você") ? " · você" : ""}</b>
-          <span>0 XP nesta semana</span></span>
-      </div>`).join("")}
-    </div>
-    <div class="ligaPremio" style="margin-top:12px">🎁 O primeiro lugar desta liga leva
-      <b>${plural(nova.gelos, "congelamento de ofensiva", "congelamentos de ofensiva")}</b>
-      e sobe de liga. As duas últimas descem.</div>`,
-    `<button class="btn" id="bora">Bora estudar</button>`);
-  document.getElementById("bora").onclick = () => { fecharCaixa(); aba = "inicio"; telaInicio(); };
 }
 
 /* Perfil de alguém do grupo, montado com o placar de verdade. */
@@ -2198,92 +2046,6 @@ function caixaPerfilDoGrupo(m, nome, emoji, xpSemana){
       continua só com ela: isso nunca sai do aparelho dela.</p>`,
     `<button class="btn ghost" id="pgOk">Fechar</button>`);
   document.getElementById("pgOk").onclick = fecharCaixa;
-}
-
-/* Perfil de outra pessoa na maquete. Mostra o que ela conquistou e o que ela ainda
-   não conquistou — mas o que falta aparece só como cadeado, sem nome nem
-   descrição, igual ao próprio perfil. Descobrir a conquista é parte da graça, e
-   ninguém deve descobri-la olhando o perfil alheio. */
-function caixaPerfilDeOutra(p, idx){
-  const tem = new Set(p.conq || []);
-  abrirCaixa(`
-    <div class="pfTopo" style="padding-top:0">
-      <div class="pfFoto pfEmoji">${p.emoji}</div>
-      <h1>${esc(p.nome)}</h1>
-      <p class="pfSub">Medicina 2º ano</p>
-    </div>
-    <div class="pfNums">
-      <div class="pfN"><b>⭐ ${p.xp}</b><span>XP desde o começo</span></div>
-      <div class="pfN"><b>🔥 ${p.ofensiva}</b><span>ofensiva</span></div>
-      <div class="pfN"><b>✏️ ${p.feitos}</b><span>exercícios respondidos</span></div>
-      <div class="pfN"><b>📅 ${p.dias}</b><span>dias estudados</span></div>
-    </div>
-    <div class="pfMenor">
-      <div><b>⚔️ ${p.des}</b><span>desafios ganhos</span></div>
-      <div><b>🥇 ${p.pod}</b><span>semanas em primeiro</span></div>
-      <div><b>⭐ ${p.sem}</b><span>XP nesta semana</span></div>
-    </div>
-    <div class="secao" style="margin-top:18px">Conquistas · ${tem.size} de ${CONQUISTAS.length}</div>
-    ${selosDeOutraPessoa(tem)}
-    <p class="muted" style="margin-top:12px">Você vê quantas ela já tem, mas o nome só aparece nas
-      que você também conquistou.</p>`,
-    p.ocupada
-      ? `<button class="btn ghost" disabled>⏳ ${esc(p.nome)} já tem dois desafios em andamento</button>`
-      : `<button class="btn" id="des">⚔️ Desafiar ${esc(p.nome)}</button>`);
-  const bd = document.getElementById("des");
-  if(bd) bd.onclick = () => caixaDesafio(p);
-}
-
-/* A tela do desafio. O ponto do desenho: as duas fazem exatamente a mesma
-   bateria, nas mesmas questões e na mesma ordem, senão não dá para comparar. */
-function caixaDesafio(p){
-  const nome = esc(p.nome);
-  abrirCaixa(`
-    <h3>⚔️ Desafiar ${nome}</h3>
-    <p class="cxSub">Vocês duas fazem a mesma bateria</p>
-    <div class="desLinha"><span class="desIc">${S.emoji || "🧫"}</span>
-      <b>${esc((S.apelido || "").trim() || "Você")}</b><span class="desVs">vs</span>
-      <b>${nome}</b><span class="desIc">${p.emoji}</span></div>
-    <p style="margin:16px 0 0;font-weight:700">Como vai funcionar</p>
-    <ul class="desLista">
-      <li><b>Os mesmos ${DESAFIO_TAM} exercícios</b> para as duas, na mesma ordem — sorteados do que
-        vocês duas já têm no grupo, não escolhidos por quem desafia. É metade de uma bateria: cabe
-        num intervalo entre aulas e não se confunde com a sessão normal.</li>
-      <li>Ganha quem <b>acertar mais</b>. Empatou no acerto, ganha quem fez em <b>menos tempo</b>.</li>
-      <li>${nome} tem <b>48 horas</b> para responder. Passou disso, o desafio expira sem vencedor.</li>
-      <li>As duas ganham o <b>XP normal</b> da bateria, com bônus de sequência. Quem vence leva
-        <b>${XP_VITORIA} de bônus</b>, e tudo isso <b>conta no ranking</b>.</li>
-      <li>Desafio <b>não gasta a espera de ${ESPERA_MIN} minutos</b> — é o outro jeito de pontuar
-        enquanto ela corre.</li>
-    </ul>
-    <p style="margin:16px 0 0;font-weight:700">O que segura o abuso</p>
-    <ul class="desLista">
-      <li>Você pode ter <b>um desafio mandado</b> e <b>um recebido</b> ao mesmo tempo. Para mandar
-        outro, o seu tem que ser respondido primeiro.</li>
-      <li><b>${HORAS_ENTRE_DESAFIOS} horas</b> entre um desafio e o próximo, valendo tanto para
-        mandar quanto para receber.</li>
-      <li>Quem já está com os dois em andamento aparece com ⏳ e não pode ser desafiada.</li>
-      <li>As questões são sorteadas, então não dá para combinar uma bateria fácil com alguém.</li>
-    </ul>
-    <p class="muted" style="margin:14px 0 0">Sobre o que quer disputar?</p>
-    <div class="desEsc">
-      <button class="minibt on">O que eu estou estudando</button>
-      <button class="minibt">Uma matéria específica</button>
-    </div>`,
-    `<button class="btn" id="mandar">Mandar o desafio</button>
-     <div style="height:8px"></div>
-     <button class="btn ghost" id="cancela">Agora não</button>`);
-  document.getElementById("mandar").onclick = () => {
-    fecharCaixa();
-    abrirCaixa(`<h3>Ainda não dá 🙂</h3>
-      <p class="cxSub">Esta é a maquete do desafio</p>
-      <p style="margin:14px 0 0">O desenho está aqui para você aprovar ou mudar, mas mandar o
-      desafio de verdade precisa da parte do servidor que ainda não existe: um lugar onde as duas
-      pessoas leem a mesma bateria e escrevem o resultado. É o mesmo pedaço que faz o ranking
-      funcionar.</p>`, `<button class="btn ghost" id="ok">Entendi</button>`);
-    document.getElementById("ok").onclick = fecharCaixa;
-  };
-  document.getElementById("cancela").onclick = fecharCaixa;
 }
 
 /* ============================================================
@@ -2936,7 +2698,22 @@ function concluir(it, acertou, textoExtra){
 
 /* ---------- rodapé de feedback e reporte de problema ---------- */
 function avancar(it, acertou){
-  if(!acertou && SES.fila.filter(x => x.id === it.id).length < 2) SES.fila.push(it);
+  /* A questão errada NÃO volta no fim da mesma bateria.
+
+     Ela voltava, e isso era herança de quando a sessão não tinha tamanho fixo.
+     Com a bateria de dez, criava três problemas que a Isabela viu de uma vez:
+     a sessão passava de dez sem aviso, a barra continuava com dez tracinhos, e
+     a sequência de acertos engordava com repetições — dava para errar quatro,
+     acertar as mesmas quatro logo depois e sair com "7 seguidas" tendo acertado
+     6 de 10 de primeira. Os números não se contradiziam por engano de conta:
+     contavam coisas diferentes, e a tela não dizia isso.
+
+     Além do mais, repetir a mesma questão três minutos depois de ler a resposta
+     testa memória curta, que é justamente o que este app existe para não fazer.
+     Quem errou já sai com a caixa zerada e volta a ver a questão amanhã.
+
+     Se um dia fizer falta, é esta linha que volta:
+       if(!acertou && SES.fila.filter(x => x.id === it.id).length < 2) SES.fila.push(it); */
   SES.i++;
   voltarRelogio();
   render();
@@ -4195,6 +3972,12 @@ function telaEntrar(erro){
     try{ await entrarComGoogle(); }
     catch(e){ telaEntrar(traduzErro(e)); }
   };
+  /* Não existe link de "entrar com outra conta" aqui, e é de propósito: quando o
+     Google desenha o botão personalizado, ele mesmo põe uma setinha ao lado do
+     e-mail que abre o seletor de contas. A Isabela confirmou que alterna entre a
+     conta pessoal e a que organiza o grupo por ali. Um segundo caminho para a
+     mesma coisa só ocuparia a tela — e, no iPhone, levaria de volta ao
+     redirecionamento que a gente acabou de tirar. */
   const caixa = $("#caixaGoogle");
   const mostrarReserva = () => {
     const b = $("#bGoogle");
