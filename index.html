@@ -449,6 +449,11 @@ button{font-family:inherit;font-size:inherit;cursor:pointer;border:none;backgrou
   display:grid;place-items:center;font-size:11px;font-weight:900;color:var(--brand)}
 .as.on .ck2{border-color:var(--brand);background:var(--brand-soft)}
 .asbtns{display:flex;gap:8px;margin-bottom:8px}
+.minibt.larga{width:100%;flex:none}
+.linhaVer{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  padding:7px 0;font-size:14px}
+.linhaVer span{color:var(--muted)}
+.linhaVer b{font-variant-numeric:tabular-nums}
 .minibt{flex:1;padding:7px 10px;border-radius:10px;border:2px solid var(--line);background:var(--card);
   font:inherit;font-size:12.5px;font-weight:800;color:var(--ink-2);cursor:pointer}
 .minibt:hover:not([disabled]){border-color:var(--brand);color:var(--brand)}
@@ -606,7 +611,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "a2b7aa8";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "53216a7";</script>
 <script>window.VERSAO_BANCO = "6d5776ea7153";</script>
 
 <script>
@@ -850,6 +855,14 @@ function avisoSemMemoria(){
   if(b) b.onclick = () => d.remove();
 }
 
+function quandoFoi(ms){
+  const s = Math.round((Date.now() - ms) / 1000);
+  if(s < 45) return "agora mesmo";
+  const m = Math.round(s / 60);
+  if(m < 60) return "há " + plural(m, "minuto", "minutos");
+  const h = Math.round(m / 60);
+  return "há " + plural(h, "hora", "horas");
+}
 function domingoDa(iso){                       // chave da semana: o domingo que a inicia
   const d = new Date(iso + "T12:00:00");
   d.setDate(d.getDate() - d.getDay());
@@ -2327,7 +2340,8 @@ function telaAjustes(op){
     </div>
     <p class="muted" style="margin:10px 0 0;font-size:12.5px">Seu progresso fica salvo na
       sua conta — ao entrar de novo, ele volta de onde parou.</p>
-  </div>`;
+  </div>
+`;
 
   const apelido = (S.apelido || "").trim();
   const emojiAtual = S.emoji || "🧠";
@@ -2347,9 +2361,30 @@ function telaAjustes(op){
       Isso viaja com a sua conta: escolheu no celular, aparece no tablet também.</p>
   </div>`;
 
+  /* A versão fica fora do cartão da conta de propósito: quando alguém escreve
+     "não está funcionando", a primeira pergunta é qual versão está aberta — e a
+     resposta não pode depender de a pessoa estar logada. */
+  const aparelho = `
+  <div class="secao">Este aparelho</div>
+  <div class="cardz">
+    <div class="linhaVer">
+      <span>Versão do app</span>
+      <b>${esc(window.VERSAO_BUILD || "—")}</b>
+    </div>
+    ${N.ligado ? `<div class="linhaVer">
+      <span>Última sincronia</span>
+      <b>${sincUltimo ? esc(quandoFoi(sincUltimo)) : "ainda não"}</b>
+    </div>
+    <button class="minibt larga" id="sincAgora" style="margin-top:12px">Sincronizar agora</button>
+    <p class="muted" style="margin:10px 0 0;font-size:12.5px">O app já sincroniza sozinho
+      enquanto você estuda e toda vez que você volta para ele. Este botão é para quando
+      você quer conferir na hora que celular e tablet estão mostrando a mesma coisa.</p>` : ""}
+  </div>`;
+
   const corpo = `
   <div class="hero"><h1>Ajustes</h1></div>
   ${conta}
+  ${aparelho}
   ${identidade}
 
   <div class="secao">Como estudar</div>
@@ -2364,8 +2399,6 @@ function telaAjustes(op){
       sem isso você começaria a receber em fevereiro o conteúdo de dezembro — e em medicina uma
       coisa se entende depois da outra. Escolher a matéria no 🎯 ignora este limite.</p>
     ${S.recorde ? `<p class="muted" style="margin-top:10px">🏅 Seu recorde: <b>${S.recorde}s por questão</b> numa sessão sem erro.</p>` : ""}
-    ${window.VERSAO_BUILD ? `<p class="muted" style="margin-top:10px">Versão do app:
-      <b>${esc(window.VERSAO_BUILD)}</b></p>` : ""}
   </div>
 
 
@@ -2495,6 +2528,14 @@ function telaAjustes(op){
   if(bSair) bSair.onclick = () => {
     caixaConfirma("Sair da conta?",
       "Seu progresso fica salvo na conta e volta quando você entrar de novo.", "Sair", sairDaConta);
+  };
+  const bSinc = $("#sincAgora");
+  if(bSinc) bSinc.onclick = async () => {
+    bSinc.disabled = true; bSinc.textContent = "Sincronizando…";
+    await sincronizarAgora();
+    /* redesenhar() não mexe em Ajustes de propósito (tem campo de texto aqui),
+       então quem atualiza esta tela é este botão mesmo. */
+    if(aba === "ajustes") telaAjustes();
   };
   const bTroca = $("#trocarGrupo");
   if(bTroca) bTroca.onclick = () => caixaConfirma("Usar outro código?",
@@ -3597,8 +3638,42 @@ function juntarProgresso(local, remoto){
     p[id] = (!b || (a.reps || 0) >= (b.reps || 0)) ? a : b;
   });
   fora.prog = p;
-  ["xp","xpSemana","ofensiva","feitosHoje"].forEach(k =>
-    fora[k] = Math.max(local[k] || 0, remoto[k] || 0));
+  /* XP total só sobe: o maior dos dois é sempre o certo. */
+  fora.xp = Math.max(local.xp || 0, remoto.xp || 0);
+
+  /* Os outros três contadores zeram sozinhos — xpSemana no domingo, feitosHoje
+     à meia-noite — e por isso não dá para pegar o maior sem olhar de que dia e
+     de que semana cada número é. Sem essa conferência, o aparelho que ficou
+     parado desde sexta ressuscitaria o XP da semana passada só de sincronizar. */
+  const semL = local.semana || null, semR = remoto.semana || null;
+  if(semR && semL && semR > semL){          // a nuvem já virou a semana, aqui não
+    fora.semana = semR; fora.xpSemana = remoto.xpSemana || 0;
+    fora.sala = remoto.sala == null ? null : remoto.sala;
+    fora.semanaSala = remoto.semanaSala || null;
+    if(remoto.semanaPassada) fora.semanaPassada = remoto.semanaPassada;
+  }else if(semR && semL && semR < semL){    // a nuvem está atrasada: ignora o número dela
+    fora.xpSemana = local.xpSemana || 0;
+  }else{
+    fora.xpSemana = Math.max(local.xpSemana || 0, remoto.xpSemana || 0);
+    if(semR && !semL) fora.semana = semR;
+  }
+
+  const diaL = local.dia || null, diaR = remoto.dia || null;
+  if(diaR && diaL && diaR > diaL){ fora.dia = diaR; fora.feitosHoje = remoto.feitosHoje || 0; }
+  else if(diaR && diaL && diaR < diaL){ fora.feitosHoje = local.feitosHoje || 0; }
+  else{
+    fora.feitosHoje = Math.max(local.feitosHoje || 0, remoto.feitosHoje || 0);
+    if(diaR && !diaL) fora.dia = diaR;
+  }
+
+  /* Ofensiva anda junto com o dia em que ela foi mantida. Pegar o maior número
+     solto quebraria assim: o tablet ficou três dias fechado com ofensiva 5, o
+     celular perdeu a sequência e recomeçou em 1 — o 5 não vale mais nada, mas
+     seria ele a ganhar. Então quem tem o ultimoDia mais recente leva o par. */
+  const udL = local.ultimoDia || null, udR = remoto.ultimoDia || null;
+  if(udR && (!udL || udR > udL)){ fora.ultimoDia = udR; fora.ofensiva = remoto.ofensiva || 0; }
+  else if(udL && (!udR || udL > udR)){ fora.ultimoDia = udL; fora.ofensiva = local.ofensiva || 0; }
+  else fora.ofensiva = Math.max(local.ofensiva || 0, remoto.ofensiva || 0);
   fora.historico = { ...(remoto.historico || {}), ...(local.historico || {}) };
   fora.datas     = { ...(remoto.datas || {}), ...(local.datas || {}) };
   if(remoto.recorde) fora.recorde = Math.min(local.recorde || 1e9, remoto.recorde);
@@ -4056,27 +4131,96 @@ function acertarContasDosDesafios(lista){
   return ganhos;
 }
 
-let sincPendente = null, sincUltimo = 0;
+/* ---------- sincronia ----------
+
+   Como isto estava errado, e por que a Isabela viu 176 XP no tablet e 586 no
+   celular no mesmo build: a subida era um setDoc com merge:true, e merge:true
+   junta CAMPOS, não junta VALORES. Quem escrevia por último mandava o número
+   dele por cima do outro. E a leitura acontecia uma vez só, na abertura — o
+   aparelho que ficasse aberto nunca mais via o que o outro tinha feito.
+
+   Agora toda subida é lê → junta → grava, com a mesma juntarProgresso da
+   abertura, e o app também puxa da nuvem quando volta a ficar visível. Dois
+   aparelhos abertos ao mesmo tempo convergem em vez de se atropelar.
+
+   Não é transação: entre a leitura e a escrita cabe a escrita do outro
+   aparelho. Na prática isso custa, no máximo, os 15 segundos de uma janelinha
+   — e a próxima sincronia de qualquer um dos dois traz o maior de volta,
+   porque todo campo aqui junta pelo maior ou pelo mais recente. Sem servidor
+   próprio (Cloud Functions pede plano pago), é o mais correto que dá para
+   fazer só com regra do Firestore. */
+let sincPendente = null, sincUltimo = 0, sincEmCurso = false, ultimoRemoto = null;
 function agendarSincronia(){
   /* Escrever a cada questão gastaria cota à toa. Uma escrita a cada 15s,
      mais uma garantida ao fechar o app, dá conta com folga. */
   if(!N.ligado || !N.usuario) return;
+  if(sincEmCurso) return;   /* o salvar() de dentro da própria sincronia não reagenda */
   clearTimeout(sincPendente);
   const espera = Math.max(0, 15000 - (Date.now() - sincUltimo));
   sincPendente = setTimeout(sincronizarAgora, espera);
 }
-async function sincronizarAgora(){
+
+/* Junta o que veio da nuvem no que está aqui. Devolve true se algum número
+   mudou, para a tela poder se redesenhar. */
+function aplicarRemoto(remoto){
+  if(!remoto) return false;
+  ultimoRemoto = remoto;
+  const antes = JSON.stringify(CAMPOS_SINC.map(k => S[k]));
+  const junto = juntarProgresso(S, remoto);
+  const depois = JSON.stringify(CAMPOS_SINC.map(k => junto[k]));
+  if(antes === depois) return false;
+  S = { ...S, ...junto };
+  return true;
+}
+
+async function sincronizarAgora(op){
   if(!N.ligado || !N.usuario) return;
+  if(sincEmCurso) return;
+  sincEmCurso = true;
   sincUltimo = Date.now();
+  clearTimeout(sincPendente);
+  let mudou = false;
+  /* Fechando o app não dá tempo de ler e depois gravar: o navegador congela a
+     página no meio. Então o caminho de saída pula a leitura e junta com o
+     último retrato que a gente trouxe da nuvem — assim a última gravação do
+     dia continua sendo uma junção, e não um número menor por cima do maior. */
+  if(op && op.rapido){
+    mudou = aplicarRemoto(ultimoRemoto);
+  }else{
+    try{
+      const d = await N.api.getDoc(ref("progresso", N.usuario.uid));
+      if(d.exists()) mudou = aplicarRemoto(d.data());
+    }catch(e){ /* sem rede: sobe o que tem, e na próxima a gente lê */ }
+  }
   const dados = {};
   CAMPOS_SINC.forEach(k => { if(S[k] !== undefined) dados[k] = S[k]; });
   dados.atualizadoEm = N.api.serverTimestamp();
   try{ await N.api.setDoc(ref("progresso", N.usuario.uid), dados, { merge: true }); }
   catch(e){ /* sem rede: fica local e sobe na próxima */ }
+  sincEmCurso = false;
+  if(mudou){ salvar(); redesenhar(); }
   publicarPlacar();
 }
-addEventListener("visibilitychange", () => { if(document.hidden) sincronizarAgora(); });
-addEventListener("pagehide", sincronizarAgora);
+
+/* Redesenha a tela em que a pessoa está, sem tirá-la do lugar. Durante uma
+   sessão de exercícios não mexe em nada: o número na tela é o da rodada, e
+   trocar a tela debaixo de quem está respondendo seria pior que o problema. */
+function redesenhar(){
+  if(SES) return;                                   /* no meio da rodada, não */
+  if(document.getElementById("caixa")) return;      /* com caixa aberta, não */
+  /* Ajustes fica de fora de propósito: lá tem campo de texto, e redesenhar
+     apagaria o apelido no meio da digitação. */
+  if(aba === "inicio")      telaInicio();
+  else if(aba === "perfil") telaPerfil();
+}
+
+addEventListener("visibilitychange", () => {
+  if(document.hidden) sincronizarAgora();
+  /* Voltando para o app: puxa antes de qualquer outra coisa. É este o momento
+     em que a pessoa pega o tablet depois de ter estudado no celular. */
+  else sincronizarAgora();
+});
+addEventListener("pagehide", () => sincronizarAgora({ rapido:true }));
 
 /* ============================================================
    TELAS DE ENTRADA
