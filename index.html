@@ -314,6 +314,13 @@ button{font-family:inherit;font-size:inherit;cursor:pointer;border:none;backgrou
 .emj{height:44px;border:1px solid var(--line);border-radius:12px;background:var(--card);
   font-size:21px;line-height:1;display:grid;place-items:center}
 .emj.on{border-color:var(--brand);background:rgba(31,157,85,.10);box-shadow:0 0 0 2px rgba(31,157,85,.18)}
+.adminGente{border-top:1px solid var(--line)}
+.agLinha{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.agLinha:last-child{border-bottom:none}
+.agTx{flex:1;min-width:0}
+.agTx b{display:block;font-size:14px;font-weight:800}
+.agTx span{display:block;font-size:11.5px;color:var(--ink-2);font-weight:700}
+.minibt.perigo{flex:0 0 auto;color:var(--wrong);border-color:rgba(198,60,50,.4)}
 .novoConv{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
 /* cabeçalho do início com o botão do perfil */
 .heroPf{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
@@ -599,7 +606,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "42479b1";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "a2b7aa8";</script>
 <script>window.VERSAO_BANCO = "6d5776ea7153";</script>
 
 <script>
@@ -1756,19 +1763,30 @@ async function telaGrupo(){
           do app.</p>
       </div>`);
   }
+  /* A lista de quem está no grupo é relida TODA vez que esta tela abre.
+
+     Antes ela era lida uma vez e guardada até o app fechar, e isso escondia
+     justamente o que a tela existe para mostrar: quem entrou depois. A Isabela
+     viu amigas no painel do Firebase que não apareciam aqui e desconfiou — com
+     razão, ainda que a causa principal fosse outra: entrar com o Google não põe
+     ninguém no grupo, quem põe é o código de convite.
+
+     Enquanto a leitura nova não chega, a lista antiga fica na tela. Piscar
+     "carregando" a cada visita seria pior do que mostrar dados de um minuto atrás. */
   if(!CACHE_MEMBROS){
     montarTela(`<div class="hero"><h1>Seu grupo ⚔️</h1></div>
       <p class="muted" style="text-align:center;padding:20px 0">Carregando quem está aqui...</p>`);
-    try{
-      const q = await N.api.getDocs(cole("grupos", N.grupo, "membros"));
-      CACHE_MEMBROS = [];
-      q.forEach(d => CACHE_MEMBROS.push({ uid:d.id, ...d.data() }));
-    }catch(e){ CACHE_MEMBROS = []; }
-    /* o placar é outra coleção: quem não publicou ainda simplesmente não tem
-       números, e a lista continua funcionando sem eles */
-    const porUid = await lerPlacar();
-    CACHE_MEMBROS.forEach(m => { m.placar = porUid[m.uid] || null; });
   }
+  try{
+    const q = await N.api.getDocs(cole("grupos", N.grupo, "membros"));
+    const lidos = [];
+    q.forEach(d => lidos.push({ uid:d.id, ...d.data() }));
+    CACHE_MEMBROS = lidos;
+  }catch(e){ CACHE_MEMBROS = CACHE_MEMBROS || []; }
+  /* o placar é outra coleção: quem não publicou ainda simplesmente não tem
+     números, e a lista continua funcionando sem eles */
+  const porUid = await lerPlacar();
+  CACHE_MEMBROS.forEach(m => { m.placar = porUid[m.uid] || null; });
   const eu = N.usuario ? N.usuario.uid : null;
   /* A conta que organiza o grupo não é necessariamente alguém que estuda. A
      "fixa aí" foi criada só para publicar questões, e ficava na lista recebendo
@@ -1793,7 +1811,7 @@ async function telaGrupo(){
      na hora, e se largar no meio encontra o desafio aqui esperando. */
   const aResponder = desafios.filter(d => desafioAberto(d) && !d["res" + meuLado(d)]);
   const placar = CACHE_PLACAR || {};
-  const naLiga = minhaLiga(placar, semanaAtual);
+  const naLiga = minhaLiga(placar, semanaAtual, CACHE_MEMBROS);
   const meuNivel = nivelDe(S.nivel);
   const falta = faltaParaFechar();
   const nome = m => m.uid === eu
@@ -3600,6 +3618,36 @@ function juntarProgresso(local, remoto){
   m.conquistas  = [...new Set([ ...((local.marcos||{}).conquistas || []),
                                 ...((remoto.marcos||{}).conquistas || []) ])];
   fora.marcos = m;
+  /* Coisas que descrevem a CONTA, e não o aparelho: em que liga a pessoa está,
+     em que sala, quantos pódios e congelamentos tem, quantos desafios ganhou.
+
+     Elas não estavam sendo juntadas, e o estrago era duplo: abrir num aparelho
+     novo mostrava tudo zerado — foi o que a Isabela viu ao entrar pelo tablet —
+     e, pior, esse zero subia por cima do que estava certo na nuvem na primeira
+     sincronia. Perdia liga, pódio e congelamento de uma vez.
+
+     Contador junta pelo maior; lista junta pela união; e o lugar na liga desta
+     semana vem da nuvem quando o aparelho é novo, porque aqui ele não existe. */
+  ["pod1","pod2","gelos","desafiosGanhos"].forEach(k =>
+    fora[k] = Math.max(local[k] || 0, remoto[k] || 0));
+  fora.congelados = [...new Set([ ...(local.congelados || []), ...(remoto.congelados || []) ])];
+  fora.desafiosVistos = [...new Set([ ...(local.desafiosVistos || []),
+                                      ...(remoto.desafiosVistos || []) ])].slice(-200);
+  ["nivel","sala","semanaSala","semanaPassada","ligaVista","horizonte"].forEach(k => {
+    if(aparelhoNovo && remoto[k] !== undefined && remoto[k] !== null) fora[k] = remoto[k];
+  });
+  /* Num aparelho já em uso, o nível ainda vem da nuvem se lá estiver mais alto:
+     subir de liga acontece no aparelho que abriu primeiro no domingo, e o outro
+     não pode continuar achando que está no bronze. */
+  if(!aparelhoNovo && remoto.nivel){
+    const iL = LIGAS.findIndex(l => l.id === (local.nivel || "bronze"));
+    const iR = LIGAS.findIndex(l => l.id === remoto.nivel);
+    if(iR > iL) fora.nivel = remoto.nivel;
+    if(iR > iL || (local.sala == null && remoto.sala != null)){
+      fora.sala = remoto.sala; fora.semanaSala = remoto.semanaSala;
+    }
+  }
+
   ["apelido","emoji"].forEach(k => {
     fora[k] = aparelhoNovo ? (remoto[k] || local[k] || "") : (local[k] || remoto[k] || "");
   });
@@ -3780,12 +3828,17 @@ async function entrarNaLiga(){
   await publicarPlacar();
 }
 /* Quem está comigo nesta semana, em ordem de XP. */
-function minhaLiga(placar, semana){
+function minhaLiga(placar, semana, membros){
   const meuNivel = S.nivel || "bronze";
   const minhaSala = (S.semanaSala === semana) ? S.sala : null;
   if(minhaSala == null) return [];
+  /* Só entra quem ainda é membro. A liga é montada a partir do placar, e o
+     placar de quem saiu do grupo pode sobrar por um tempo — sem este filtro,
+     alguém removido continuaria disputando a semana. */
+  const doGrupo = membros ? new Set(membros.map(m => m.uid)) : null;
   const gente = [];
   Object.entries(placar || {}).forEach(([uid, p]) => {
+    if(doGrupo && !doGrupo.has(uid)) return;
     const d = daSemanaDe(p, semana);
     if(!d || d.nivel !== meuNivel || d.sala !== minhaSala) return;
     gente.push({ uid, placar:p, xpSemana:d.xpSemana });
@@ -4211,11 +4264,17 @@ async function telaAdmin(aviso){
       if(d.exists()) convite = { codigo: dono.convite, ...d.data() };
     }catch(e){}
   }
-  let nMembros = "—", meuRegistro = null;
+  let nMembros = "—", meuRegistro = null, listaMembros = [];
   try{
     const ms = await N.api.getDocs(cole("grupos", dono.id, "membros"));
     nMembros = ms.size;
-    ms.forEach(d => { if(d.id === N.usuario.uid) meuRegistro = { uid:d.id, ...d.data() }; });
+    ms.forEach(d => {
+      const m = { uid:d.id, ...d.data() };
+      listaMembros.push(m);
+      if(d.id === N.usuario.uid) meuRegistro = m;
+    });
+    listaMembros.sort((a, b) => (a.uid === N.usuario.uid ? -1 : b.uid === N.usuario.uid ? 1 : 0)
+      || String(a.nome || "").localeCompare(String(b.nome || ""), "pt-BR"));
   }catch(e){}
   let nQuestoes = 0;
   const jaPublicado = {};        // "imuno_p3" -> quantos exercícios estão no ar
@@ -4271,8 +4330,21 @@ async function telaAdmin(aviso){
 
     <div class="cx">
       <b>Quem já entrou</b>
-      <p class="muted" style="margin:8px 0 0">${nMembros} ${nMembros === 1 ? "pessoa" : "pessoas"} ·
+      <p class="muted" style="margin:8px 0 10px">${nMembros} ${nMembros === 1 ? "pessoa" : "pessoas"} ·
         sem limite de tamanho</p>
+      ${listaMembros.length ? `<div class="adminGente">
+        ${listaMembros.map(m => `<div class="agLinha">
+          <span class="agTx"><b>${esc(m.nome || "sem nome")}</b>
+            <span>${m.papel === "dono" ? "organiza o grupo" : (m.oculto ? "escondida da lista" : "estuda no grupo")}</span></span>
+          ${m.uid === N.usuario.uid ? "" :
+            `<button class="minibt perigo" data-tirar="${esc(m.uid)}">Remover</button>`}
+        </div>`).join("")}
+      </div>
+      <p class="muted" style="margin:10px 0 0;font-size:12.5px">Remover tira a pessoa da lista, da
+        liga e do ranking, e apaga o placar dela neste grupo. O progresso de estudo dela continua
+        na conta dela — se você mandar o código de novo, ela volta de onde parou.
+        <b>Desativar a conta no Firebase não faz isso:</b> aquilo impede a pessoa de entrar, mas o
+        registro dela no grupo continua aqui.</p>` : ""}
     </div>
 
     <div class="cx">
@@ -4405,6 +4477,34 @@ async function telaAdmin(aviso){
       telaAdmin();
     }catch(e){ telaAdmin(traduzErro(e)); }
   }
+
+  /* Remover alguém do grupo.
+
+     Faltava, e a Isabela encontrou o buraco do jeito mais direto: pediu para uma
+     amiga de fora testar o app, e depois não tinha como tirar ela da lista.
+     Desativar a conta no Firebase não resolve — aquilo impede a pessoa de entrar,
+     mas o registro de membro continua, e a lista do grupo lê o registro.
+
+     Apaga três coisas: o registro de membro, o placar (senão a pessoa continua
+     na liga, que é montada a partir do placar) e as datas de prova que ela tinha
+     compartilhado com a turma. O progresso de estudo dela NÃO é tocado: mora na
+     conta dela, e se ela voltar com o código, volta de onde parou. */
+  document.querySelectorAll("[data-tirar]").forEach(b => b.onclick = () => {
+    const m = listaMembros.find(x => x.uid === b.dataset.tirar);
+    if(!m) return;
+    caixaConfirma(`Remover ${esc(m.nome || "esta pessoa")}?`,
+      "Ela sai da lista, da liga e do ranking deste grupo, e o placar dela aqui é apagado. "
+      + "O progresso de estudo continua na conta dela — voltando com o código, volta de onde parou.",
+      "Remover do grupo", async () => {
+        try{
+          await N.api.deleteDoc(ref("grupos", dono.id, "membros", m.uid));
+          try{ await N.api.deleteDoc(ref("grupos", dono.id, "placar", m.uid)); }catch(e){}
+          try{ await N.api.deleteDoc(ref("grupos", dono.id, "datas", m.uid)); }catch(e){}
+          CACHE_MEMBROS = null; CACHE_PLACAR = null;
+          telaAdmin();
+        }catch(e){ telaAdmin(traduzErro(e)); }
+      }, true);
+  });
 
   const bMostrar = $("#bMostrar");
   if(bMostrar) bMostrar.onclick = async () => {
