@@ -515,6 +515,9 @@ textarea.resposta.alta{width:100%;min-height:130px;resize:vertical;font-family:i
 .resposta.no{border-color:var(--wrong);background:var(--wrong-soft)}
 .resposta[disabled]{opacity:1}
 .pista{margin:10px 0 0;font-size:13.5px;color:var(--ink-2)}
+.parteLabel{font-weight:800;font-size:14px;margin:16px 0 6px;color:var(--ink)}
+.parteLabel:first-child{margin-top:0}
+.parteBox{margin-bottom:2px}
 .revtexto{font-size:15px;line-height:1.6;margin:10px 0 0;color:var(--txt)}
 .revexp{font-size:14.5px;line-height:1.55;margin:10px 0 0;color:var(--ink-2)}
 .acoes .btn.ghost{flex:1}
@@ -605,6 +608,12 @@ textarea.resposta.alta{width:100%;min-height:130px;resize:vertical;font-family:i
 .opt.no{border-color:var(--wrong);background:var(--wrong-soft);box-shadow:0 2px 0 var(--wrong)}
 .vfgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .vfgrid .opt{justify-content:center;font-weight:800;font-size:16px;text-transform:uppercase;letter-spacing:.03em}
+.vfbloco{display:flex;flex-direction:column;gap:16px;margin-bottom:4px}
+.vfitem{padding-bottom:16px;border-bottom:1px solid var(--line)}
+.vfitem:last-child{border-bottom:none;padding-bottom:0}
+.vfitem .stem{margin-bottom:10px;font-size:15px}
+.vfitem .vfgrid .opt{padding:10px 12px;margin-bottom:0}
+.justBox{margin-top:10px}
 
 .cloze{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;font-size:17px;line-height:2.1}
 .blank{display:inline-block;min-width:104px;border-bottom:3px solid var(--ink-2);text-align:center;
@@ -613,6 +622,14 @@ textarea.resposta.alta{width:100%;min-height:130px;resize:vertical;font-family:i
 .blank.ok{background:var(--brand-soft);border-bottom-color:var(--brand)}
 .blank.no{background:var(--wrong-soft);border-bottom-color:var(--wrong);text-decoration:line-through;opacity:.75}
 .blank.fix{background:var(--brand-soft);border-bottom-color:var(--brand);font-weight:800}
+input.blankInput{border:none;border-bottom:3px solid var(--ink-2);background:transparent;
+  font:inherit;font-size:16px;font-weight:700;color:var(--txt);outline:none;width:150px;
+  max-width:100%}
+input.blankInput:focus{border-bottom-color:var(--brand)}
+input.blankInput[disabled]{opacity:1}
+input.blankInput.ok{background:var(--brand-soft);border-bottom-color:var(--brand);color:var(--ink)}
+input.blankInput.no{background:var(--wrong-soft);border-bottom-color:var(--wrong);
+  text-decoration:line-through;opacity:.75}
 .bank{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
 .chip{background:var(--card);border:2px solid var(--line);box-shadow:0 2px 0 var(--line);border-radius:12px;
   padding:9px 13px;font-weight:700;font-size:15px;transition:.1s}
@@ -697,7 +714,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026mp-v05";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026qf-v01";</script>
 <script>window.VERSAO_BANCO = "684a01b441d4";</script>
 
 <script>
@@ -712,7 +729,7 @@ const CAIXA_MAX  = INTERVALOS.length - 1;
 const NOMES_TIPO  = { vf:"V ou F", mcq:"Assinalar", multi:"Marcar várias", escrita:"Escrever", cloze:"Lacunas", ordem:"Ordenar", relacionar:"Relacionar" };
 const TITULO_TIPO = { vf:"Verdadeiro ou falso", mcq:"Escolha a certa", multi:"Marque TODAS as corretas",
                       escrita:"Escreva a resposta", cloze:"Complete as lacunas", ordem:"Coloque em ordem",
-                      relacionar:"Relacione", discursiva:"Discursiva" };
+                      relacionar:"Relacione", discursiva:"Discursiva", vfjust:"Verdadeiro ou falso, com justificativa" };
 
 /* toda questão pertence a uma disciplina e a uma prova */
 let porId = {}, discPorId = {};
@@ -885,6 +902,7 @@ const padrao = () => ({
   moedasGanhas:0, moedasGastas:0,
   provasCompradas:{},                           // { [provaId]: { tentativas:{ [questaoId]: n } } }
   marcosMoedas:{ ofensiva:0 },                   // último múltiplo de 7 de ofensiva já recompensado
+  brindeBoasVindas:false,                        // já recebeu o presente de conta nova?
   conhecidos:[],                                // ids de exercício que este aparelho já viu chegar
   apelido:"", emoji:"",                         // como a pessoa quer ser chamada
                                                 // emoji vazio = ainda não escolheu
@@ -899,6 +917,7 @@ let S = carregar();
 let aba = "inicio";
 let discAberta = null;      // qual disciplina está aberta na lista de datas de prova
 const discsAbertas = new Set();   // quais matérias estão abertas na tela inicial
+const gruposProvasAbertos = new Set();   // quais grupos (P3, P4...) estão abertos em "provas anteriores"
 
 /* Emojis para a pessoa escolher. Coisa de faculdade de medicina, sem cara de
    app de banco: órgão, bicho, vidraria, estudo. */
@@ -1062,6 +1081,29 @@ function ofertarCongelarSePreciso(){
     caixaAviso("Você perdeu sua ofensiva ontem",
       "Você não tem congelamentos guardados. Continue com a rotina de estudos para ganhar mais e proteger sua sequência da próxima vez.");
   }
+}
+
+/* Presente de conta nova: 50 moedas e 1 congelamento, só na primeira vez.
+   "Conta nova" é medido pelo estado de verdade (histórico, progresso, xp,
+   moedas), não por um dispositivo novo — senão reinstalar o app duas vezes
+   daria dois presentes. */
+function ofertarBoasVindasSePreciso(){
+  if(S.brindeBoasVindas) return;
+  const contaNova = !Object.keys(S.historico || {}).length
+    && !Object.keys(S.prog || {}).length
+    && (S.xp || 0) === 0
+    && (S.moedasGanhas || 0) === 0;
+  S.brindeBoasVindas = true;
+  if(!contaNova){ salvar(); return; }
+  ganharMoedas(50);
+  S.gelos = Math.min(MAX_GELOS, (S.gelos || 0) + 1);
+  salvar(); publicarPlacar();
+  caixaAviso("🎉 Bem-vinda ao Fixa aí!",
+    `Ganhou de presente <b>50 moedas</b> e <b>1 congelamento de ofensiva</b> pra começar.
+     <br><br>Moedas servem pra comprar acesso a provas antigas e às correções das discursivas
+     pela IA — cada prova custa ${PRECO_PROVA}. Mas fica tranquila: você ganha muito mais
+     estudando de verdade — terminando baterias de questões, pontuando no ranking, e ficando
+     em primeiro lugar na liga toda semana.`);
 }
 
 /* ---------- consultas ---------- */
@@ -1795,7 +1837,7 @@ function telaInicio(op){
     else { discsAbertas.add(id); jaViANovidade(id); }   // abriu, viu: o selo cumpriu o papel
     telaInicio({ manterRolagem:true });
   });
-  if(!op || !op.manterRolagem) ofertarCongelarSePreciso();
+  if(!op || !op.manterRolagem){ ofertarBoasVindasSePreciso(); ofertarCongelarSePreciso(); }
 }
 
 /* ============================================================
@@ -3022,7 +3064,7 @@ function render(){
   SES.respondido = false;
   if(SES.fim) tocarRelogio();
   const desenhar = { vf:rVF, mcq:rMCQ, multi:rMulti, escrita:rEscrita, cloze:rCloze,
-                     ordem:rOrdem, relacionar:rRel, discursiva:rDiscursiva }[it.t];
+                     ordem:rOrdem, relacionar:rRel, discursiva:rDiscursiva, vfjust:rVFJust }[it.t];
   if(!desenhar){
     /* Tipo que este app ainda não sabe desenhar — banco novo em programa velho.
        Melhor dizer isso e seguir do que quebrar a bateria inteira. */
@@ -3170,7 +3212,7 @@ function rodapeFeedback(it, acertou, exp, aviso, ganho){
      embaixo, numa questão que quase sempre é parcial, só confundiria. */
   const selo = (ganho == null || naProva) ? "" : `<span class="xpg">+${ganho} XP${
     seq >= 2 ? ` <b>⚡ ${seq} seguidas</b>` : ""}</span>`;
-  const semVeredito = naProva && it.t === "discursiva";
+  const semVeredito = naProva && (it.t === "discursiva" || it.t === "vfjust");
   const idBanco = naProva ? idNoBanco(it) : it.id;
   $(".foot").innerHTML = `
     ${barraTempoHTML()}
@@ -3250,6 +3292,7 @@ function painelReporte(it, acertou, exp){
 
 /* ---------- 1. Verdadeiro ou falso ---------- */
 function rVF(it){
+  if(it.itens && it.itens.length) return rVFBloco(it);
   $("#q").innerHTML = cabecalho(it, "A afirmação é verdadeira ou falsa?") +
     `<div class="stem">${esc(it.frase)}</div>
      <div class="vfgrid">
@@ -3266,6 +3309,137 @@ function rVF(it){
     });
     concluir(it, acertou, (it.correta ? "<b>Verdadeiro.</b> " : "<b>Falso.</b> ") + esc(it.just));
   });
+}
+
+/* ---------- 1b. Verdadeiro ou falso — bloco de várias afirmações ----------
+
+   Pedido novo: uma questão de prova pode trazer várias afirmações V/F sob o
+   MESMO número — "questão 09, dez afirmações, 1 ponto cada" — e não dez
+   questões soltas. `it.itens` é a lista de afirmações (`{frase, correta,
+   just}` cada uma), e a questão continua sendo uma só no banco.
+
+   A nota é parcial, item por item — é a reprodução fiel de como a prova de
+   papel pontua ("cada afirmação vale X"). Por isso esta tela não responde no
+   toque como a V/F simples: junta as respostas de todas as afirmações e só
+   fecha quando a pessoa tocar em "Verificar", com todas respondidas. */
+function rVFBloco(it){
+  const val = valorDaQuestao(it);
+  const n = it.itens.length;
+  const porItem = Math.round((val / n) * 100) / 100;
+  const resp = new Array(n).fill(null);
+  $("#q").innerHTML = cabecalho(it, it.enunciado || "Julgue cada afirmação como verdadeira ou falsa.") +
+    `<p class="dica">Vale ${plural(val, "ponto", "pontos")} — ${plural(porItem, "ponto", "pontos")} por afirmação certa.</p>
+     <div class="vfbloco">${it.itens.map((s, k) => `
+       <div class="vfitem" data-item="${k}">
+         <div class="stem"><b>${k + 1}.</b> ${esc(s.frase)}</div>
+         <div class="vfgrid">
+           <button class="opt" data-item="${k}" data-v="1"><span>Verdadeiro</span></button>
+           <button class="opt" data-item="${k}" data-v="0"><span>Falso</span></button>
+         </div>
+       </div>`).join("")}</div>`;
+  pedirVerificar(() => {
+    if(SES.respondido) return;
+    if(resp.some(r => r === null)) return;
+    document.querySelectorAll(".vfitem [data-v]").forEach(b => b.disabled = true);
+    let acertos = 0;
+    it.itens.forEach((s, k) => {
+      const certo = resp[k] === s.correta;
+      if(certo) acertos++;
+      document.querySelectorAll(`.vfitem[data-item="${k}"] [data-v]`).forEach(x => {
+        const ehVerdadeiro = x.dataset.v === "1";
+        if(ehVerdadeiro === s.correta) x.classList.add("ok");
+        else if(ehVerdadeiro === resp[k]) x.classList.add("no");
+      });
+    });
+    const nota = Math.round((acertos / n) * val * 100) / 100;
+    guardarRespostaDeProva(it, nota, { itens: resp });
+    const texto = `Você acertou ${acertos} de ${n} afirmações — ${nota} de ${val} pontos.<br><br>` +
+      it.itens.map((s, k) => `${resp[k] === s.correta ? "✅" : "❌"} <b>${
+        s.correta ? "Verdadeiro." : "Falso."}</b> ${esc(s.just || "")}`).join("<br><br>");
+    concluir(it, acertos === n, texto);
+  }, false);
+  document.querySelectorAll(".vfitem [data-v]").forEach(b => b.onclick = () => {
+    if(SES.respondido) return;
+    const k = +b.dataset.item;
+    resp[k] = b.dataset.v === "1";
+    document.querySelectorAll(`.vfitem[data-item="${k}"] [data-v]`).forEach(x => x.classList.toggle("sel", x === b));
+    atualizaVerificar(resp.every(r => r !== null));
+  });
+}
+
+/* ---------- 1c. Verdadeiro ou falso — com justificativa quando Falso ----------
+
+   Pedido novo (prova de Fisiologia, 2026-08-23): a prova de papel cobrava, em
+   cada afirmação marcada Falsa, uma justificativa escrita — não bastava
+   acertar "F", tinha que explicar por quê. `it.itens` tem o mesmo formato do
+   vf-bloco ({frase, correta, just} cada), a diferença é o que acontece
+   quando alguém marca "Falso": aparece uma caixa de texto para justificar.
+
+   A nota não é calculada aqui no cliente item a item, feito o vf-bloco — vai
+   inteira para a correção da IA, exatamente como a discursiva. O texto que
+   junta a escolha (V/F) e a justificativa de cada afirmação vira "a
+   resposta", e as mesmas três funções que já existiam (pedirCorrecao,
+   mostrarCorrecaoDoClaude, mostrarSemCorrecao) corrigem sem precisar de
+   nenhuma mudança nelas — elas só olham it.id, it.gab e valorDaQuestao(it),
+   nunca it.t. É o mesmo truque de reaproveitamento usado para o vf-bloco. */
+function rVFJust(it){
+  const val = valorDaQuestao(it);
+  const n = it.itens.length;
+  const resp = new Array(n).fill(null);
+  $("#q").innerHTML = cabecalho(it, it.enunciado || "Julgue cada afirmação. Se marcar Falso, justifique.") +
+    `<p class="dica">Vale ${plural(val, "ponto", "pontos")}. Toda afirmação marcada Falso precisa de justificativa.</p>
+     <div class="vfbloco">${it.itens.map((s, k) => `
+       <div class="vfitem" data-item="${k}">
+         <div class="stem"><b>${k + 1}.</b> ${esc(s.frase)}</div>
+         <div class="vfgrid">
+           <button class="opt" data-item="${k}" data-v="1"><span>Verdadeiro</span></button>
+           <button class="opt" data-item="${k}" data-v="0"><span>Falso</span></button>
+         </div>
+         <div class="justBox hide" id="justBox${k}">
+           <textarea class="resposta alta" id="txtJust${k}" rows="3"
+             placeholder="Por que esta afirmação é falsa?"
+             aria-label="Justificativa da afirmação ${k + 1}"></textarea>
+         </div>
+       </div>`).join("")}</div>
+     <p class="pista" id="contaLetras">0 caracteres de justificativa</p>
+     <div id="correcao"></div>`;
+  const justCampo = k => $("#txtJust" + k);
+  const pronto = () => resp.every(r => r !== null)
+    && resp.every((r, k) => r !== false || justCampo(k).value.trim().length >= 5);
+  const atualizaContagem = () => {
+    const total = it.itens.reduce((soma, s, k) => soma + (resp[k] === false ? justCampo(k).value.trim().length : 0), 0);
+    $("#contaLetras").textContent = total + " caracteres de justificativa";
+  };
+  document.querySelectorAll(".vfitem [data-v]").forEach(b => b.onclick = () => {
+    if(SES.respondido) return;
+    const k = +b.dataset.item;
+    resp[k] = b.dataset.v === "1";
+    document.querySelectorAll(`.vfitem[data-item="${k}"] [data-v]`).forEach(x => x.classList.toggle("sel", x === b));
+    $("#justBox" + k).classList.toggle("hide", resp[k] !== false);
+    if(resp[k] !== false) justCampo(k).value = "";
+    atualizaContagem();
+    atualizaVerificar(pronto());
+  });
+  it.itens.forEach((s, k) => { justCampo(k).oninput = () => { atualizaContagem(); atualizaVerificar(pronto()); }; });
+  pedirVerificar(async () => {
+    if(SES.respondido) return;
+    if(!pronto()) return;
+    document.querySelectorAll(".vfitem [data-v]").forEach(b => b.disabled = true);
+    document.querySelectorAll(".vfitem textarea").forEach(t => t.disabled = true);
+    const texto = it.itens.map((s, k) =>
+      `${k + 1}. ${s.frase}\nMinha resposta: ${resp[k] ? "Verdadeiro" : "Falso"}` +
+      (resp[k] === false ? `\nMinha justificativa: ${justCampo(k).value.trim()}` : "")
+    ).join("\n\n");
+    $(".foot").innerHTML = barraTempoHTML() + `<button class="btn" disabled>Corrigindo…</button>`;
+    let c = null, porque = "Este aparelho está sem conexão com o grupo, então não deu para corrigir agora.";
+    if(correcaoLigada()){
+      c = await pedirCorrecao(it, texto);
+      if(!c) porque = N.erroCorrecao
+        || "Não deu para falar com a correção agora. Pode ser a internet, ou o limite de correções do dia.";
+    }
+    if(c) mostrarCorrecaoDoClaude(it, texto, c);
+    else  mostrarSemCorrecao(it, texto, porque);
+  }, false);
 }
 
 /* ---------- 2. Múltipla escolha ---------- */
@@ -3414,8 +3588,24 @@ function rEscrita(it){
   setTimeout(() => { try{ campo.focus({ preventScroll:true }); }catch(e){ campo.focus(); } }, 60);
 }
 
-/* ---------- 3. Completar lacunas ---------- */
+/* ---------- 3. Completar lacunas ----------
+
+   Duas formas de responder, e a diferença é fidelidade à prova de papel:
+
+   - Por padrão, TOCAR num chip da lista de palavras — é o formato de sempre,
+     bom para treinar reconhecimento.
+
+   - Com `it.digitar:true`, ESCREVER cada lacuna, com a mesma tolerância de
+     grafia da questão `escrita` (ignora acento/maiúscula/pontuação, perdoa
+     uma letra errada em palavra de 6+). Pedido explícito da Isabela para a
+     questão 05 de Farmacologia: a prova de papel pedia para ESCREVER a
+     resposta na lacuna, não escolher entre alternativas — então a prova aqui
+     dentro precisa cobrar a mesma coisa. Uma questão de prova que na folha
+     original era de completar por extenso não pode virar múltipla escolha
+     nem virar "toque no chip certo": as duas dão pista que a prova de
+     verdade não dava. */
 function rCloze(it){
+  if(it.digitar) return rClozeDigitar(it);
   const partes = it.texto.split(/(\[\[\d+\]\])/g);
   const corpo = partes.map(p => {
     const m = p.match(/^\[\[(\d+)\]\]$/);
@@ -3470,6 +3660,48 @@ function rCloze(it){
     concluir(it, tudoOk, esc(it.exp));
   }, false);
   pintar();
+}
+
+/* ---------- 3b. Completar lacunas — escrevendo ----------
+   Mesmo texto com `[[n]]`, mesma lista `lacunas`, mas cada lacuna vira um
+   campo de texto de verdade em vez de um chip para tocar. A correção usa
+   `conferirEscrita`, a mesma função da questão `escrita` — cada `lacuna` só
+   precisa dos campos que `conferirEscrita` já sabe ler (`resp`, `aceita`). */
+function rClozeDigitar(it){
+  let n = 0;
+  const partes = it.texto.split(/(\[\[\d+\]\])/g);
+  const corpo = partes.map(p => {
+    const m = p.match(/^\[\[(\d+)\]\]$/);
+    if(!m) return esc(p);
+    const i = n++;
+    return `<input class="blank blankInput" type="text" data-b="${i}"
+      autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+      aria-label="Lacuna ${i + 1}">`;
+  }).join("");
+
+  $("#q").innerHTML = cabecalho(it, it.enunciado) +
+    `<p class="dica">Escreva o que falta em cada lacuna.</p>
+     <div class="cloze">${corpo}</div>`;
+
+  const inputs = [...document.querySelectorAll(".blankInput")];
+  const completo = () => inputs.every(inp => inp.value.trim().length > 0);
+  inputs.forEach(inp => inp.oninput = () => atualizaVerificar(completo()));
+
+  pedirVerificar(() => {
+    if(SES.respondido) return;
+    if(!completo()) return;
+    let tudoOk = true;
+    inputs.forEach((inp, i) => {
+      const lac = it.lacunas[i];
+      const r = conferirEscrita(lac, inp.value);
+      inp.disabled = true;
+      if(r.certo) inp.classList.add("ok");
+      else{ tudoOk = false; inp.classList.add("no");
+        inp.insertAdjacentHTML("afterend", ` <span class="blank fix">${esc(lac.resp)}</span>`); }
+    });
+    concluir(it, tudoOk, esc(it.exp));
+  }, false);
+  setTimeout(() => { try{ inputs[0].focus({ preventScroll:true }); }catch(e){} }, 60);
 }
 
 /* ---------- 4. Colocar em ordem ---------- */
@@ -3565,7 +3797,10 @@ function gabaritoLegivel(it){
     case "mcq":   return `<div class="pares"><div class="par"><b>Resposta</b><span class="seta">→</span><span>${esc(it.opcoes[it.correta])}</span></div></div>`;
     case "multi": return `<div class="pares">${it.corretas.map(i =>
                     `<div class="par"><b>✓</b><span>${esc(it.opcoes[i])}</span></div>`).join("")}</div>`;
-    case "vf":    return `<div class="pares"><div class="par"><b>${it.correta ? "Verdadeiro" : "Falso"}</b></div></div>`;
+    case "vf":    return it.itens && it.itens.length
+                    ? `<div class="pares">${it.itens.map((s, k) =>
+                        `<div class="par"><b>${k+1}. ${s.correta ? "Verdadeiro" : "Falso"}</b><span>${esc(s.frase)}</span></div>`).join("")}</div>`
+                    : `<div class="pares"><div class="par"><b>${it.correta ? "Verdadeiro" : "Falso"}</b></div></div>`;
     case "escrita": return `<div class="pares"><div class="par"><b>Resposta</b><span class="seta">→</span><span>${esc(it.resp)}</span></div></div>`;
     case "cloze": return `<div class="pares">${it.lacunas.map((l, k) =>
                     `<div class="par"><b>${k+1}</b><span class="seta">→</span><span>${esc(l.resp)}</span></div>`).join("")}</div>`;
@@ -3769,28 +4004,57 @@ function telaFim(){
       lado do gabarito aprende bastante.
 
    O gabarito só aparece DEPOIS de a pessoa enviar. Antes disso, nem no HTML.
-*/
+
+   ---- Discursiva com partes ----
+
+   Pedido novo: uma questão com "a) ... b) ... c) ..." precisa de uma caixa de
+   resposta PARA CADA PARTE — ler a) e b) juntas numa caixa só confunde quem
+   está respondendo, e a pessoa perde o fio de qual parte já cobriu. Mas a nota
+   continua sendo UMA só, do valor total da questão: a professora corrigia a
+   questão inteira de uma vez, não parte por parte, e o gabarito (`gab.pontos`)
+   já mistura pontos de partes diferentes sem separá-los.
+
+   Então `it.partes` é só uma lista de rótulos (`["a) ...", "b) ...", ...]`)
+   que desenha N caixas. Ao enviar, as respostas são coladas de volta em UM
+   texto só, cada uma sob o rótulo da sua parte, e mandadas para a correção
+   como se fossem uma resposta corrida — a Cloud Function nunca fica sabendo
+   que existiu mais de uma caixa. Questão sem `partes` continua com uma caixa
+   só, exatamente como sempre foi. */
 function rDiscursiva(it){
   const g = it.gab || {};
   const val = valorDaQuestao(it);
+  const partes = (it.partes && it.partes.length) ? it.partes : null;
+  const boxes = partes || [null];
   $("#q").innerHTML =
     `${it.apoio ? `<div class="apoio">${esc(it.apoio)}</div>` : ""}` +
     cabecalho(it, it.enunciado || it.p) +
-    `<p class="dica">Responda com as suas palavras. Vale ${plural(val, "ponto", "pontos")}.</p>
-     <textarea class="resposta alta" id="txtDisc" rows="7"
-       placeholder="Digite sua resposta e ela será corrigida pela IA com base nos critérios usados nas QPs." aria-label="Sua resposta"></textarea>
+    `<p class="dica">Responda com as suas palavras. Vale ${plural(val, "ponto", "pontos")}${
+       partes ? `, no total das ${plural(partes.length, "parte", "partes")}` : ""}.</p>
+     ${boxes.map((rotulo, k) => `
+       ${rotulo ? `<p class="parteLabel">${esc(rotulo)}</p>` : ""}
+       <div class="parteBox">
+         <textarea class="resposta alta" id="txtDisc${k}" rows="${partes ? 4 : 7}"
+           placeholder="${partes ? "Sua resposta para esta parte" : "Digite sua resposta e ela será corrigida pela IA com base nos critérios usados nas QPs."}"
+           aria-label="${rotulo ? "Sua resposta — " + esc(rotulo) : "Sua resposta"}"></textarea>
+       </div>`).join("")}
      <p class="pista" id="contaLetras">0 caracteres</p>
      <div id="correcao"></div>`;
-  const campo = $("#txtDisc");
-  campo.oninput = () => {
-    $("#contaLetras").textContent = campo.value.trim().length + " caracteres";
-    atualizaVerificar(campo.value.trim().length >= 10);
-  };
+  const campos = boxes.map((_, k) => $("#txtDisc" + k));
+  /* Junta as caixas num texto só, cada parte sob o rótulo dela — é isso que
+     vira "a resposta" para a correção e para o que fica salvo. */
+  const textoJunto = () => partes
+    ? partes.map((rotulo, k) => rotulo + "\n" + (campos[k].value || "").trim()).join("\n\n").trim()
+    : (campos[0].value || "").trim();
+  const pronto = () => campos.every(c => c.value.trim().length > 0) && textoJunto().length >= 10;
+  campos.forEach(c => c.oninput = () => {
+    $("#contaLetras").textContent = campos.reduce((n, x) => n + x.value.trim().length, 0) + " caracteres";
+    atualizaVerificar(pronto());
+  });
   pedirVerificar(async () => {
     if(SES.respondido) return;
-    const texto = campo.value.trim();
-    if(texto.length < 10) return;
-    campo.disabled = true;
+    if(!pronto()) return;
+    const texto = textoJunto();
+    campos.forEach(c => c.disabled = true);
     $(".foot").innerHTML = barraTempoHTML() + `<button class="btn" disabled>Corrigindo…</button>`;
     let c = null, porque = "Este aparelho está sem conexão com o grupo, então não deu para corrigir agora.";
     if(correcaoLigada()){
@@ -3801,7 +4065,7 @@ function rDiscursiva(it){
     if(c) mostrarCorrecaoDoClaude(it, texto, c);
     else  mostrarSemCorrecao(it, texto, porque);
   }, false);
-  setTimeout(() => { try{ campo.focus({ preventScroll:true }); }catch(e){} }, 60);
+  setTimeout(() => { try{ campos[0].focus({ preventScroll:true }); }catch(e){} }, 60);
 }
 
 /* Desenha os pontos do gabarito, um por um, do jeito que a professora cobraria. */
@@ -3975,7 +4239,7 @@ async function pedirCorrecao(it, texto){
 function jaTemAcesso(pv){ return souDonoDoGrupo() || !!(S.provasCompradas && S.provasCompradas[pv.id]); }
 function tentativasIniciais(pv){
   const t = {};
-  (pv.questoes || []).forEach(q => { if(q.t === "discursiva") t[q.id] = TENTATIVAS_POR_COMPRA; });
+  (pv.questoes || []).forEach(q => { if(q.t === "discursiva" || q.t === "vfjust") t[q.id] = TENTATIVAS_POR_COMPRA; });
   return t;
 }
 function tentativasRestantes(pv, questaoId){
@@ -4197,6 +4461,18 @@ function telaPreviaProva(pv){
       extra = `<ul style="margin:8px 0 0;padding-left:18px">${embaralhado.map(s => `<li>${esc(s)}</li>`).join("")}</ul>
         <p class="muted" style="margin:6px 0 0;font-size:12px">A ordem certa aparece só depois de comprar.</p>`;
     }
+    if((q.t === "vf" || q.t === "vfjust") && (q.itens || []).length){
+      /* Bloco de várias afirmações sob a mesma questão — mostra todas, sem
+         dizer qual é verdadeira ou falsa. */
+      extra = `<ul style="margin:8px 0 0;padding-left:18px">${
+        q.itens.map((s, i) => `<li>${i + 1}. ${esc(s.frase)}</li>`).join("")}</ul>`;
+    }
+    if(q.t === "discursiva" && (q.partes || []).length){
+      /* Cada parte (a, b, c...) aparece como texto — sem caixa de resposta
+         nenhuma aqui, é só pra saber o tamanho da questão antes de comprar. */
+      extra = `<ul style="margin:8px 0 0;padding-left:18px;list-style:none">${
+        q.partes.map(p => `<li style="margin-bottom:4px">${esc(p)}</li>`).join("")}</ul>`;
+    }
     return `
     <div class="cardz" style="margin-bottom:10px;padding:14px 16px">
       <p class="muted" style="margin:0 0 6px;font-size:12px">${k + 1}. ${TITULO_TIPO[q.t] || q.t} · ${
@@ -4221,9 +4497,10 @@ function telaPreviaProva(pv){
 function telaProvas(){
   aba = "estudar";
   const lista = provasDisponiveis();
-  /* Agrupada por disciplina — antes vinha tudo misturado numa lista só, e com
-     mais de uma matéria publicando provas (Farmaco tem duas P3, por exemplo)
-     virava uma sopa sem separação nenhuma. */
+  /* Três níveis: disciplina → grupo (P3, P4...) → prova específica.
+     Sem o grupo no meio, Farmacologia mostrava duas provas com o nome
+     "Farmacologia P3" repetido, e a diferença entre elas só aparecia num
+     texto pequeno embaixo — fácil de confundir qual é qual. */
   const porDisc = {};
   lista.forEach(pv => { (porDisc[pv.disc] = porDisc[pv.disc] || []).push(pv); });
   const discsComProva = Object.keys(porDisc)
@@ -4242,29 +4519,53 @@ function telaProvas(){
   </div>` : ""}
   ${!lista.length ? `<div class="cardz"><b>Ainda não tem prova cadastrada.</b>
     <p class="muted" style="margin:6px 0 0">Quem organiza o grupo publica as provas junto com o
-    banco de questões.</p></div>` : discsComProva.map(d => `
-    <div class="secao">${esc(d.emoji)} ${esc(d.nome)}</div>
-    <div class="cardz" style="padding:6px 14px;margin-bottom:14px">
-      ${porDisc[d.id].map(pv => {
-        const feito = feitoDaProva(pv.id);
-        const n = feito ? notaDaProva(pv, feito) : null;
-        const respondidas = feito ? Object.keys(feito.respostas || {}).length : 0;
-        const total = questoesDaVez(pv, feito).length;
-        const trancada = !jaTemAcesso(pv);
-        return `<button class="esc" data-prova-abrir="${esc(pv.id)}">
-          <span class="ic">${trancada ? "🔒" : esc(d.emoji)}</span>
-          <span class="tx"><b>${esc(pv.nome)}</b><span>${esc(pv.sub || "")}${pv.sub ? " · " : ""}${
-            plural(total, "questão", "questões")}
-            · ${valorDaProva(pv, feito)} pontos${pv.minutos ? " · " + pv.minutos + " min" : ""}${
-            trancada ? ` · <b>${PRECO_PROVA} moedas</b>`
-            : feito && feito.terminada ? ` · <b>você tirou ${n.tirou} de ${n.total}</b>`
-            : respondidas ? ` · começada (${respondidas}/${total})` : ""}</span></span>
-          <span class="ck">›</span>
-        </button>`;
-      }).join("")}
-    </div>`).join("")}`;
+    banco de questões.</p></div>` : discsComProva.map(d => {
+      const porGrupo = {};
+      porDisc[d.id].forEach(pv => {
+        const g = pv.grupo || "Provas";
+        (porGrupo[g] = porGrupo[g] || []).push(pv);
+      });
+      return `
+      <div class="secao">${esc(d.emoji)} ${esc(d.nome)}</div>
+      <div class="cardz" style="padding:6px 14px;margin-bottom:14px">
+        ${Object.keys(porGrupo).sort().map(g => {
+          const chave = d.id + "/" + g;
+          const aberto = gruposProvasAbertos.has(chave);
+          const provasDoGrupo = porGrupo[g];
+          return `
+          <button class="dhead ${aberto ? "on" : ""}" data-grupo-abre="${esc(chave)}">
+            <span class="ic">📄</span>
+            <span class="tx"><b>${esc(g)}</b><span>${plural(provasDoGrupo.length, "prova", "provas")}</span></span>
+            <span class="dseta">${aberto ? "⌄" : "›"}</span>
+          </button>
+          ${aberto ? provasDoGrupo.map(pv => {
+            const feito = feitoDaProva(pv.id);
+            const n = feito ? notaDaProva(pv, feito) : null;
+            const respondidas = feito ? Object.keys(feito.respostas || {}).length : 0;
+            const total = questoesDaVez(pv, feito).length;
+            const trancada = !jaTemAcesso(pv);
+            return `<button class="esc" style="padding-left:12px" data-prova-abrir="${esc(pv.id)}">
+              <span class="ic">${trancada ? "🔒" : "·"}</span>
+              <span class="tx"><b>${esc(pv.nome)}</b><span>${esc(pv.sub || "")}${pv.sub ? " · " : ""}${
+                plural(total, "questão", "questões")}
+                · ${valorDaProva(pv, feito)} pontos${pv.minutos ? " · " + pv.minutos + " min" : ""}${
+                trancada ? ` · <b>${PRECO_PROVA} moedas</b>`
+                : feito && feito.terminada ? ` · <b>você tirou ${n.tirou} de ${n.total}</b>`
+                : respondidas ? ` · começada (${respondidas}/${total})` : ""}</span></span>
+              <span class="ck">›</span>
+            </button>`;
+          }).join("") : ""}`;
+        }).join("")}
+      </div>`;
+    }).join("")}`;
   montarTela(corpo, { rodape: `<button class="btn ghost" id="voltarEstudar">Voltar</button>` });
   $("#voltarEstudar").onclick = () => telaEstudar();
+  document.querySelectorAll("[data-grupo-abre]").forEach(b => b.onclick = () => {
+    const chave = b.dataset.grupoAbre;
+    if(gruposProvasAbertos.has(chave)) gruposProvasAbertos.delete(chave);
+    else gruposProvasAbertos.add(chave);
+    telaProvas();
+  });
   document.querySelectorAll("[data-prova-abrir]").forEach(b => b.onclick = () => {
     const pv = provaPorId(b.dataset.provaAbrir);
     if(!pv) return;
@@ -4293,7 +4594,7 @@ function telaProvaFim(pv){
       n.valeu !== n.total ? ` · a prova toda vale ${n.total}` : ""}</p>
   </div>
   ${n.esperando ? `<div class="cardz avisoCorr">
-    <b>⏳ ${plural(n.esperando, "questão discursiva está", "questões discursivas estão")} esperando correção.</b>
+    <b>⏳ ${plural(n.esperando, "questão está", "questões estão")} esperando correção.</b>
     <p class="muted" style="margin:6px 0 0">Elas não entraram na nota — e não valeram zero. Toque
       nelas para ler a sua resposta ao lado do gabarito, ou para tentar corrigir de novo.</p>
   </div>` : ""}
@@ -4306,7 +4607,7 @@ function telaProvaFim(pv){
     const nota = (r && !semNota) ? Math.max(0, Math.min(val, r.nota)) : 0;
     const cor = !r ? "vazia" : semNota ? "esperando"
               : nota >= val ? "cheia" : nota > 0 ? "parcial" : "zero";
-    const rest = q.t === "discursiva" && !souDonoDoGrupo() ? tentativasRestantes(pv, q.id) : null;
+    const rest = (q.t === "discursiva" || q.t === "vfjust") && !souDonoDoGrupo() ? tentativasRestantes(pv, q.id) : null;
     return `<button class="qLinha ${cor}" data-rever-q="${esc(q.id)}">
       <span class="nq">${k + 1}</span>
       <span class="tx"><b>${esc(enunciadoDe(q).replace(/\[\[\d+\]\]/g, "___").slice(0, 70))}${
@@ -4316,7 +4617,7 @@ function telaProvaFim(pv){
     </button>`;
   }).join("")}`;
   const semTentativas = !souDonoDoGrupo() && questoesDaVez(pv, feito)
-    .some(q => q.t === "discursiva" && tentativasRestantes(pv, q.id) <= 0);
+    .some(q => (q.t === "discursiva" || q.t === "vfjust") && tentativasRestantes(pv, q.id) <= 0);
   montarTela(corpo, { comNav:false, rodape:
     `${semTentativas ? `<button class="btn ghost" id="recarregar">🪙 Recarregar tentativas (${PRECO_RECARGA} moedas)</button>
      <div style="height:10px"></div>` : ""}
@@ -4348,10 +4649,15 @@ function enunciadoDe(q){
 }
 function gabaritoEmTexto(q){
   if(q.t === "discursiva") return (q.gab && q.gab.resposta) || "";
-  if(q.t === "vf")   return q.correta ? "Verdadeiro" : "Falso";
+  if(q.t === "vfjust") return (q.itens || []).map((s, k) => (k+1) + ". " + (s.correta ? "Verdadeiro" : "Falso")
+      + " — " + s.frase + (s.correta ? "" : (s.just ? "\n   Justificativa esperada: " + s.just : ""))).join("\n\n");
+  if(q.t === "vf") return (q.itens && q.itens.length)
+    ? q.itens.map((s, k) => (k+1) + ". " + (s.correta ? "Verdadeiro" : "Falso") + " — " + s.frase).join("\n")
+    : (q.correta ? "Verdadeiro" : "Falso");
   if(q.t === "mcq")  return (q.opcoes || [])[q.correta] || "";
   if(q.t === "multi") return (q.corretas || []).map(i => (q.opcoes || [])[i]).join(" · ");
   if(q.t === "escrita") return q.resp || "";
+  if(q.t === "relacionar") return (q.pares || []).map(p => p[0] + " → " + p[1]).join("\n");
   return "";
 }
 
@@ -4681,6 +4987,7 @@ function juntarProgresso(local, remoto){
   }
   fora.marcosMoedas = { ofensiva: Math.max((local.marcosMoedas||{}).ofensiva || 0,
                                             (remoto.marcosMoedas||{}).ofensiva || 0) };
+  fora.brindeBoasVindas = !!(local.brindeBoasVindas || remoto.brindeBoasVindas);
 
   /* Os outros três contadores zeram sozinhos — xpSemana no domingo, feitosHoje
      à meia-noite — e por isso não dá para pegar o maior sem olhar de que dia e
