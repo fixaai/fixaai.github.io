@@ -714,7 +714,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026qf-v01";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026qf-v02";</script>
 <script>window.VERSAO_BANCO = "684a01b441d4";</script>
 
 <script>
@@ -1104,6 +1104,30 @@ function ofertarBoasVindasSePreciso(){
      pela IA — cada prova custa ${PRECO_PROVA}. Mas fica tranquila: você ganha muito mais
      estudando de verdade — terminando baterias de questões, pontuando no ranking, e ficando
      em primeiro lugar na liga toda semana.`);
+}
+
+/* Confere se a dona mandou algum presente (moedas/congelamento) pendente.
+   É assíncrono e lê do Firestore, então só roda quando está de fato logada
+   num grupo — sem isso, todo abrir de app faria essa checagem à toa. */
+async function conferirPresentePendente(){
+  if(!N.ligado || !N.usuario || !N.grupo) return;
+  try{
+    const d = await N.api.getDoc(ref("grupos", N.grupo, "presentes", N.usuario.uid));
+    if(!d.exists()) return;
+    const p = d.data();
+    const moedas = Math.max(0, Math.round(p.moedas || 0));
+    const gelos = Math.max(0, Math.round(p.gelos || 0));
+    await N.api.deleteDoc(ref("grupos", N.grupo, "presentes", N.usuario.uid));
+    if(!moedas && !gelos) return;
+    if(moedas) ganharMoedas(moedas);
+    if(gelos) S.gelos = Math.min(MAX_GELOS, (S.gelos || 0) + gelos);
+    salvar(); publicarPlacar();
+    const partes = [];
+    if(moedas) partes.push(`<b>${moedas} moedas</b>`);
+    if(gelos) partes.push(`<b>${plural(gelos, "congelamento", "congelamentos")}</b>`);
+    caixaAviso("🎁 Você recebeu um presente!", `Quem organiza o grupo te mandou ${partes.join(" e ")}.`);
+    telaInicio();
+  }catch(e){ /* sem rede ou sem permissão: tenta na próxima vez */ }
 }
 
 /* ---------- consultas ---------- */
@@ -3750,41 +3774,68 @@ function listaDePares(it){
   return `<div class="pares">${it.pares.map(p =>
     `<div class="par"><b>${esc(p[0])}</b><span class="seta">→</span><span>${esc(p[1])}</span></div>`).join("")}</div>`;
 }
+/* Formar par sobe ele pra uma área confirmada em cima — igual a "colocar em
+   ordem" — e some do campo visual de baixo. Errar não avisa na hora: o par
+   errado sobe do mesmo jeito, e só fica sabendo se acertou ou não quando
+   tocar em Verificar. Antes isso corrigia par a par, na hora, e dava pra
+   tentar de novo até acertar — a Isabela não queria esse tipo de chute. */
 function rRel(it){
   const esqL = embaralhar(it.pares.map((p, i) => ({txt:p[0], i})));
   const dirL = embaralhar(it.pares.map((p, i) => ({txt:p[1], i})));
-  $("#q").innerHTML = cabecalho(it, it.enunciado) +
-    `<div class="mgrid">
-       <div class="mcol">${esqL.map((x,k) => `<button class="mi" data-l="${k}" data-par="${x.i}">${esc(x.txt)}</button>`).join("")}</div>
-       <div class="mcol">${dirL.map((x,k) => `<button class="mi" data-r="${k}" data-par="${x.i}">${esc(x.txt)}</button>`).join("")}</div>
-     </div>`;
-  $(".foot").innerHTML = barraTempoHTML()
-    + `<p class="muted" style="text-align:center;margin:0 0 8px">Toque num item da esquerda e depois no par dele à direita.</p>`;
-
-  let selE = null, feitos = 0, errou = false;
   const tot = it.pares.length;
-  const todos = [...document.querySelectorAll(".mi")];
-  todos.forEach(b => b.onclick = () => {
-    if(SES.respondido) return;
-    if(b.hasAttribute("data-l")){
-      todos.forEach(x => x.classList.remove("sel"));
-      b.classList.add("sel"); selE = b; return;
-    }
-    if(!selE) return;
-    if(selE.dataset.par === b.dataset.par){
-      selE.classList.remove("sel"); selE.classList.add("done"); b.classList.add("done");
-      selE = null; feitos++;
-      if(feitos === tot) concluir(it, !errou,
-        (errou ? "Você fechou todos os pares, mas errou pelo caminho — volta amanhã.<br>" : "") +
-        listaDePares(it) + esc(it.exp));
-    }else{
-      errou = true;
-      const a = selE, c = b;
-      a.classList.add("err"); c.classList.add("err");
-      setTimeout(() => { a.classList.remove("err","sel"); c.classList.remove("err"); }, 400);
-      selE = null;
-    }
-  });
+  $("#q").innerHTML = cabecalho(it, it.enunciado) +
+    `<p class="dica">Toque num item da esquerda e depois no par dele à direita. Só corrige quando tocar em Verificar.</p>
+     <div class="slots" id="slots"></div>
+     <div class="mgrid" id="mgrid">
+       <div class="mcol" id="colE"></div>
+       <div class="mcol" id="colD"></div>
+     </div>`;
+
+  const formados = []; // {l, r} — índices dentro de esqL/dirL
+  let selE = null;
+
+  function pintar(){
+    const usadosL = new Set(formados.map(f => f.l));
+    const usadosR = new Set(formados.map(f => f.r));
+    $("#slots").innerHTML = formados.map((f, n) => `
+      <div class="srow" data-pos="${n}">
+        <div class="n">${n + 1}</div>
+        <div>${esc(esqL[f.l].txt)} ↔ ${esc(dirL[f.r].txt)}</div>
+      </div>`).join("");
+    $("#colE").innerHTML = esqL.map((x, k) => usadosL.has(k) ? "" :
+      `<button class="mi ${selE === k ? "sel" : ""}" data-l="${k}">${esc(x.txt)}</button>`).join("");
+    $("#colD").innerHTML = dirL.map((x, k) => usadosR.has(k) ? "" :
+      `<button class="mi" data-r="${k}">${esc(x.txt)}</button>`).join("");
+    document.querySelectorAll("[data-l]").forEach(b => b.onclick = () => {
+      if(SES.respondido) return;
+      selE = +b.dataset.l; pintar();
+    });
+    document.querySelectorAll("[data-r]").forEach(b => b.onclick = () => {
+      if(SES.respondido || selE === null) return;
+      formados.push({ l: selE, r: +b.dataset.r });
+      selE = null; pintar();
+      atualizaVerificar(formados.length === tot);
+    });
+    document.querySelectorAll(".srow").forEach(r => r.onclick = () => {
+      if(SES.respondido) return;                    // desfaz o par: os dois voltam pra baixo
+      formados.splice(+r.dataset.pos, 1); pintar();
+      atualizaVerificar(formados.length === tot);
+    });
+  }
+  pintar();
+
+  pedirVerificar(() => {
+    if(formados.length !== tot) return;
+    let tudoOk = true;
+    formados.forEach((f, n) => {
+      const certo = esqL[f.l].i === dirL[f.r].i;
+      if(!certo) tudoOk = false;
+      const el = $(`.srow[data-pos="${n}"]`);
+      if(el) el.classList.add(certo ? "ok" : "no");
+    });
+    $("#mgrid").style.display = "none";
+    concluir(it, tudoOk, listaDePares(it) + esc(it.exp));
+  }, false);
 }
 
 /* ============================================================
@@ -4025,10 +4076,21 @@ function rDiscursiva(it){
   const val = valorDaQuestao(it);
   const partes = (it.partes && it.partes.length) ? it.partes : null;
   const boxes = partes || [null];
+  const d = discPorId[it.disc];
+  /* A tag ("DISCURSIVA") sempre vem primeiro, antes até do caso clínico —
+     é a primeira coisa que diz que tipo de questão é essa. Com partes, o
+     enunciado grande (a+b+c juntos) NÃO se repete: cada parte já aparece
+     como rótulo em cima da própria caixa, e mostrar duas vezes só confunde. */
   $("#q").innerHTML =
-    `${it.apoio ? `<div class="apoio">${esc(it.apoio)}</div>` : ""}` +
-    cabecalho(it, it.enunciado || it.p) +
-    `<p class="dica">Responda com as suas palavras. Vale ${plural(val, "ponto", "pontos")}${
+    `<div class="qhead">
+      <div class="qtag">${TITULO_TIPO[it.t]}${d ? " · " + esc(d.nome) : ""}</div>
+      <span class="raiobox">${raioHTML()}</span>
+      ${it.fonte ? `<button class="info" id="btInfo" title="De onde veio esta questão" aria-label="De onde veio esta questão">i</button>` : ""}
+    </div>
+    ${it.apoio ? `<div class="apoio">${esc(it.apoio)}</div>` : ""}
+    ${partes ? "" : `<div class="qtitle">${esc(it.enunciado || it.p)}</div>`}
+    ${blocoFonte(it)}
+    <p class="dica">Responda com as suas palavras. Vale ${plural(val, "ponto", "pontos")}${
        partes ? `, no total das ${plural(partes.length, "parte", "partes")}` : ""}.</p>
      ${boxes.map((rotulo, k) => `
        ${rotulo ? `<p class="parteLabel">${esc(rotulo)}</p>` : ""}
@@ -4698,7 +4760,7 @@ async function nuvemCarregar(){
      de proteção. */
   try{
     const fn = await import(SDK + "firebase-functions.js");
-    N.funcoes = fn.getFunctions(app, window.REGIAO_FUNCOES || "southamerica-east1");
+    N.funcoes = fn.getFunctions(app, window.REGIAO_FUNCOES || "us-central1");
     N.api.httpsCallable = fn.httpsCallable;
   }catch(e){ N.funcoes = null; }
   N.ligado = true;
@@ -5854,6 +5916,22 @@ async function telaAdmin(aviso){
     </div>
 
     <div class="cx">
+      <b>Mandar presente</b>
+      <p class="muted" style="margin:8px 0 10px">Dá moedas e/ou congelamento pra alguém do grupo —
+        inclusive pra você mesma, pra testar prova sem esperar juntar do jeito normal.</p>
+      <label class="f">Pra quem</label>
+      <select id="presenteQuem" style="width:100%;margin-bottom:10px">
+        ${listaMembros.map(m => `<option value="${esc(m.uid)}" ${m.uid === N.usuario.uid ? "selected" : ""}>${
+          esc(m.nome || "sem nome")}${m.uid === N.usuario.uid ? " (você)" : ""}</option>`).join("")}
+      </select>
+      <div class="asbtns">
+        <input type="number" id="presenteMoedas" placeholder="Moedas" min="0" value="0" style="width:100%">
+        <input type="number" id="presenteGelos" placeholder="Congelamentos" min="0" value="0" style="width:100%">
+      </div>
+      <button class="minibt" id="bMandarPresente" style="width:100%;margin-top:10px">Mandar</button>
+    </div>
+
+    <div class="cx">
       <b>Questões publicadas</b>
       <p class="muted" style="margin:8px 0 10px">
         ${nQuestoes ? nQuestoes + " exercícios no ar" : "Nenhuma ainda — publique o banco abaixo."}</p>
@@ -6034,6 +6112,32 @@ async function telaAdmin(aviso){
     }catch(e){ telaAdmin(traduzErro(e)); }
   };
 
+  $("#bMandarPresente").onclick = async () => {
+    const uid = $("#presenteQuem").value;
+    const moedas = Math.max(0, Math.round(+$("#presenteMoedas").value || 0));
+    const gelos = Math.max(0, Math.round(+$("#presenteGelos").value || 0));
+    if(!uid || (!moedas && !gelos)) return;
+    const btn = $("#bMandarPresente"); btn.disabled = true; btn.textContent = "Mandando...";
+    try{
+      /* Soma em cima do que já estiver pendente — se a pessoa ainda não abriu
+         o app pra receber o presente anterior, o novo se junta ao invés de
+         sobrescrever. */
+      let antes = { moedas:0, gelos:0 };
+      try{
+        const d = await N.api.getDoc(ref("grupos", dono.id, "presentes", uid));
+        if(d.exists()) antes = d.data();
+      }catch(e){}
+      await N.api.setDoc(ref("grupos", dono.id, "presentes", uid), {
+        moedas: (antes.moedas || 0) + moedas,
+        gelos: (antes.gelos || 0) + gelos,
+        de: N.usuario.uid,
+        quando: N.api.serverTimestamp()
+      });
+      caixaAviso("Presente mandado!",
+        "A pessoa recebe assim que abrir o app (ou sincronizar, se já estiver aberto).");
+    }catch(e){ caixaAviso("Não consegui mandar", esc(traduzErro(e))); }
+    btn.disabled = false; btn.textContent = "Mandar";
+  };
   $("#bPubArq").onclick = () => $("#arq").click();
   $("#arq").onchange = async ev => {
     const f = ev.target.files[0];
@@ -6073,6 +6177,7 @@ async function abrirComGrupo(g){
 
   telaInicio();
   sincronizarAgora();
+  conferirPresentePendente();
   /* O resultado da semana espera a pessoa onde ela abre o app, não escondido na
      aba do grupo — é a notícia mais importante da segunda-feira. */
   lerPlacar().then(fecharSemanaSePreciso).then(r => { if(r) caixaResultadoDaSemana(r); });
