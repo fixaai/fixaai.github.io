@@ -714,7 +714,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026qf-v04";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026qf-v06";</script>
 <script>window.VERSAO_BANCO = "684a01b441d4";</script>
 
 <script>
@@ -781,6 +781,21 @@ const addDias = (iso, n) => { const d = new Date(iso + "T12:00:00"); d.setDate(d
 const difDias = (a, b) => Math.round((new Date(b+"T12:00:00") - new Date(a+"T12:00:00")) / 86400000);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const plural = (n, s, p) => n + " " + (n === 1 ? s : p);
+/* Números grandes de XP viram "10 K", "10,3 K"... "999 K", depois "1,1 M".
+   Abaixo de 10 mil mostra o número inteiro, sem arredondar — perder XP visto
+   de perto (2320 virando "2 K") ia incomodar mais do que ajudar. */
+function fmtXP(n){
+  n = Math.max(0, Math.round(n || 0));
+  if(n < 10000) return String(n);
+  const emK = n / 1000;
+  if(emK < 1000){
+    const casas = emK < 100 ? 1 : 0;
+    return emK.toFixed(casas).replace(".", ",").replace(",0", "") + " K";
+  }
+  const emM = n / 1000000;
+  const casas = emM < 100 ? 1 : 0;
+  return emM.toFixed(casas).replace(".", ",").replace(",0", "") + " M";
+}
 function embaralhar(a){ a = a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
 /* ============================================================
@@ -1795,9 +1810,11 @@ function telaInicio(op){
        longa; com as cinco provas de nove matérias vira uma rolagem sem fim, e
        o que a Isabela quer ver — como está cada matéria — some no meio dos
        assuntos. Fechada, a matéria mostra o essencial: quanto está dominado. */
-    const cabecalhoDisc = prontas.length ? `<p class="muted" style="margin:16px 2px 2px;font-size:12px">
-      <b>Acertado</b> é ter marcado certo pelo menos uma vez. <b>Dominado</b> é ter acertado em 4 dias
-      diferentes — é o que costuma ficar até o dia da prova.</p>` : "";
+    const cabecalhoDisc = prontas.length ? `<p class="muted lgLinhas" style="margin:16px 2px 2px;font-size:12px;display:flex;gap:14px;flex-wrap:wrap">
+      <span><i class="pt" style="background:var(--line)"></i> ainda não visto</span>
+      <span><i class="pt cob"></i> <b>acertado</b> — certo pelo menos 1 vez</span>
+      <span><i class="pt fix"></i> <b>dominado</b> — certo em 4 dias diferentes</span>
+    </p>` : "";
     return cabecalhoDisc + prontas.map(d => {
       const its = itensDaProva(d.id);
       const tops = CURSO.topicos.filter(t => t.disc === d.id);
@@ -2260,7 +2277,7 @@ async function telaGrupo(){
         <button class="gpQuem" data-quem="${esc(m.uid)}">
           <span class="gpIc">${esc(cara(m))}</span>
           <span class="gpTx"><b>${esc(nome(m))}${souEu ? " · você" : ""}</b>
-            <span>${p ? `⭐ ${p.xp || 0} XP · ✏️ ${p.feitos || 0} · 🔥 ${p.ofensiva || 0} · ⚔️ ${p.desafios || 0} · ${
+            <span>${p ? `⭐ ${fmtXP(p.xp || 0)} XP · ✏️ ${p.feitos || 0} · 🔥 ${p.ofensiva || 0} · ⚔️ ${p.desafios || 0} · ${
                           plural((p.conquistas || []).length, "conquista", "conquistas")}${
                           naoFecha(p) ? ` <span class="naoFecha" title="${esc(naoFecha(p))}">⚠️</span>` : ""}`
                        : "ainda não estudou por aqui"}</span></span>
@@ -2450,7 +2467,7 @@ function caixaPerfilDoGrupo(m, nome, emoji, xpSemana){
       <p class="pfSub">${esc(N.grupoNome || "")}</p>
     </div>
     <div class="pfNums">
-      <div class="pfN"><b>⭐ ${p.xp || 0}</b><span>XP desde o começo</span></div>
+      <div class="pfN"><b>⭐ ${fmtXP(p.xp || 0)}</b><span>XP desde o começo</span></div>
       <div class="pfN"><b>🔥 ${p.ofensiva || 0}</b><span>ofensiva</span></div>
       <div class="pfN"><b>✏️ ${p.feitos || 0}</b><span>exercícios respondidos</span></div>
       <div class="pfN"><b>📅 ${p.dias || 0}</b><span>dias estudados</span></div>
@@ -2495,7 +2512,7 @@ function telaPerfil(){
 
   <div class="cardz">
     <div class="pfNums">
-      <div class="pfN"><b>⭐ ${S.xp}</b><span>XP desde o começo</span></div>
+      <div class="pfN"><b>⭐ ${fmtXP(S.xp)}</b><span>XP desde o começo</span></div>
       <div class="pfN"><b>🔥 ${S.ofensiva}</b><span>ofensiva</span></div>
       <div class="pfN"><b>✏️ ${respondidas}</b><span>exercícios respondidos</span></div>
       <div class="pfN"><b>📅 ${diasEstudados}</b><span>${diasEstudados === 1 ? "dia estudado" : "dias estudados"}</span></div>
@@ -2506,9 +2523,6 @@ function telaPerfil(){
       <div><b>🥈 ${S.pod2 || 0}</b><span>semanas em segundo</span></div>
       <div><b>🪙 ${saldoMoedas()}</b><span>moedas</span></div>
     </div>
-    <p class="muted" style="margin:12px 0 0">Desafio e ranking ainda não existem — por isso os
-      traços. Nesta semana você fez <b>${S.xpSemana} XP</b>; esse número zera todo domingo, o
-      total nunca zera.</p>
   </div>
 
   <div class="secao">Conquistas · ${ganhas.length} de ${CONQUISTAS.length}</div>
@@ -2520,8 +2534,6 @@ function telaPerfil(){
         : `<button class="selo" data-conq="${c.id}"><span class="fig">🔒</span>
              <span class="nm">?</span></button>`).join("")}
     </div>
-    <p class="muted" style="margin-top:14px">Conquista trancada não mostra nem o desenho nem o
-      nome — só a pista, se você tocar nela. Descobrir faz parte.</p>
   </div>`;
 
   aba = "perfil";
@@ -3597,8 +3609,13 @@ function conferirEscrita(it, digitado){
 }
 
 function rEscrita(it){
+  /* "Uma palavra basta" só é verdade quando a resposta certa É uma palavra
+     só — "vitamina K" e "tromboxano A2" têm duas, e prometer isso enganava
+     quem via a dica e escrevia só metade da resposta. */
+  const palavras = (it.resp || "").trim().split(/\s+/).filter(Boolean).length;
+  const dica = palavras <= 1 ? "Escreva a resposta — uma palavra basta." : "Escreva a resposta.";
   $("#q").innerHTML = cabecalho(it, it.enunciado) +
-    `<p class="dica">Escreva a resposta — uma palavra basta.</p>
+    `<p class="dica">${dica}</p>
      <input class="resposta" id="txtResp" type="text" inputmode="text"
        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
        placeholder="digite aqui" aria-label="Sua resposta">
@@ -3837,7 +3854,10 @@ function rRel(it){
     if(formados.length !== tot) return;
     let tudoOk = true;
     formados.forEach((f, n) => {
-      const certo = esqL[f.l].i === dirL[f.r].i;
+      /* Compara pelo TEXTO certo do lado direito, não pelo índice do par
+         original — com valor repetido (duas coisas que precisam de COX-1,
+         por exemplo), o índice não bate mesmo a resposta estando certa. */
+      const certo = dirL[f.r].txt === it.pares[esqL[f.l].i][1];
       if(!certo) tudoOk = false;
       const el = $(`.srow[data-pos="${n}"]`);
       if(el) el.classList.add(certo ? "ok" : "no");
@@ -4622,14 +4642,18 @@ function telaProvas(){
             const total = questoesDaVez(pv, feito).length;
             const trancada = !jaTemAcesso(pv);
             return `<button class="esc" style="padding-left:12px" data-prova-abrir="${esc(pv.id)}">
-              <span class="ic">${trancada ? "🔒" : "·"}</span>
+              <span class="ic" style="${trancada ? "filter:grayscale(1);opacity:.45" : ""}">${esc(d.emoji)}</span>
               <span class="tx"><b>${esc(pv.nome)}</b><span>${esc(pv.sub || "")}${pv.sub ? " · " : ""}${
                 plural(total, "questão", "questões")}
                 · ${valorDaProva(pv, feito)} pontos${pv.minutos ? " · " + pv.minutos + " min" : ""}${
-                trancada ? ` · <b>${PRECO_PROVA} moedas</b>`
-                : feito && feito.terminada ? ` · <b>você tirou ${n.tirou} de ${n.total}</b>`
-                : respondidas ? ` · começada (${respondidas}/${total})` : ""}</span></span>
-              <span class="ck">›</span>
+                !trancada && feito && feito.terminada ? ` · <b>você tirou ${n.tirou} de ${n.total}</b>`
+                : !trancada && respondidas ? ` · começada (${respondidas}/${total})` : ""}</span></span>
+              ${trancada
+                ? `<span style="text-align:center;line-height:1.25">
+                     <span style="display:block;font-weight:800;white-space:nowrap">${PRECO_PROVA} 🪙</span>
+                     <span style="display:block;font-size:10.5px;font-weight:800;color:var(--brand)">LIBERAR</span>
+                   </span>`
+                : `<span class="ck">›</span>`}
             </button>`;
           }).join("") : ""}`;
         }).join("")}
