@@ -408,8 +408,11 @@ textarea.resposta.alta{width:100%;min-height:130px;resize:vertical;font-family:i
 .novoConv{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
 /* cabeçalho do início com o botão do perfil */
 .heroPf{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.tiraTopo{display:flex;align-items:center;gap:8px;margin-top:4px}
+.miniStat{font-size:12.5px;font-weight:700;color:var(--ink-2);background:var(--card);
+  border:1px solid var(--line);border-radius:99px;padding:5px 9px;white-space:nowrap}
 .btPf{flex:0 0 42px;width:42px;height:42px;border-radius:50%;border:1px solid var(--line);
-  background:var(--card);font-size:20px;display:grid;place-items:center;overflow:hidden;margin-top:4px}
+  background:var(--card);font-size:20px;display:grid;place-items:center;overflow:hidden;margin-top:0}
 .btPf img{width:100%;height:100%;object-fit:cover;display:block}
 .cardBt{display:block;width:100%;text-align:left}
 .maisProvas{width:100%;text-align:left;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink-2)}
@@ -695,7 +698,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026mp-v01";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026mp-v02";</script>
 <script>window.VERSAO_BANCO = "684a01b441d4";</script>
 
 <script>
@@ -1028,6 +1031,37 @@ function virarODia(){
   const h = hoje();
   if(S.dia !== h){
     S.dia = h; S.feitosHoje = 0; arrumarOfensiva(S); salvar();
+  }
+}
+
+/* Oferece gastar um congelamento quando ontem quebrou a sequência.
+   Só pergunta UMA vez por dia perdido (S.avisoQuebra guarda qual data já foi
+   perguntada) — sem isso, reabrir o app repetidas vezes no mesmo dia
+   repetiria a pergunta toda hora. Se ela recusar ou não tiver congelamento,
+   a sequência já está quebrada mesmo (ofensivaDe já rodou sem contar ontem);
+   isto aqui só oferece o jeito de desfazer isso antes de virar rotina. */
+function ofertarCongelarSePreciso(){
+  const h = hoje();
+  const ontem = addDias(h, -1);
+  if(fechouODia(S, ontem)) return;                          // não quebrou nada
+  const gelo = new Set(S.congelados || []);
+  if(gelo.has(ontem)) return;                                // já foi congelado
+  if(S.avisoQuebra === ontem) return;                        // já perguntamos por esse dia
+  if(!Object.keys(S.historico || {}).length) return;         // conta nova, nada a proteger ainda
+  S.avisoQuebra = ontem; salvar();
+  if((S.gelos || 0) > 0){
+    caixaConfirma("Você perdeu sua ofensiva ontem",
+      `Você não completou uma bateria ontem. Quer usar 1 congelamento (você tem ${S.gelos}) para manter sua sequência viva?`,
+      "Usar congelamento",
+      () => {
+        S.congelados = [...(S.congelados || []), ontem];
+        S.gelos = Math.max(0, (S.gelos || 0) - 1);
+        arrumarOfensiva(S); salvar();
+        telaInicio();
+      });
+  }else{
+    caixaAviso("Você perdeu sua ofensiva ontem",
+      "Você não tem congelamentos guardados. Continue com a rotina de estudos para ganhar mais e proteger sua sequência da próxima vez.");
   }
 }
 
@@ -1601,7 +1635,12 @@ function telaInicio(op){
       <div class="sub">Bom estudo</div>
       <h1>Fixa aí${apelido ? ", " + esc(apelido) : ""} ${esc(S.emoji || "🧠")}</h1>
     </div>
-    <button class="btPf" id="irCalendario" aria-label="Seu calendário de estudo e provas">📅</button>
+    <div class="tiraTopo">
+      <span class="miniStat" title="Ofensiva">🔥${S.ofensiva}</span>
+      ${!souDonoDoGrupo() ? `<span class="miniStat" title="Moedas">🪙${saldoMoedas()}</span>` : ""}
+      ${(S.gelos || 0) ? `<span class="miniStat" title="Congelamentos guardados">🧊${S.gelos}</span>` : ""}
+      <button class="btPf" id="irCalendario" aria-label="Seu calendário de estudo e provas">📅</button>
+    </div>
   </div>
   ${quem}
 
@@ -1675,13 +1714,10 @@ function telaInicio(op){
   })()}
 
   <div class="stats">
-    <div class="stat"><b>🔥 ${S.ofensiva}</b><span>ofensiva</span></div>
     <div class="stat"><b>${S.xpSemana}</b><span>xp da semana</span></div>
-    <div class="stat"><b>${cPool.pcCerto}%</b><span>acertadas</span></div>
-    ${!souDonoDoGrupo() ? `<div class="stat"><b>🪙 ${saldoMoedas()}</b><span>moedas</span></div>` : ""}
-    ${(S.gelos || 0) ? `<div class="stat"><b>🧊 ${S.gelos}</b><span>${S.gelos === 1 ? "congelamento" : "congelamentos"}</span></div>` : ""}
+    <div class="stat"><b>${cPool.pcCerto}%</b><span>acertadas${S.foco.disc ? "" : " · mix de tudo"}</span></div>
   </div>
-  <div class="cardz legenda">
+  ${S.foco.disc ? `<div class="cardz legenda">
     ${barraDupla(cPool, "grande")}
     <div class="lgLinhas">
       <span><i class="pt cob"></i> <b>${cPool.certas}</b> de ${cPool.total} acertadas${
@@ -1691,7 +1727,8 @@ function telaInicio(op){
         que é o que você ainda vai lembrar depois da prova</span>
       ${cPool.marcadas ? `<span><i class="pt mk"></i> <b>${cPool.marcadas}</b> marcadas para revisar</span>` : ""}
     </div>
-  </div>
+  </div>` : `<p class="muted" style="margin:2px 2px 14px;font-size:13px">Escolha uma disciplina no
+    🎯 acima para ver quanto já está acertado e fixado nela.</p>`}
 
   ${(() => {
     /* Cada disciplina abre e fecha. Com uma prova por matéria a lista já era
@@ -1769,6 +1806,7 @@ function telaInicio(op){
     else { discsAbertas.add(id); jaViANovidade(id); }   // abriu, viu: o selo cumpriu o papel
     telaInicio({ manterRolagem:true });
   });
+  if(!op || !op.manterRolagem) ofertarCongelarSePreciso();
 }
 
 /* ============================================================
@@ -5681,6 +5719,13 @@ async function abrirComGrupo(g){
     const gd = await N.api.getDoc(ref("grupos", g));
     if(gd.exists()) N.grupoNome = gd.data().nome || null;
   }catch(e){ N.grupoNome = null; }
+  /* N.papel decide quem é isenta de pagar moeda (souDonoDoGrupo). Sem ler o
+     próprio registro de membro, isso ficava sempre null e a isenção nunca
+     funcionava — nem para quem realmente organiza o grupo. */
+  try{
+    const md = await N.api.getDoc(ref("grupos", g, "membros", N.usuario.uid));
+    N.papel = md.exists() ? (md.data().papel || "membro") : "membro";
+  }catch(e){ N.papel = "membro"; }
   let curso = null;
   try{ curso = await lerBancoDoGrupo(g); }catch(e){ curso = null; }
   if(curso && curso.itens.length){ guardarBanco(curso); }
