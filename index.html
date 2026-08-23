@@ -714,7 +714,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026qf-v02";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026qf-v03";</script>
 <script>window.VERSAO_BANCO = "684a01b441d4";</script>
 
 <script>
@@ -733,6 +733,15 @@ const TITULO_TIPO = { vf:"Verdadeiro ou falso", mcq:"Escolha a certa", multi:"Ma
 
 /* toda questão pertence a uma disciplina e a uma prova */
 let porId = {}, discPorId = {};
+/* Acha a questão pelo id em qualquer um dos dois lugares onde ela pode
+   morar: o banco normal (porId) ou a prova em curso (SES.prova.questoes).
+   Sem isso, "voltar e reler" durante uma prova quebrava — a questão de
+   prova nunca esteve em porId, só no documento separado da prova. */
+function itemPorId(id){
+  return porId[id]
+    || (SES && SES.prova && (SES.prova.questoes || []).find(q => q.id === id))
+    || null;
+}
 /* Quais matérias ganharam exercício desde a última vez que ESTE aparelho olhou.
 
    A lista de ids conhecidos fica só no aparelho, de propósito: o selo de "novos"
@@ -3858,6 +3867,11 @@ function gabaritoLegivel(it){
     case "ordem": return `<div class="pares">${it.seq.map((p, k) =>
                     `<div class="par"><b>${k+1}</b><span class="seta">→</span><span>${esc(p)}</span></div>`).join("")}</div>`;
     case "relacionar": return listaDePares(it);
+    case "discursiva": return (it.gab && it.gab.resposta)
+                    ? `<div class="pares"><div class="par"><b>Resposta esperada</b><span class="seta">→</span><span>${esc(it.gab.resposta)}</span></div></div>` : "";
+    case "vfjust": return (it.itens || []).length
+                    ? `<div class="pares">${it.itens.map((s, k) =>
+                        `<div class="par"><b>${k+1}. ${s.correta ? "Verdadeiro" : "Falso"}</b><span>${esc(s.frase)}</span></div>`).join("")}</div>` : "";
     default: return "";
   }
 }
@@ -3866,7 +3880,8 @@ function telaRever(n){
   const total = SES.log.length;
   n = Math.max(0, Math.min(total - 1, n));
   const reg = SES.log[n];
-  const it = porId[reg.id];
+  const it = itemPorId(reg.id);
+  if(!it){ render(); return; }   // não deveria acontecer, mas não trava o app se acontecer
   const titulo = it.enunciado || it.frase || "";
   const corpo = `<div class="q" id="q">
       <div class="qhead">
@@ -4697,9 +4712,42 @@ function telaProvaFim(pv){
     const minha = r.texto ? `<br><br><b>O que você escreveu:</b><br>${esc(r.texto)}` : "";
     const pendente = r.nota == null && r.texto
       ? `<br><br><i>${esc(r.semCorrecao || "Ainda sem correção.")}</i>` : "";
-    caixaAviso(`Questão ${ordem}`,
-      (r.comentario ? esc(r.comentario) + "<br><br>" : "") + gab + minha + pendente,
-      esc(enunciadoDe(q)));
+    /* Sem nota mas com texto salvo: dá pra tentar corrigir de novo usando a
+       MESMA resposta, sem reescrever nada — é o que o aviso da folha promete
+       e antes não existia de verdade, só o texto prometendo. */
+    const podeTentar = r.nota == null && r.texto && tentativasRestantes(pv, q.id) > 0;
+    if(!podeTentar){
+      caixaAviso(`Questão ${ordem}`,
+        (r.comentario ? esc(r.comentario) + "<br><br>" : "") + gab + minha + pendente,
+        esc(enunciadoDe(q)));
+      return;
+    }
+    abrirCaixa(`<h3>Questão ${ordem}</h3><p class="cxSub">${esc(enunciadoDe(q))}</p>
+      <p style="margin:14px 0 0">${gab}${minha}${pendente}</p>`,
+      `<button class="btn" id="tentarAgora">Tentar corrigir agora</button>
+       <div style="height:8px"></div>
+       <button class="btn ghost" id="fecharRever">Fechar</button>`);
+    $("#fecharRever").onclick = fecharCaixa;
+    $("#tentarAgora").onclick = async () => {
+      const btn = $("#tentarAgora");
+      btn.disabled = true; btn.textContent = "Corrigindo…";
+      /* pedirCorrecao usa SES.prova pra saber qual prova/gabarito buscar —
+         reler uma prova já terminada pode acontecer com SES limpo ou apontando
+         para outra coisa, então garante isso antes de chamar. */
+      if(!SES || !SES.prova) SES = { ...(SES || {}), prova: pv };
+      const c = correcaoLigada() ? await pedirCorrecao(q, r.texto) : null;
+      if(c){
+        const val = valorDaQuestao(q);
+        const nota = Math.max(0, Math.min(val, Number(c.nota) || 0));
+        guardarRespostaDeProva(q, nota, { texto: r.texto, comentario: c.resumo || "", porIA:true });
+        fecharCaixa();
+        telaProvaFim(pv);
+      }else{
+        btn.disabled = false; btn.textContent = "Tentar corrigir agora";
+        caixaAviso("Não deu dessa vez", esc(N.erroCorrecao
+          || "Não consegui falar com a correção agora. Pode ser a internet, ou o limite do dia."));
+      }
+    };
   });
 }
 /* O enunciado mora num campo diferente em cada tipo: `enunciado` na maioria,
