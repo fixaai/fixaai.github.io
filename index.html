@@ -409,8 +409,7 @@ textarea.resposta.alta{width:100%;min-height:130px;resize:vertical;font-family:i
 /* cabeçalho do início com o botão do perfil */
 .heroPf{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 .tiraTopo{display:flex;align-items:center;gap:8px;margin-top:4px}
-.miniStat{font-size:12.5px;font-weight:700;color:var(--ink-2);background:var(--card);
-  border:1px solid var(--line);border-radius:99px;padding:5px 9px;white-space:nowrap}
+.miniStat{font-size:13px;font-weight:700;color:var(--ink-2)}
 .btPf{flex:0 0 42px;width:42px;height:42px;border-radius:50%;border:1px solid var(--line);
   background:var(--card);font-size:20px;display:grid;place-items:center;overflow:hidden;margin-top:0}
 .btPf img{width:100%;height:100%;object-fit:cover;display:block}
@@ -698,7 +697,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026mp-v02";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026mp-v05";</script>
 <script>window.VERSAO_BANCO = "684a01b441d4";</script>
 
 <script>
@@ -1633,7 +1632,7 @@ function telaInicio(op){
   <div class="hero heroPf">
     <div>
       <div class="sub">Bom estudo</div>
-      <h1>Fixa aí${apelido ? ", " + esc(apelido) : ""} ${esc(S.emoji || "🧠")}</h1>
+      <h1>Fixa aí${apelido ? `,<br>${esc(apelido)}` : ""} ${esc(S.emoji || "🧠")}</h1>
     </div>
     <div class="tiraTopo">
       <span class="miniStat" title="Ofensiva">🔥${S.ofensiva}</span>
@@ -1674,15 +1673,6 @@ function telaInicio(op){
     </div>`;
   })()}
 
-  ${prox ? `
-  <div class="cardz countdown">
-    <b>${prox.dias > 0 ? plural(prox.dias, "dia", "dias") : "É hoje!"}</b>
-    <small>até ${esc(prox.disc.nome)} ${esc(prox.prova ? prox.prova.nome : "")}${
-      prox.dias > 0
-        ? " · " + Math.max(1, Math.ceil(itensDaProva(prox.disc.id, prox.prova && prox.prova.id).length / prox.dias)) + " exercícios/dia pra dar conta"
-        : " · boa prova! 🍀"}</small>
-  </div>` : ""}
-
   <div class="cardz">
     <div class="ring">
       <svg width="76" height="76" viewBox="0 0 76 76">
@@ -1713,10 +1703,6 @@ function telaInicio(op){
       fora da mistura. Para revisar, escolha a disciplina no 🎯 acima.</p>`;
   })()}
 
-  <div class="stats">
-    <div class="stat"><b>${S.xpSemana}</b><span>xp da semana</span></div>
-    <div class="stat"><b>${cPool.pcCerto}%</b><span>acertadas${S.foco.disc ? "" : " · mix de tudo"}</span></div>
-  </div>
   ${S.foco.disc ? `<div class="cardz legenda">
     ${barraDupla(cPool, "grande")}
     <div class="lgLinhas">
@@ -1727,15 +1713,17 @@ function telaInicio(op){
         que é o que você ainda vai lembrar depois da prova</span>
       ${cPool.marcadas ? `<span><i class="pt mk"></i> <b>${cPool.marcadas}</b> marcadas para revisar</span>` : ""}
     </div>
-  </div>` : `<p class="muted" style="margin:2px 2px 14px;font-size:13px">Escolha uma disciplina no
-    🎯 acima para ver quanto já está acertado e fixado nela.</p>`}
+  </div>` : ""}
 
   ${(() => {
     /* Cada disciplina abre e fecha. Com uma prova por matéria a lista já era
        longa; com as cinco provas de nove matérias vira uma rolagem sem fim, e
        o que a Isabela quer ver — como está cada matéria — some no meio dos
        assuntos. Fechada, a matéria mostra o essencial: quanto está dominado. */
-    return prontas.map(d => {
+    const cabecalhoDisc = prontas.length ? `<p class="muted" style="margin:16px 2px 2px;font-size:12px">
+      <b>Acertado</b> é ter marcado certo pelo menos uma vez. <b>Dominado</b> é ter acertado em 4 dias
+      diferentes — é o que costuma ficar até o dia da prova.</p>` : "";
+    return cabecalhoDisc + prontas.map(d => {
       const its = itensDaProva(d.id);
       const tops = CURSO.topicos.filter(t => t.disc === d.id);
       const cD = contagem(its);
@@ -1745,7 +1733,8 @@ function telaInicio(op){
         <span class="ic">${esc(d.emoji)}</span>
         <span class="tx"><b>${esc(d.nome)}${discsComNovidade.has(d.id)
           ? ` <span class="selNovo">novos</span>` : ""}</b>
-          <span>${plural(its.length, "exercício", "exercícios")} · ${plural(tops.length, "assunto", "assuntos")}</span></span>
+          <span>${plural(its.length, "exercício", "exercícios")} · ${plural(tops.length, "assunto", "assuntos")}
+            · ${cD.pcCerto}% acertado · ${cD.pcFixo}% dominado</span></span>
         ${barraDupla(cD)}
         <span class="dpc">${cD.pcCerto}%</span>
         <span class="dseta">${aberta ? "⌄" : "›"}</span>
@@ -3784,9 +3773,10 @@ function telaFim(){
 function rDiscursiva(it){
   const g = it.gab || {};
   const val = valorDaQuestao(it);
-  $("#q").innerHTML = cabecalho(it, it.enunciado || it.p) +
-    `${it.apoio ? `<div class="apoio">${esc(it.apoio)}</div>` : ""}
-     <p class="dica">Responda com as suas palavras. Vale ${plural(val, "ponto", "pontos")}.</p>
+  $("#q").innerHTML =
+    `${it.apoio ? `<div class="apoio">${esc(it.apoio)}</div>` : ""}` +
+    cabecalho(it, it.enunciado || it.p) +
+    `<p class="dica">Responda com as suas palavras. Vale ${plural(val, "ponto", "pontos")}.</p>
      <textarea class="resposta alta" id="txtDisc" rows="7"
        placeholder="Digite sua resposta e ela será corrigida pela IA com base nos critérios usados nas QPs." aria-label="Sua resposta"></textarea>
      <p class="pista" id="contaLetras">0 caracteres</p>
@@ -4179,20 +4169,43 @@ function telaPreviaProva(pv){
   const corpo = `
   <div class="hero"><h1>${esc(pv.nome)}</h1></div>
   <p class="muted" style="margin:0 0 14px">Prévia — dá para ler todas as questões antes de
-    decidir. Nenhum gabarito aparece aqui, só o enunciado, do jeito que a professora cobrou.</p>
+    decidir. Nada de gabarito: nas de relacionar e ordenar, os itens aparecem embaralhados,
+    sem dizer qual vai com qual.</p>
   <div class="cardz" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;margin-bottom:14px">
     <span>🪙 <b>${saldoMoedas()}</b> moedas</span>
     <span class="muted" style="font-size:12.5px">esta prova custa ${PRECO_PROVA}</span>
   </div>
-  ${(pv.questoes || []).map((q, k) => `
+  ${(pv.questoes || []).map((q, k) => {
+    let extra = "";
+    if((q.opcoes || []).length){
+      extra = `<ul style="margin:8px 0 0;padding-left:18px">${q.opcoes.map(o => `<li>${esc(o)}</li>`).join("")}</ul>`;
+    }
+    if(q.t === "relacionar" && (q.pares || []).length){
+      /* Mostra os dois lados de verdade — os fármacos e as definições —
+         só que embaralhados e SEPARADOS, sem dizer qual vai com qual.
+         Ver a lista inteira é o que convence a comprar; ver o par pronto
+         é entregar o gabarito. */
+      const esq = q.pares.map(p => p[0]);
+      const dir = [...q.pares.map(p => p[1])].sort(() => Math.random() - 0.5);
+      extra = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px">
+        <ul style="margin:0;padding-left:18px">${esq.map(t => `<li>${esc(t)}</li>`).join("")}</ul>
+        <ul style="margin:0;padding-left:18px">${dir.map(t => `<li>${esc(t)}</li>`).join("")}</ul>
+      </div>`;
+    }
+    if(q.t === "ordem" && (q.seq || []).length){
+      const embaralhado = [...q.seq].sort(() => Math.random() - 0.5);
+      extra = `<ul style="margin:8px 0 0;padding-left:18px">${embaralhado.map(s => `<li>${esc(s)}</li>`).join("")}</ul>
+        <p class="muted" style="margin:6px 0 0;font-size:12px">A ordem certa aparece só depois de comprar.</p>`;
+    }
+    return `
     <div class="cardz" style="margin-bottom:10px;padding:14px 16px">
       <p class="muted" style="margin:0 0 6px;font-size:12px">${k + 1}. ${TITULO_TIPO[q.t] || q.t} · ${
         plural(valorDaQuestao(q), "ponto", "pontos")}${q.opcional ? " · opcional" : ""}</p>
+      ${q.apoio ? `<div class="apoio" style="margin-bottom:8px">${esc(q.apoio)}</div>` : ""}
       <p style="margin:0">${esc(enunciadoDe(q).replace(/\[\[\d+\]\]/g, "___"))}</p>
-      ${q.apoio ? `<div class="apoio" style="margin-top:8px">${esc(q.apoio)}</div>` : ""}
-      ${(q.opcoes || []).length ? `<ul style="margin:8px 0 0;padding-left:18px">${
-        q.opcoes.map(o => `<li>${esc(o)}</li>`).join("")}</ul>` : ""}
-    </div>`).join("")}`;
+      ${extra}
+    </div>`;
+  }).join("")}`;
   montarTela(corpo, { rodape:
     `<button class="btn" id="comprarDaPrevia">Comprar por ${PRECO_PROVA} moedas</button>
      <div style="height:10px"></div>
@@ -4208,6 +4221,16 @@ function telaPreviaProva(pv){
 function telaProvas(){
   aba = "estudar";
   const lista = provasDisponiveis();
+  /* Agrupada por disciplina — antes vinha tudo misturado numa lista só, e com
+     mais de uma matéria publicando provas (Farmaco tem duas P3, por exemplo)
+     virava uma sopa sem separação nenhuma. */
+  const porDisc = {};
+  lista.forEach(pv => { (porDisc[pv.disc] = porDisc[pv.disc] || []).push(pv); });
+  const discsComProva = Object.keys(porDisc)
+    .map(id => discPorId[id])
+    .filter(Boolean)
+    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+
   const corpo = `
   <div class="hero"><h1>Provas anteriores</h1></div>
   <p class="muted" style="margin:0 0 16px">As provas que já caíram, do jeito que a professora
@@ -4219,24 +4242,27 @@ function telaProvas(){
   </div>` : ""}
   ${!lista.length ? `<div class="cardz"><b>Ainda não tem prova cadastrada.</b>
     <p class="muted" style="margin:6px 0 0">Quem organiza o grupo publica as provas junto com o
-    banco de questões.</p></div>` : lista.map(pv => {
-      const d = discPorId[pv.disc];
-      const feito = feitoDaProva(pv.id);
-      const n = feito ? notaDaProva(pv, feito) : null;
-      const respondidas = feito ? Object.keys(feito.respostas || {}).length : 0;
-      const total = questoesDaVez(pv, feito).length;
-      const trancada = !jaTemAcesso(pv);
-      return `<button class="esc" data-prova-abrir="${esc(pv.id)}">
-        <span class="ic">${trancada ? "🔒" : d ? esc(d.emoji) : "📄"}</span>
-        <span class="tx"><b>${esc(pv.nome)}</b><span>${esc(pv.sub || "")}${pv.sub ? " · " : ""}${
-          plural(total, "questão", "questões")}
-          · ${valorDaProva(pv, feito)} pontos${pv.minutos ? " · " + pv.minutos + " min" : ""}${
-          trancada ? ` · <b>${PRECO_PROVA} moedas</b>`
-          : feito && feito.terminada ? ` · <b>você tirou ${n.tirou} de ${n.total}</b>`
-          : respondidas ? ` · começada (${respondidas}/${total})` : ""}</span></span>
-        <span class="ck">›</span>
-      </button>`;
-    }).join("")}`;
+    banco de questões.</p></div>` : discsComProva.map(d => `
+    <div class="secao">${esc(d.emoji)} ${esc(d.nome)}</div>
+    <div class="cardz" style="padding:6px 14px;margin-bottom:14px">
+      ${porDisc[d.id].map(pv => {
+        const feito = feitoDaProva(pv.id);
+        const n = feito ? notaDaProva(pv, feito) : null;
+        const respondidas = feito ? Object.keys(feito.respostas || {}).length : 0;
+        const total = questoesDaVez(pv, feito).length;
+        const trancada = !jaTemAcesso(pv);
+        return `<button class="esc" data-prova-abrir="${esc(pv.id)}">
+          <span class="ic">${trancada ? "🔒" : esc(d.emoji)}</span>
+          <span class="tx"><b>${esc(pv.nome)}</b><span>${esc(pv.sub || "")}${pv.sub ? " · " : ""}${
+            plural(total, "questão", "questões")}
+            · ${valorDaProva(pv, feito)} pontos${pv.minutos ? " · " + pv.minutos + " min" : ""}${
+            trancada ? ` · <b>${PRECO_PROVA} moedas</b>`
+            : feito && feito.terminada ? ` · <b>você tirou ${n.tirou} de ${n.total}</b>`
+            : respondidas ? ` · começada (${respondidas}/${total})` : ""}</span></span>
+          <span class="ck">›</span>
+        </button>`;
+      }).join("")}
+    </div>`).join("")}`;
   montarTela(corpo, { rodape: `<button class="btn ghost" id="voltarEstudar">Voltar</button>` });
   $("#voltarEstudar").onclick = () => telaEstudar();
   document.querySelectorAll("[data-prova-abrir]").forEach(b => b.onclick = () => {
