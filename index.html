@@ -86,7 +86,6 @@ button{font-family:inherit;font-size:inherit;cursor:pointer;border:none;backgrou
 .fb.bad .xpg{color:var(--ink-2)}
 .perdeu{font-size:12.5px;font-weight:700;color:var(--ink-2);margin-top:6px}
 
-.flame{font-weight:800;color:var(--gold);display:flex;align-items:center;gap:3px;font-size:15px}
 .semrank{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-2);
   background:var(--line);border-radius:99px;padding:3px 8px}
 .cron{font-weight:800;font-size:15px;color:var(--ink-2);font-variant-numeric:tabular-nums;min-width:62px;text-align:right}
@@ -221,8 +220,95 @@ button{font-family:inherit;font-size:inherit;cursor:pointer;border:none;backgrou
 .dhead .tx{flex:1;min-width:0}
 .dhead .tx b{display:block;font-size:15px;font-weight:800}
 .dhead .tx span{display:block;font-size:11.5px;color:var(--ink-2);font-weight:700}
-.dhead .dbar{flex:0 0 56px;height:8px;border-radius:99px;background:var(--line);overflow:hidden}
-.dhead .dbar i{display:block;height:100%;background:var(--brand);border-radius:99px}
+/* Barra de duas camadas: o claro é o que foi acertado, o escuro por cima é o
+   que já está fixado. As duas partem da esquerda, então a escura fica sempre
+   dentro da clara — é impossível ter mais fixadas do que acertadas. */
+.dbar{position:relative;display:block;height:8px;border-radius:99px;background:var(--line);
+  overflow:hidden;flex:0 0 56px}
+.dbar i{position:absolute;left:0;top:0;height:100%;border-radius:99px;display:block}
+.dbar i.cob{background:rgba(31,157,85,.42)}
+.dbar i.fix{background:var(--brand)}
+.dbar.mini{flex:none;width:74px;height:9px}
+.dbar.grande{flex:none;width:100%;height:12px;margin-bottom:12px}
+.legenda{padding:14px}
+.lgLinhas{display:flex;flex-direction:column;gap:7px;font-size:12.5px;color:var(--ink-2);line-height:1.45}
+.lgLinhas .pt{display:inline-block;width:10px;height:10px;border-radius:99px;vertical-align:-1px;margin-right:5px}
+.lgLinhas .pt.cob{background:rgba(31,157,85,.42)}
+.lgLinhas .pt.fix{background:var(--brand)}
+.lgLinhas .pt.mk{background:#d4a017}
+/* ---- provas anteriores e discursiva ---- */
+.escQ{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;padding:11px 12px;
+  margin-bottom:8px;border:2px solid var(--line);border-radius:12px;background:var(--card);cursor:pointer}
+.escQ.on{border-color:var(--brand);background:rgba(31,157,85,.07)}
+.escQ .ck2{flex:0 0 20px;height:20px;border-radius:6px;border:2px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#fff}
+.escQ.on .ck2{background:var(--brand);border-color:var(--brand)}
+.escQ .tx{flex:1;font-size:13.5px;line-height:1.45}
+.escQ .vale{display:block;margin-top:3px;font-size:11.5px;color:var(--muted)}
+.notaGrande{font-size:46px;font-weight:900;line-height:1;color:var(--brand)}
+.notaGrande small{font-size:20px;font-weight:700;color:var(--muted)}
+.qLinha{display:flex;align-items:center;gap:11px;width:100%;text-align:left;padding:11px 13px;
+  margin-bottom:8px;border:2px solid var(--line);border-radius:13px;background:var(--card);cursor:pointer}
+.qLinha .nq{flex:0 0 26px;height:26px;border-radius:99px;background:var(--line);color:var(--ink-2);
+  display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:800}
+.qLinha .tx{flex:1;display:flex;flex-direction:column;line-height:1.3;min-width:0}
+.qLinha .tx b{font-size:13.5px;font-weight:600}
+.qLinha .tx span{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.qLinha .nt{flex:0 0 auto;font-size:16px;font-weight:900}
+.qLinha .nt small{font-size:11px;font-weight:700;color:var(--muted)}
+.qLinha.cheia{border-color:rgba(31,157,85,.45)} .qLinha.cheia .nt{color:var(--brand)}
+.qLinha.cheia .nq{background:var(--brand);color:#fff}
+.qLinha.parcial{border-color:rgba(212,160,23,.5)} .qLinha.parcial .nt{color:#a97b0b}
+.qLinha.parcial .nq{background:#d4a017;color:#fff}
+.qLinha.zero{border-color:rgba(198,60,50,.35)} .qLinha.zero .nt{color:var(--wrong)}
+.qLinha.zero .nq{background:var(--wrong);color:#fff}
+.qLinha.vazia{opacity:.6}
+.qLinha.esperando{border-color:rgba(120,130,145,.45);border-style:dashed}
+.qLinha.esperando .nq{background:var(--line);color:var(--ink-2)}
+.avisoCorr{margin-top:12px;border-color:rgba(120,130,145,.4);border-style:dashed}
+.semCorr{display:flex;flex-direction:column;gap:4px;padding:10px 12px;margin-bottom:12px;
+  border-radius:11px;background:rgba(120,130,145,.1)}
+.semCorr b{font-size:14px}
+.semCorr span{font-size:12.5px;color:var(--muted);line-height:1.45}
+.gabTexto.suaResp{border-left:3px solid var(--line);padding-left:11px;color:var(--ink)}
+textarea.resposta.alta{width:100%;min-height:130px;resize:vertical;font-family:inherit;
+  font-size:15px;line-height:1.5;padding:12px 14px}
+.apoio{border-left:3px solid var(--line);padding:2px 0 2px 12px;margin:0 0 12px;
+  color:var(--ink-2);font-size:14px;line-height:1.55;white-space:pre-wrap}
+.corr{margin-top:16px;border:2px solid var(--line);border-radius:14px;padding:14px;background:var(--card)}
+.cabNota{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.cabNota b{font-size:30px;font-weight:900;color:var(--brand);line-height:1}
+.cabNota small{font-size:14px;color:var(--muted);font-weight:700}
+.cabNota .porQuem{flex:1 0 100%;font-size:11.5px;color:var(--muted)}
+.corr .resumo{margin:0 0 12px;font-size:14px;line-height:1.5}
+.secaoP{font-size:11.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;
+  color:var(--muted);margin:14px 0 7px}
+.pnt{display:flex;gap:9px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line)}
+.pnt:first-of-type{border-top:none}
+.pnt .ic{flex:0 0 20px;font-size:15px;line-height:1.4;color:var(--muted);text-align:center}
+.pnt.parcial .ic{color:#a97b0b}
+.pnt .tx{display:flex;flex-direction:column;gap:2px;line-height:1.45}
+.pnt .tx b{font-size:14px;font-weight:600}
+.pnt .tx span{font-size:12.5px;color:var(--muted)}
+.pnt.faltou .tx b{color:var(--ink-2)}
+.pnt.extra .tx b{color:#a97b0b}
+.pnt.escolha{cursor:pointer}
+.pnt.escolha input{position:absolute;opacity:0;width:0;height:0}
+.pnt.escolha.ok .tx b{color:var(--brand)}
+.gabTexto{margin:0;font-size:14px;line-height:1.55;white-space:pre-wrap;color:var(--ink-2)}
+.mkTag{font-size:11px;font-weight:800;color:#a97b0b;background:rgba(212,160,23,.14);
+  border-radius:6px;padding:1px 5px;margin-left:4px}
+/* Caixinha "revisar sempre", no rodapé de feedback */
+.revisar{display:flex;align-items:center;gap:10px;padding:9px 12px;margin:0 0 10px;
+  border:2px solid var(--line);border-radius:12px;background:var(--card);cursor:pointer}
+.revisar.on{border-color:#d4a017;background:rgba(212,160,23,.08)}
+.revisar input{position:absolute;opacity:0;width:0;height:0}
+.revisar .cx{flex:0 0 20px;height:20px;border-radius:6px;border:2px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff}
+.revisar.on .cx{background:#d4a017;border-color:#d4a017}
+.revisar .tx{display:flex;flex-direction:column;line-height:1.3}
+.revisar .tx b{font-size:13.5px}
+.revisar .tx span{font-size:11.5px;color:var(--muted)}
 .dhead .dpc{flex:0 0 34px;text-align:right;font-size:12px;font-weight:800;color:var(--ink-2)}
 .dhead .dseta{flex:0 0 14px;text-align:center;color:var(--ink-2);font-weight:800}
 /* fechamento da liga */
@@ -286,8 +372,6 @@ button{font-family:inherit;font-size:inherit;cursor:pointer;border:none;backgrou
 .tp:hover{background:var(--brand-soft)}
 .tp:active{transform:scale(.99)}
 .tp .nm{flex:1;font-size:14px;font-weight:600}
-.tp .mini{width:74px;height:9px;border-radius:99px;background:var(--line);overflow:hidden}
-.tp .mini i{display:block;height:100%;background:var(--brand);border-radius:99px}
 .tp .pc{width:38px;text-align:right;font-size:12px;color:var(--ink-2);font-weight:700}
 .pv{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:11px 0;
   border-bottom:1px solid var(--line)}
@@ -611,8 +695,8 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "53216a7";</script>
-<script>window.VERSAO_BANCO = "6d5776ea7153";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "3f20dc6";</script>
+<script>window.VERSAO_BANCO = "684a01b441d4";</script>
 
 <script>
 "use strict";
@@ -626,7 +710,7 @@ const CAIXA_MAX  = INTERVALOS.length - 1;
 const NOMES_TIPO  = { vf:"V ou F", mcq:"Assinalar", multi:"Marcar várias", escrita:"Escrever", cloze:"Lacunas", ordem:"Ordenar", relacionar:"Relacionar" };
 const TITULO_TIPO = { vf:"Verdadeiro ou falso", mcq:"Escolha a certa", multi:"Marque TODAS as corretas",
                       escrita:"Escreva a resposta", cloze:"Complete as lacunas", ordem:"Coloque em ordem",
-                      relacionar:"Relacione" };
+                      relacionar:"Relacione", discursiva:"Discursiva" };
 
 /* toda questão pertence a uma disciplina e a uma prova */
 let porId = {}, discPorId = {};
@@ -790,13 +874,22 @@ const padrao = () => ({
   nivel:"bronze", sala:null, semanaSala:null,   // onde eu jogo esta semana
   semanaPassada:null, ligaVista:null,           // retrato da semana que fechou, e se já vi o resultado
   pod1:0, pod2:0,                               // semanas em primeiro e em segundo
+  marcadas:[],                                  // exercícios que a pessoa quer rever sempre
+  provasFeitas:{},                              // resultado de cada prova antiga respondida
+  /* MOEDAS — economia para comprar acesso às provas antigas.
+     Ganhas e gastas ficam em contadores SEPARADOS que só sobem (mesmo padrão
+     do XP): o saldo é a subtração dos dois, nunca um número guardado direto.
+     Isso evita que sincronizar dois aparelhos ressuscite moedas já gastas. */
+  moedasGanhas:0, moedasGastas:0,
+  provasCompradas:{},                           // { [provaId]: { tentativas:{ [questaoId]: n } } }
+  marcosMoedas:{ ofensiva:0 },                   // último múltiplo de 7 de ofensiva já recompensado
   conhecidos:[],                                // ids de exercício que este aparelho já viu chegar
   apelido:"", emoji:"",                         // como a pessoa quer ser chamada
                                                 // emoji vazio = ainda não escolheu
   horizonte:1,                                  // quantas provas por matéria entram na mistura
   marcos:{},                                    // o que já foi conquistado
   datas:{},                                     // "fisio/p3" -> "2026-08-26"
-  foco:{ disc:null, prova:null, tops:[], tipos:[], soRevisao:false, soErros:false },
+  foco:{ disc:null, prova:null, tops:[], tipos:[], soRevisao:false, soErros:false, soMarcadas:false },
   reportes:[],
   historico:{}
 });
@@ -830,6 +923,9 @@ function carregar(){
        ranking não compara nada. Então a cada abertura eles voltam ao padrão. */
     s.meta = SESSAO; s.segPorQuestao = SEG_POR_QUESTAO; s.esperaMin = ESPERA_MIN;
     s.v = 4;
+    /* Reconta a ofensiva já na abertura: quem vinha com um número guardado
+       errado de antes se acerta sozinho, sem precisar sincronizar primeiro. */
+    arrumarOfensiva(s);
     return s;
   }catch(e){ return padrao(); }
 }
@@ -883,12 +979,55 @@ function virarASemana(){
   S.semana = dom; S.xpSemana = 0; S.sala = null; S.semanaSala = null;
   salvar();
 }
+/* ---------- ofensiva ----------
+
+   A ofensiva é CONTADA a partir do histórico de dias, e não guardada como um
+   número que vai subindo de um em um.
+
+   Guardar o número dava um erro que a Isabela viu: celular com 2 e tablet com
+   1. Cada aparelho somava +1 a partir do que ELE sabia. O tablet fechou a
+   rodada do dia quando ainda estava desatualizado, não reconheceu o dia
+   anterior, e escreveu 1. Depois esse 1 era um número tão legítimo quanto o 2 —
+   não dava para saber qual dos dois estava certo só olhando para eles.
+
+   O histórico não tem esse problema: ele é uma lista de dias, e juntar duas
+   listas de dias é a união delas. Contando a ofensiva dele, os dois aparelhos
+   chegam sozinhos ao mesmo número, sem ninguém precisar ganhar a discussão.
+
+   Um dia entra na conta quando fechou a rodada de dez. Dia congelado não conta
+   como estudado, mas também não quebra a sequência — é para isso que serve. E
+   o dia de hoje só é cobrado quando acaba: quem ainda não estudou hoje às nove
+   da manhã não perdeu nada. */
+function fechouODia(s, d){
+  return ((s.historico || {})[d] || 0) >= SESSAO;
+}
+function ofensivaDe(s){
+  const gelo = new Set(s.congelados || []);
+  const h = hoje();
+  let d = fechouODia(s, h) ? h : addDias(h, -1);
+  let n = 0;
+  for(let volta = 0; volta < 4000; volta++){
+    if(fechouODia(s, d)) n++;
+    else if(!gelo.has(d)) break;    // nem estudou nem congelou: a sequência para aqui
+    d = addDias(d, -1);
+  }
+  return n;
+}
+function ultimoDiaFechado(s){
+  const dias = Object.keys(s.historico || {}).filter(d => fechouODia(s, d)).sort();
+  return dias.length ? dias[dias.length - 1] : null;
+}
+function arrumarOfensiva(s){
+  s.ofensiva = ofensivaDe(s);
+  s.ultimoDia = ultimoDiaFechado(s);
+  return s;
+}
+
 function virarODia(){
   virarASemana();
   const h = hoje();
   if(S.dia !== h){
-    if(S.ultimoDia && difDias(S.ultimoDia, h) > 1) S.ofensiva = 0;
-    S.dia = h; S.feitosHoje = 0; salvar();
+    S.dia = h; S.feitosHoje = 0; arrumarOfensiva(S); salvar();
   }
 }
 
@@ -948,8 +1087,36 @@ function focoValeRanking(f){
   if((f.tipos || []).length) return { vale:false, porque:"você escolheu tipos de exercício" };
   if((f.tops  || []).length) return { vale:false, porque:"você escolheu assuntos soltos" };
   if(f.soErros)              return { vale:false, porque:"“só o que eu errei” repete os mesmos exercícios" };
+  if(f.soMarcadas)           return { vale:false, porque:"“só as marcadas” é uma lista escolhida por você" };
   return { vale:true, porque:null };
 }
+
+/* ---------- marcar para revisar ----------
+
+   Pedido da Isabela: "provavelmente serão aqueles que são questão de prova, ou
+   que eu sei que preciso revisar. Ele vai aparecer mais vezes pra mim, mesmo
+   que eu acerte."
+
+   A marca não é um caminho paralelo ao da repetição espaçada — ela aperta o
+   intervalo do próprio motor. Um exercício marcado nunca some por mais de dois
+   dias, mesmo que a pessoa acerte dez vezes seguidas. Assim ele volta pela fila
+   normal, junto com o resto, sem precisar de uma bateria só dele.
+
+   Só a dona vê as marcas dela: `marcadas` sobe na conta, não no placar. */
+const TETO_MARCADA = 2;              // dias, no máximo, entre uma revisão e a próxima
+function marcada(id){ return (S.marcadas || []).includes(id); }
+function marcar(id, ligar){
+  const m = new Set(S.marcadas || []);
+  if(ligar) m.add(id); else m.delete(id);
+  S.marcadas = [...m];
+  /* Marcou agora: puxa a próxima aparição para dentro do teto, senão a pessoa
+     marca hoje e a questão só reaparece daqui a trinta dias. */
+  const p = S.prog[id];
+  if(ligar && p && difDias(hoje(), p.venc) > TETO_MARCADA) p.venc = addDias(hoje(), TETO_MARCADA);
+  salvar();
+  return m.has(id);
+}
+function marcadas(lista){ return (lista || CURSO.itens).filter(i => marcada(i.id)); }
 
 function itensDoFoco(){
   const f = S.foco;
@@ -957,7 +1124,8 @@ function itensDoFoco(){
     (!f.disc  || i.disc  === f.disc)  &&
     (!f.prova || i.prova === f.prova) &&
     (!(f.tops || []).length || f.tops.includes(i.top)) &&
-    (!f.tipos.length || f.tipos.includes(i.t)));
+    (!f.tipos.length || f.tipos.includes(i.t)) &&
+    (!f.soMarcadas || marcada(i.id)));
   if(f.disc || f.prova) return base;
   const dentro = provasNaMistura();
   const filtrados = base.filter(i => dentro.has(i.disc + "/" + i.prova));
@@ -991,6 +1159,7 @@ function itensDaProva(discId, provaId){
 function nomeDoFoco(){
   const f = S.foco;
   if(f.soErros) return "Só o que eu errei";
+  if(f.soMarcadas) return "Só as marcadas";
   if(f.soRevisao) return "Só revisão";
   if(!f.disc) return "Mix de tudo";
   const d = discPorId[f.disc];
@@ -1009,11 +1178,50 @@ function resumoTipos(){
   const t = S.foco.tipos;
   return t.length ? t.map(x => NOMES_TIPO[x]).join(", ") : "todos os tipos";
 }
-function progresso(lista){
+/* ---------- as duas medidas de progresso ----------
+
+   Elas respondem perguntas diferentes, e a Isabela precisou das duas em
+   momentos diferentes:
+
+     acertadas — "quanto falta pra eu ver e acertar tudo?" É a pergunta de quem
+       está vendo a matéria em cima da hora. Sobe assim que a pessoa acerta uma
+       vez; se errar depois, aquele exercício sai da conta na hora.
+
+     fixadas — "o que eu vou lembrar daqui a um mês?" Só entra quem acertou em
+       quatro dias diferentes, que é o que a repetição espaçada mede.
+
+   Antes só existia a segunda, e ela era a barra inteira. Na véspera de prova
+   isso mostrava 12% para quem já tinha acertado metade do conteúdo — número
+   verdadeiro, mas respondendo a uma pergunta que não era a da hora.
+
+   As duas dividem a mesma barra: o claro é o que foi acertado, o escuro por
+   cima é o que já está fixado. O número grande é o das acertadas. */
+function contagem(lista){
+  const r = { total: lista.length, certas:0, fixadas:0, erradas:0, novas:0, marcadas:0 };
+  lista.forEach(i => {
+    const p = S.prog[i.id];
+    if(marcada(i.id)) r.marcadas++;
+    if(!p){ r.novas++; return; }
+    if(p.caixa >= 1) r.certas++; else r.erradas++;
+    if(p.caixa >= 4) r.fixadas++;
+  });
+  r.pcCerto = r.total ? Math.round(100 * r.certas  / r.total) : 0;
+  r.pcFixo  = r.total ? Math.round(100 * r.fixadas / r.total) : 0;
+  r.faltam  = r.total - r.certas;
+  return r;
+}
+function acertadas(lista){ return contagem(lista).pcCerto; }
+function progresso(lista){          // fixadas — a medida antiga, agora a camada de baixo
   if(!lista.length) return 0;
   let soma = 0;
   lista.forEach(i => { const p = S.prog[i.id]; soma += p ? Math.min(p.caixa, 4)/4 : 0; });
   return Math.round(100 * soma / lista.length);
+}
+/* A barra de duas camadas, num lugar só, para as três telas usarem a mesma. */
+function barraDupla(c, classe){
+  return `<span class="dbar ${classe || ""}">
+    <i class="cob" style="width:${c.pcCerto}%"></i>
+    <i class="fix" style="width:${c.pcFixo}%"></i></span>`;
 }
 /* A pessoa pode marcar a data de uma prova que ainda não tem questão nenhuma no
    app — e deve poder: a contagem regressiva vale mesmo antes de existir banco.
@@ -1072,8 +1280,8 @@ function provasFuturas(){
     const prova = provaDe(disc, provaId);
     const its = itensDaProva(discId, provaId);
     lista.push({ dias, data, disc, prova, chave, discId, provaId,
-                 total: its.length, pc: progresso(its),
-                 faltam: its.filter(i => !S.prog[i.id] || S.prog[i.id].caixa < 4).length });
+                 total: its.length, pc: acertadas(its),
+                 faltam: contagem(its).faltam });
   });
   return lista.sort((a,b) => a.dias - b.dias);
 }
@@ -1228,15 +1436,25 @@ const BONUS_TEMPO = [ { seg:30, xp:50 }, { seg:60, xp:30 } ];
 
 /* ---------- agendamento ---------- */
 function registrar(id, acertou){
+  /* Prova antiga não mexe na repetição espaçada nem no XP: ela é um retrato de
+     como a pessoa iria hoje, não um jeito alternativo de pontuar. Decisão da
+     Isabela — "responder essas provas não entra no ranking". */
+  if(SES && SES.prova) return 0;
   const h = hoje();
   const p = S.prog[id] || { caixa:0, venc:h, erros:0, reps:0 };
   p.reps++;
   if(acertou){
-    // a caixa sobe no máximo uma vez por dia: repetir o mesmo exercício hoje
-    // treina, mas não é prova de que ficou fixado — isso só o tempo mostra
-    if(p.avancou !== h){
+    /* A caixa sobe no máximo uma vez por dia: repetir o mesmo exercício hoje
+       treina, mas não é prova de que ficou fixado — isso só o tempo mostra.
+
+       A exceção é sair do zero. Quem errou de manhã e acertou à tarde acertou
+       de verdade, e a caixa 0 quer dizer "errei da última vez" — deixar em zero
+       até amanhã faria a barra de acertadas mostrar como pendente uma questão
+       que a pessoa acabou de acertar. Do 1 em diante volta a valer um por dia. */
+    if(p.caixa === 0 || p.avancou !== h){
       p.caixa = Math.min(p.caixa + 1, CAIXA_MAX);
       p.avancou = h;
+      delete p.voltaEm;
       let intervalo = INTERVALOS[p.caixa];
       const it = porId[id];
       const data = it ? (S.datas || {})[it.disc + "/" + it.prova] : null;
@@ -1244,6 +1462,7 @@ function registrar(id, acertou){
         const faltam = difDias(h, data);
         if(faltam > 0) intervalo = Math.min(intervalo, Math.max(1, Math.ceil(faltam/2)));
       }
+      if(marcada(id)) intervalo = Math.min(intervalo, TETO_MARCADA);   // marcada volta sempre
       p.venc = addDias(h, intervalo);
     }
   }else{
@@ -1294,14 +1513,17 @@ function montarSessao(){
      pelo mesmo tempo de espera, o que castiga justamente quem estudou mais.
      A meta do dia continua existindo, mas ela mede o dia, não a bateria. */
   const alvo = S.meta;
-  const v = embaralhar(vencidos(pool));
-  const n = embaralhar(novos(pool));
+  /* Marcada entra na frente. Dentro de cada grupo continua sorteado, para a
+     bateria não virar sempre a mesma sequência. */
+  const naFrente = l => embaralhar(marcadas(l)).concat(embaralhar(l.filter(i => !marcada(i.id))));
+  const v = naFrente(vencidos(pool));
+  const n = naFrente(novos(pool));
   if(S.foco.soErros)   return { fila: errados(pool).slice(0, alvo), modo:"erros" };
   if(S.foco.soRevisao) return { fila: v.slice(0, alvo), modo:"revisao" };
   let fila = v.concat(n).slice(0, alvo);
   if(fila.length) return { fila, modo:"normal" };
   // nada vencendo e nada novo: vira treino livre, que não é o mesmo que progresso
-  return { fila: embaralhar(pool).slice(0, Math.min(alvo, pool.length)), modo:"treino" };
+  return { fila: naFrente(pool).slice(0, Math.min(alvo, pool.length)), modo:"treino" };
 }
 
 /* ============================================================
@@ -1364,6 +1586,7 @@ function telaInicio(op){
   const pcDia = Math.round(100 * feitos / S.meta);
   const raio = 32, circ = 2 * Math.PI * raio;
   const pool = itensDoFoco();
+  const cPool = contagem(pool);
   const nVenc = vencidos(pool).length, nNovos = novos(pool).length;
   const prontas = CURSO.disciplinas.filter(d => d.provas.length);
 
@@ -1404,7 +1627,7 @@ function telaInicio(op){
           <span class="ic">${f.disc.emoji}</span>
           <span class="tx">
             <b>${esc(f.disc.nome)} ${esc(f.prova ? f.prova.nome : "")}</b>
-            <span>${f.pc}% dominado · ${plural(f.faltam, "exercício ainda não fixado", "exercícios ainda não fixados")}</span>
+            <span>${f.pc}% acertadas${f.faltam ? " · faltam " + plural(f.faltam, "exercício", "exercícios") : " · você acertou tudo"}</span>
           </span>
           <span class="dias ${f.dias <= 3 ? "perto" : ""}">${f.dias === 0 ? "hoje" : f.dias}<small>${f.dias === 0 ? "" : f.dias === 1 ? "dia" : "dias"}</small></span>
         </button>`).join("")}
@@ -1454,14 +1677,21 @@ function telaInicio(op){
   <div class="stats">
     <div class="stat"><b>🔥 ${S.ofensiva}</b><span>ofensiva</span></div>
     <div class="stat"><b>${S.xpSemana}</b><span>xp da semana</span></div>
-    <div class="stat"><b>${progresso(pool)}%</b><span>dominado</span></div>
+    <div class="stat"><b>${cPool.pcCerto}%</b><span>acertadas</span></div>
+    ${!souDonoDoGrupo() ? `<div class="stat"><b>🪙 ${saldoMoedas()}</b><span>moedas</span></div>` : ""}
+    ${(S.gelos || 0) ? `<div class="stat"><b>🧊 ${S.gelos}</b><span>${S.gelos === 1 ? "congelamento" : "congelamentos"}</span></div>` : ""}
   </div>
-  <p class="muted" style="margin:-4px 0 4px">${(() => {
-    const p2 = pool, nv = vistos(p2).length, ne = errados(p2).length;
-    return `<b>Dominado</b> não é quantas você viu: é quantas você acertou em <b>4 dias diferentes</b>.
-      Acertar de novo hoje treina, mas não conta de novo. Errar zera aquele exercício.<br>
-      Até agora: ${nv} de ${p2.length} vistos${ne ? ` · <b>${ne}</b> com erro no histórico` : ""}.`;
-  })()}</p>
+  <div class="cardz legenda">
+    ${barraDupla(cPool, "grande")}
+    <div class="lgLinhas">
+      <span><i class="pt cob"></i> <b>${cPool.certas}</b> de ${cPool.total} acertadas${
+        cPool.erradas ? ` · <b>${cPool.erradas}</b> esperando você acertar` : ""}${
+        cPool.novas ? ` · ${cPool.novas} ainda não vistas` : ""}</span>
+      <span><i class="pt fix"></i> <b>${cPool.fixadas}</b> fixadas — acertadas em 4 dias diferentes,
+        que é o que você ainda vai lembrar depois da prova</span>
+      ${cPool.marcadas ? `<span><i class="pt mk"></i> <b>${cPool.marcadas}</b> marcadas para revisar</span>` : ""}
+    </div>
+  </div>
 
   ${(() => {
     /* Cada disciplina abre e fecha. Com uma prova por matéria a lista já era
@@ -1471,7 +1701,7 @@ function telaInicio(op){
     return prontas.map(d => {
       const its = itensDaProva(d.id);
       const tops = CURSO.topicos.filter(t => t.disc === d.id);
-      const pcD = progresso(its);
+      const cD = contagem(its);
       const aberta = discsAbertas.has(d.id);
       return `
       <button class="dhead ${aberta ? "on" : ""}" data-disc-abre2="${d.id}">
@@ -1479,16 +1709,16 @@ function telaInicio(op){
         <span class="tx"><b>${esc(d.nome)}${discsComNovidade.has(d.id)
           ? ` <span class="selNovo">novos</span>` : ""}</b>
           <span>${plural(its.length, "exercício", "exercícios")} · ${plural(tops.length, "assunto", "assuntos")}</span></span>
-        <span class="dbar"><i style="width:${pcD}%"></i></span>
-        <span class="dpc">${pcD}%</span>
+        ${barraDupla(cD)}
+        <span class="dpc">${cD.pcCerto}%</span>
         <span class="dseta">${aberta ? "⌄" : "›"}</span>
       </button>
       ${aberta ? `<div class="cardz">
-        ${tops.map(t => { const lista = its.filter(i => i.top === t.id); const pc = progresso(lista); return `
+        ${tops.map(t => { const lista = its.filter(i => i.top === t.id); const c = contagem(lista); return `
           <button class="tp" data-topo-ir="${d.id}/${t.id}" title="Estudar só este assunto">
-            <div class="nm">${esc(t.nome)}</div>
-            <div class="mini"><i style="width:${pc}%"></i></div>
-            <div class="pc">${pc}%</div>
+            <div class="nm">${esc(t.nome)}${c.marcadas ? ` <span class="mkTag">★${c.marcadas}</span>` : ""}</div>
+            ${barraDupla(c, "mini")}
+            <div class="pc">${c.pcCerto}%</div>
           </button>`; }).join("")}
       </div>` : ""}`;
     }).join("");
@@ -2041,6 +2271,36 @@ function faltaParaFechar(){
            txt: h >= 1 ? `${h}h ${String(m).padStart(2,"0")}min` : `${m} min` };
 }
 
+/* ============================================================
+   MOEDAS — a economia que dá acesso às provas antigas.
+
+   Ganhar é sempre por EVENTO (terminar bateria, virar a semana da ofensiva,
+   destravar conquista, vencer desafio, fechar a liga) — não por um total
+   acumulado, porque isso deixaria a conta "some quantos exercícios você já
+   fez" render moedas de exercícios de anos atrás.
+
+   O gasto de verdade que protege o cartão da Isabela é o teto por dia dentro
+   da Cloud Function de correção — moedas são só a camada que a pessoa vê e
+   que torna a escolha "qual prova vale mais a pena" uma escolha real. Mesmo
+   risco de honestidade que o XP já tem (documentado em "Honestidade sobre o
+   placar"): quem souber mexer no app pode inflar o saldo. Não é o que impede
+   gasto descontrolado — é só o jogo. ============================================================ */
+const MOEDAS_BATERIA      = 3;   // terminar uma bateria de 10, mesmo errando
+const MOEDAS_BATERIA_SEMERRO = 2; // a mais, só se acertou tudo (total 5)
+const MOEDAS_OFENSIVA_7   = 10;  // a cada 7 dias novos de ofensiva
+const MOEDAS_CONQUISTA    = 10;  // cada conquista nova
+const MOEDAS_DESAFIO      = 3;   // ganhar um desafio
+const MOEDAS_LIGA = { 1:20, 2:14, 3:10, 4:6 };  // 5º ao 8º cai no valor abaixo
+const MOEDAS_LIGA_RESTO   = 3;
+const PRECO_PROVA         = 60;  // acesso permanente ao enunciado + 2 correções/discursiva
+const TENTATIVAS_POR_COMPRA = 2;
+const PRECO_RECARGA       = 30;  // metade do preço, só recarrega as tentativas
+
+function saldoMoedas(){ return Math.max(0, (S.moedasGanhas || 0) - (S.moedasGastas || 0)); }
+function souDonoDoGrupo(){ return N.papel === "dono"; }
+function ganharMoedas(qtd){ if(qtd > 0) S.moedasGanhas = (S.moedasGanhas || 0) + qtd; }
+function gastarMoedas(qtd){ S.moedasGastas = (S.moedasGastas || 0) + qtd; }
+
 /* Desafio pontua no ranking — sem isso ninguém desafiaria ninguém. O que impede
    de virar fábrica de XP entre duas amigas são três travas juntas: um desafio
    mandado por vez, um dia entre um e o próximo, e a bateria sorteada do banco
@@ -2127,9 +2387,8 @@ function telaPerfil(){
   <div class="pfTopo">
     ${foto}
     <h1>${esc(nome)} ${esc(emoji)}</h1>
-    ${u ? `<p class="pfSub">${esc(u.email || "")}${N.grupoNome ? " · " + esc(N.grupoNome) : ""}</p>` : ""}
-    ${N.ligado ? `<p class="pfSub">${nivelDe(S.nivel).emoji} Liga ${esc(nivelDe(S.nivel).nome)}${
-      (S.gelos || 0) ? ` · 🧊 ${plural(S.gelos, "congelamento guardado", "congelamentos guardados")}` : ""}</p>` : ""}
+    ${N.grupoNome ? `<p class="pfSub">${esc(N.grupoNome)}</p>` : ""}
+    ${N.ligado ? `<p class="pfSub">${nivelDe(S.nivel).emoji} Liga ${esc(nivelDe(S.nivel).nome)}</p>` : ""}
   </div>
 
   <div class="cardz">
@@ -2143,6 +2402,7 @@ function telaPerfil(){
       <div><b>⚔️ ${S.desafiosGanhos || 0}</b><span>desafios ganhos</span></div>
       <div><b>🥇 ${S.pod1 || 0}</b><span>semanas em primeiro</span></div>
       <div><b>🥈 ${S.pod2 || 0}</b><span>semanas em segundo</span></div>
+      <div><b>🪙 ${saldoMoedas()}</b><span>moedas</span></div>
     </div>
     <p class="muted" style="margin:12px 0 0">Desafio e ranking ainda não existem — por isso os
       traços. Nesta semana você fez <b>${S.xpSemana} XP</b>; esse número zera todo domingo, o
@@ -2208,6 +2468,23 @@ function telaEstudar(rolagemAnterior){
       : "nada vencendo hoje"}</span></span>
     <span class="ck">${f.soRevisao?"✓":""}</span>
   </button>
+  <button class="esc ${f.soMarcadas?"on":""} ${marcadas().length?"":"off"}" data-modo="marcadas">
+    <span class="ic">★</span>
+    <span class="tx"><b>Só as marcadas</b><span>${marcadas().length
+      ? plural(marcadas().length,"exercício marcado para revisar","exercícios marcados para revisar")
+      : "você ainda não marcou nenhuma"}</span></span>
+    <span class="ck">${f.soMarcadas?"✓":""}</span>
+  </button>
+
+  ${(CURSO.provas || []).length ? `
+  <div class="secao">Provas anteriores</div>
+  <button class="esc" id="irProvas">
+    <span class="ic">📄</span>
+    <span class="tx"><b>Fazer uma prova antiga</b><span>${
+      plural((CURSO.provas || []).length, "prova já aplicada", "provas já aplicadas")
+      } · não conta para o ranking</span></span>
+    <span class="ck">›</span>
+  </button>` : ""}
 
   <div class="secao">Por disciplina</div>
   ${CURSO.disciplinas.map(d => {
@@ -2218,7 +2495,7 @@ function telaEstudar(rolagemAnterior){
     <button class="esc ${escolhida?"on":""} ${pronta?"":"off"}" data-disc="${d.id}">
       <span class="ic">${d.emoji}</span>
       <span class="tx"><b>${esc(d.nome)}</b><span>${pronta
-        ? plural(its.length,"exercício","exercícios") + " · " + progresso(its) + "% dominado"
+        ? plural(its.length,"exercício","exercícios") + " · " + acertadas(its) + "% acertadas"
         : esc(d.embreve || "em breve")}</span></span>
       <span class="ck">${escolhida?"✓":""}</span>
     </button>
@@ -2240,7 +2517,7 @@ function telaEstudar(rolagemAnterior){
             <button class="as ${on?"on":""}" data-top="${t.id}" data-d="${d.id}" data-p="${p.id}">
               <span class="ck2">${on?"✓":""}</span>
               <span class="nm">${esc(t.nome)}</span>
-              <span class="qt">${lt.length} · ${progresso(lt)}%</span>
+              <span class="qt">${lt.length} · ${acertadas(lt)}%</span>
             </button>`; }).join("")}
           <p class="muted" style="margin:8px 0 0;font-size:12.5px">Sem nenhum marcado, entra a prova inteira.</p>
         </div>` : ""}`; }).join("")}
@@ -2256,7 +2533,8 @@ function telaEstudar(rolagemAnterior){
   <p class="muted" style="margin-top:9px">Dá para marcar mais de um. Sem nenhum marcado, entram todos.</p>`;
 
   const pool = itensDoFoco();
-  const disponivel = f.soErros ? errados(pool).length : f.soRevisao ? vencidos(pool).length : pool.length;
+  const disponivel = f.soErros ? errados(pool).length
+                   : f.soRevisao ? vencidos(pool).length : pool.length;
   montarTela(corpo, { rodape:
     `<button class="btn" id="ir" ${disponivel?"":"disabled"}>${disponivel ? "Começar" : "Nada para estudar aqui"}
      <small>${esc(nomeDoFoco())} · ${esc(resumoTipos())} · ${disponivel} disponíveis</small></button>` });
@@ -2266,11 +2544,14 @@ function telaEstudar(rolagemAnterior){
     if(el){ el.scrollTop = rolagemAnterior; atualizaSombra(); }
   }
 
+  const bp = $("#irProvas"); if(bp) bp.onclick = telaProvas;
   document.querySelectorAll("[data-modo]").forEach(b => b.onclick = () => {
     const m = b.dataset.modo;
-    if(m === "mix"){ S.foco.disc = null; S.foco.prova = null; S.foco.tops = []; S.foco.soRevisao = false; S.foco.soErros = false; }
-    else if(m === "erros"){ S.foco.soErros = !S.foco.soErros; S.foco.soRevisao = false; }
-    else { S.foco.soRevisao = !S.foco.soRevisao; S.foco.soErros = false; }
+    if(m === "mix"){ S.foco.disc = null; S.foco.prova = null; S.foco.tops = [];
+                     S.foco.soRevisao = false; S.foco.soErros = false; S.foco.soMarcadas = false; }
+    else if(m === "erros"){ S.foco.soErros = !S.foco.soErros; S.foco.soRevisao = false; S.foco.soMarcadas = false; }
+    else if(m === "marcadas"){ S.foco.soMarcadas = !S.foco.soMarcadas; S.foco.soErros = false; S.foco.soRevisao = false; }
+    else { S.foco.soRevisao = !S.foco.soRevisao; S.foco.soErros = false; S.foco.soMarcadas = false; }
     salvar(); redesenhaEstudar();
   });
   document.querySelectorAll("[data-disc]").forEach(b => b.onclick = () => {
@@ -2576,8 +2857,10 @@ function pararRelogio(){ if(relogio){ clearInterval(relogio); relogio = null; } 
    ela só existe DEPOIS de responder — nunca antes. */
 function pausarRelogio(){
   /* No desafio o relógio não para. Ele é o critério de desempate, e pausar
-     enquanto se lê a explicação abriria a mesma porta de sair e voltar. */
-  if(SES && SES.desafio) return;
+     enquanto se lê a explicação abriria a mesma porta de sair e voltar.
+     Na prova antiga também não: o tempo declarado é o tempo que a professora
+     deu, e um simulado com pausa não simula nada. */
+  if(SES && (SES.desafio || SES.prova)) return;
   if(!SES || !SES.fim || SES.pausa) return;
   SES.pausa = Date.now();
   pararRelogio();
@@ -2675,13 +2958,18 @@ function raioHTML(){
 function barraTempoHTML(){
   if(!SES) return "";
   const parado = !!SES.pausa;
+  const semRanking = SES.valeRanking === false;
+  /* A ofensiva já morou aqui, preenchendo o espaço do relógio quando a bateria
+     era sem tempo. A Isabela cortou, com razão: ela mede o dia, não a questão,
+     e ali em cima do "❌ Quase" parecia que o erro tinha mexido nela. Ofensiva é
+     assunto da tela inicial. Sem relógio e sem aviso de ranking, esta faixa
+     simplesmente não existe. */
+  if(!SES.fim && !semRanking) return "";
   return `<div class="tempoBar">
     ${SES.fim ? `<span class="cron ${parado ? "parado" : ""}" id="cron">⏱ ${
-        mmss(Math.max(0, Math.round((SES.fim - (SES.pausa || Date.now())) / 1000)))}</span>`
-              : `<span class="flame">🔥 ${S.ofensiva} de ofensiva</span>`}
+        mmss(Math.max(0, Math.round((SES.fim - (SES.pausa || Date.now())) / 1000)))}</span>` : ""}
     ${parado ? `<span class="tbNota">tempo parado enquanto você lê</span>` : ""}
-    ${SES.valeRanking === false
-      ? `<span class="semrank" title="Este recorte não pontua no ranking">sem ranking</span>` : ""}
+    ${semRanking ? `<span class="semrank" title="Este recorte não pontua no ranking">sem ranking</span>` : ""}
   </div>`;
 }
 function render(){
@@ -2706,7 +2994,19 @@ function render(){
   const bv = $("#voltarQ"); if(bv) bv.onclick = () => telaRever(SES.log.length - 1);
   SES.respondido = false;
   if(SES.fim) tocarRelogio();
-  ({ vf:rVF, mcq:rMCQ, multi:rMulti, escrita:rEscrita, cloze:rCloze, ordem:rOrdem, relacionar:rRel })[it.t](it);
+  const desenhar = { vf:rVF, mcq:rMCQ, multi:rMulti, escrita:rEscrita, cloze:rCloze,
+                     ordem:rOrdem, relacionar:rRel, discursiva:rDiscursiva }[it.t];
+  if(!desenhar){
+    /* Tipo que este app ainda não sabe desenhar — banco novo em programa velho.
+       Melhor dizer isso e seguir do que quebrar a bateria inteira. */
+    $("#q").innerHTML = cabecalho(it, enunciadoDe(it) || "Exercício")
+      + `<p class="dica">Este exercício é de um tipo que esta versão do app ainda não abre.
+         Atualize o app (feche e abra de novo) para respondê-lo.</p>`;
+    $(".foot").innerHTML = `<button class="btn" id="pula">Pular</button>`;
+    $("#pula").onclick = () => { SES.i++; render(); };
+    return;
+  }
+  desenhar(it);
   const bt = $("#btInfo");
   if(bt) bt.onclick = () => {
     const cx = $("#boxFonte");
@@ -2765,12 +3065,17 @@ function concluir(it, acertou, textoExtra){
   const primeiraVez = !SES.vistos.includes(it.id);   // repetição do erro não conta como acerto de primeira
   if(primeiraVez) SES.vistos.push(it.id);
   if(acertou && primeiraVez) SES.acertos++;
-  S.feitosHoje++;
-  if(S.feitosHoje === S.meta){
-    const h = hoje();
-    if(S.ultimoDia !== h){ S.ofensiva = (S.ultimoDia && difDias(S.ultimoDia,h) === 1) ? S.ofensiva + 1 : 1; S.ultimoDia = h; }
+  /* Numa prova antiga, a objetiva é 0 ou o valor cheio. A discursiva já gravou
+     a nota dela antes de chegar aqui, então só grava quem ainda não gravou. */
+  if(SES.prova){
+    const f = (S.provasFeitas || {})[SES.prova.id];
+    if(!f || !f.respostas || !f.respostas[it.id])
+      guardarRespostaDeProva(it, acertou ? valorDaQuestao(it) : 0, {});
   }
+  S.feitosHoje++;
   S.historico[hoje()] = (S.historico[hoje()] || 0) + 1;
+  /* O histórico sobe primeiro: é dele que a ofensiva é contada. */
+  arrumarOfensiva(S);
   /* O andamento do desafio fica guardado a cada resposta: quem fechar o app no
      meio volta com os acertos que já tinha e o tempo que sobrou. */
   if(SES.desafio) S.desafioEmCurso = { id:SES.desafio.id, fim:SES.fim, acertos:SES.acertos,
@@ -2811,20 +3116,51 @@ function avancar(it, acertou){
   voltarRelogio();
   render();
 }
+/* Qual exercício do BANCO esta questão é. Numa prova antiga, as objetivas são
+   exercícios que já existem no banco, com o id prefixado pelo id da prova — e é
+   o exercício original que a marca "revisar sempre" precisa pegar, porque é ele
+   que volta nas baterias. A discursiva não tem original: ela só existe dentro
+   da prova, e por isso não pode ser marcada. */
+function idNoBanco(it){
+  if(!it) return null;
+  if(porId[it.id]) return it.id;
+  if(it.ref && porId[it.ref]) return it.ref;
+  const corte = String(it.id).indexOf("__");
+  if(corte > 0){
+    const base = String(it.id).slice(corte + 2);
+    if(porId[base]) return base;
+  }
+  return null;
+}
+
 function rodapeFeedback(it, acertou, exp, aviso, ganho){
   const jaReportou = (S.reportes || []).some(r => r.id === it.id);
   const seq = SES ? (SES.seq || 0) : 0;
-  const selo = (ganho == null) ? "" : `<span class="xpg">+${ganho} XP${
+  const naProva = !!(SES && SES.prova);
+  /* Numa prova antiga não existe XP, então não existe selo de XP. E na
+     discursiva não existe "Isso aí" nem "Quase": a nota e o que faltou já estão
+     escritos na correção, logo acima. Repetir um veredito de acertou/errou aqui
+     embaixo, numa questão que quase sempre é parcial, só confundiria. */
+  const selo = (ganho == null || naProva) ? "" : `<span class="xpg">+${ganho} XP${
     seq >= 2 ? ` <b>⚡ ${seq} seguidas</b>` : ""}</span>`;
+  const semVeredito = naProva && it.t === "discursiva";
+  const idBanco = naProva ? idNoBanco(it) : it.id;
   $(".foot").innerHTML = `
     ${barraTempoHTML()}
-    ${aviso ? `<div class="fb good"><p>${aviso}</p></div>` : `
+    ${semVeredito ? "" : (aviso ? `<div class="fb good"><p>${aviso}</p></div>` : `
     <div class="fb ${acertou?"good":"bad"}">
       <h3>${acertou ? "✅ Isso aí!" : "❌ Quase"}${selo}</h3>
       ${exp ? `<p>${exp}</p>` : ""}
-      ${(!acertou && ganho != null && SES && SES.perdeuSeq)
+      ${(!acertou && ganho != null && !naProva && SES && SES.perdeuSeq)
         ? `<p class="perdeu">A sequência de ${SES.perdeuSeq} zerou.</p>` : ""}
-    </div>`}
+    </div>`)}
+    ${idBanco ? `<label class="revisar ${marcada(idBanco) ? "on" : ""}" id="lbRev">
+      <input type="checkbox" id="ckRev" ${marcada(idBanco) ? "checked" : ""}>
+      <span class="cx">${marcada(idBanco) ? "✓" : ""}</span>
+      <span class="tx"><b>Revisar sempre</b><span id="txRev">${marcada(idBanco)
+        ? "volta a cada " + plural(TETO_MARCADA, "dia", "dias") + ", mesmo acertando"
+        : "questão de prova, ou que você sabe que precisa rever"}</span></span>
+    </label>` : ""}
     <div class="acoes">
       <button class="btn ${acertou?"":"danger"}" id="prox">Continuar</button>
       <button class="flag ${jaReportou?"neutra":""}" id="btRep"
@@ -2834,6 +3170,15 @@ function rodapeFeedback(it, acertou, exp, aviso, ganho){
   ligarCue();
   $("#prox").onclick = () => avancar(it, acertou);
   $("#btRep").onclick = () => painelReporte(it, acertou, exp);
+  const ck = $("#ckRev");
+  if(ck) ck.onchange = () => {
+    const on = marcar(idBanco, ck.checked);
+    $("#lbRev").classList.toggle("on", on);
+    $("#lbRev").querySelector(".cx").textContent = on ? "✓" : "";
+    $("#txRev").textContent = on
+      ? "volta a cada " + plural(TETO_MARCADA, "dia", "dias") + ", mesmo acertando"
+      : "questão de prova, ou que você sabe que precisa rever";
+  };
 }
 
 const MOTIVOS = [
@@ -3256,6 +3601,7 @@ function telaRever(n){
    ============================================================ */
 function telaFim(){
   pararRelogio();
+  if(SES && SES.prova) return telaProvaFim(SES.prova);
   const pc = SES.total ? Math.round(100 * SES.acertos / SES.total) : 0;
   const bateuMeta = S.feitosHoje >= S.meta;
   const respondidas = SES.vistos.length - SES.estourou;
@@ -3284,6 +3630,26 @@ function telaFim(){
   const agora = conquistasGanhas().map(c => c.id);
   const novasConquistas = agora.filter(id => !antesDasConquistas.includes(id));
   S.marcos.conquistas = agora;
+  /* Moedas: bateria terminada (mesmo com erro) + bônus se foi tudo certo. */
+  let moedasRodada = 0;
+  if(SES.total > 0){
+    ganharMoedas(MOEDAS_BATERIA); moedasRodada += MOEDAS_BATERIA;
+    if(semErro){ ganharMoedas(MOEDAS_BATERIA_SEMERRO); moedasRodada += MOEDAS_BATERIA_SEMERRO; }
+  }
+  /* Moedas de conquista nova, uma vez cada. */
+  if(novasConquistas.length){
+    const q = novasConquistas.length * MOEDAS_CONQUISTA;
+    ganharMoedas(q); moedasRodada += q;
+  }
+  /* Moedas de ofensiva: um múltiplo de 7 por vez, nunca repete o mesmo múltiplo.
+     Cobre também quem pulou direto de 6 para 14 num dia de bateria dupla. */
+  S.marcosMoedas = S.marcosMoedas || { ofensiva:0 };
+  const multiploAtual = Math.floor((S.ofensiva || 0) / 7);
+  if(multiploAtual > (S.marcosMoedas.ofensiva || 0)){
+    const q = (multiploAtual - (S.marcosMoedas.ofensiva || 0)) * MOEDAS_OFENSIVA_7;
+    ganharMoedas(q); moedasRodada += q;
+    S.marcosMoedas.ofensiva = multiploAtual;
+  }
   /* Vaga na liga só depois de uma bateria que vale ranking — é o que impede
      cadeira ocupada por quem não jogou. */
   if(SES.valeRanking !== false && SES.total > 0) entrarNaLiga();
@@ -3305,6 +3671,7 @@ function telaFim(){
         <div><b>⭐ ${SES.xpGanho || 0}</b><span>XP nesta rodada</span></div>
         <div><b>${segMedio != null ? segMedio + "s" : "—"}</b><span>por questão</span></div>
       </div>
+      ${moedasRodada ? `<p class="muted" style="margin:8px 0 0">🪙 +${moedasRodada} moedas nesta rodada · saldo: ${saldoMoedas()}</p>` : ""}
       <div>
         ${bonus ? `<span class="pill" style="color:var(--gold)">⏱ +${bonus} de bônus por velocidade —
           menos de ${faixaBonus.seg}s por questão, sem errar nenhuma</span>` : ""}
@@ -3356,6 +3723,574 @@ function telaFim(){
   $("#home").onclick = telaInicio;
 }
 
+/* ---------- 8. Discursiva ----------
+
+   Ideia de uma amiga da Isabela, e o desenho que ela pediu: a pessoa escreve
+   com as palavras dela, e a correção diz o que a professora esperava — "se
+   faltou algo pra ficar completo, ou se colocou coisa a mais, com risco de
+   errar coisa que nem foi pedida".
+
+   Duas correções, e o app funciona com qualquer uma das duas:
+
+   1. Pelo Claude, quando o grupo tem a correção ligada. A chave da API não
+      pode morar aqui dentro — este arquivo é público — então quem fala com o
+      Claude é uma função no Firebase, com a chave guardada lá. Ver funcoes/.
+
+   2. Por conta própria, sempre disponível. Aparece a resposta esperada
+      quebrada em pontos, e a pessoa marca os que escreveu. É menos confortável
+      e mais honesto do que fingir que corrigiu: quem lê o próprio texto ao
+      lado do gabarito aprende bastante.
+
+   O gabarito só aparece DEPOIS de a pessoa enviar. Antes disso, nem no HTML.
+*/
+function rDiscursiva(it){
+  const g = it.gab || {};
+  const val = valorDaQuestao(it);
+  $("#q").innerHTML = cabecalho(it, it.enunciado || it.p) +
+    `${it.apoio ? `<div class="apoio">${esc(it.apoio)}</div>` : ""}
+     <p class="dica">Responda com as suas palavras. Vale ${plural(val, "ponto", "pontos")}.</p>
+     <textarea class="resposta alta" id="txtDisc" rows="7"
+       placeholder="Digite sua resposta e ela será corrigida pela IA com base nos critérios usados nas QPs." aria-label="Sua resposta"></textarea>
+     <p class="pista" id="contaLetras">0 caracteres</p>
+     <div id="correcao"></div>`;
+  const campo = $("#txtDisc");
+  campo.oninput = () => {
+    $("#contaLetras").textContent = campo.value.trim().length + " caracteres";
+    atualizaVerificar(campo.value.trim().length >= 10);
+  };
+  pedirVerificar(async () => {
+    if(SES.respondido) return;
+    const texto = campo.value.trim();
+    if(texto.length < 10) return;
+    campo.disabled = true;
+    $(".foot").innerHTML = barraTempoHTML() + `<button class="btn" disabled>Corrigindo…</button>`;
+    let c = null, porque = "Este aparelho está sem conexão com o grupo, então não deu para corrigir agora.";
+    if(correcaoLigada()){
+      c = await pedirCorrecao(it, texto);
+      if(!c) porque = N.erroCorrecao
+        || "Não deu para falar com a correção agora. Pode ser a internet, ou o limite de correções do dia.";
+    }
+    if(c) mostrarCorrecaoDoClaude(it, texto, c);
+    else  mostrarSemCorrecao(it, texto, porque);
+  }, false);
+  setTimeout(() => { try{ campo.focus({ preventScroll:true }); }catch(e){} }, 60);
+}
+
+/* Desenha os pontos do gabarito, um por um, do jeito que a professora cobraria. */
+function linhaDePonto(p, estado, comentario){
+  const ic = { ok:"✅", parcial:"◐", faltou:"○" }[estado] || "○";
+  return `<div class="pnt ${estado}">
+    <span class="ic">${ic}</span>
+    <span class="tx"><b>${esc(p.t || p)}</b>${comentario ? `<span>${esc(comentario)}</span>` : ""}</span>
+  </div>`;
+}
+
+function mostrarCorrecaoDoClaude(it, texto, c){
+  const val = valorDaQuestao(it);
+  const nota = Math.max(0, Math.min(val, Number(c.nota) || 0));
+  const g = it.gab || {};
+  $("#correcao").innerHTML = `
+    <div class="corr">
+      <div class="cabNota"><b>${nota}</b><small>de ${val}</small>
+        <span class="porQuem">corrigido pelo Claude, com o gabarito da prova</span></div>
+      ${c.resumo ? `<p class="resumo">${esc(c.resumo)}</p>` : ""}
+      <div class="secaoP">O que a professora esperava</div>
+      ${(c.pontos || []).map(p => linhaDePonto(p, p.estado, p.comentario)).join("")}
+      ${(c.aMais || []).length ? `<div class="secaoP">O que você pôs a mais</div>
+        ${c.aMais.map(a => `<div class="pnt extra"><span class="ic">⚠️</span>
+          <span class="tx"><b>${esc(a.t)}</b>${a.risco ? `<span>${esc(a.risco)}</span>` : ""}</span></div>`).join("")}
+        <p class="muted" style="margin:8px 0 0;font-size:12.5px">Escrever o que não foi pedido não
+          soma ponto, e pode tirar: se vier errado, a professora vê um erro que você não precisava
+          ter cometido.</p>` : ""}
+      ${g.resposta ? `<div class="secaoP">Resposta esperada</div>
+        <p class="gabTexto">${esc(g.resposta)}</p>` : ""}
+    </div>`;
+  guardarRespostaDeProva(it, nota, { texto, comentario: c.resumo || "", porIA:true });
+  concluir(it, nota >= val * 0.6, "");
+  rolarParaCorrecao();
+}
+
+/* Sem a correção do Claude, o app NÃO pede para a pessoa se corrigir.
+
+   Essa era a primeira versão, e a Isabela cortou na hora: "eu não quero marcar
+   o que eu escrevi. Quero que você leia minha resposta e avalie se eu escrevi
+   ou não o que é esperado". Ela tem razão, e o motivo é o que a questão
+   discursiva tem de melhor — quem já sabe o que era esperado lê a própria
+   resposta e enxerga o que quer enxergar. Se a correção é a própria pessoa
+   marcando caixinha, a questão vira um cartão de memória com passos extras.
+
+   Então: sem correção, a questão fica SEM NOTA. Aparece a resposta dela ao lado
+   do que a professora esperava, para ela poder comparar com os próprios olhos,
+   e um botão para tentar corrigir de novo. A folha de resultado mostra a
+   questão como "esperando correção", e não como zero — porque não é zero, é
+   uma questão que ninguém corrigiu ainda. */
+function mostrarSemCorrecao(it, texto, porque){
+  const g = it.gab || {};
+  const val = valorDaQuestao(it);
+  $("#correcao").innerHTML = `
+    <div class="corr">
+      <div class="semCorr">
+        <b>Esta questão ficou sem nota.</b>
+        <span>${esc(porque)}</span>
+      </div>
+      ${g.resposta ? `<div class="secaoP">O que a professora esperava</div>
+        <p class="gabTexto">${esc(g.resposta)}</p>` : ""}
+      ${(g.pontos || []).length ? `<div class="secaoP">Os pontos da questão (valem ${val})</div>
+        ${g.pontos.map(pt => `<div class="pnt"><span class="ic">·</span>
+          <span class="tx"><b>${esc(pt.t || pt)}</b>${pt.peso ? `<span>peso ${pt.peso}</span>` : ""}</span>
+        </div>`).join("")}` : ""}
+      ${(g.armadilhas || []).length ? `<div class="secaoP">Onde costuma cair ponto</div>
+        ${g.armadilhas.map(a => `<div class="pnt extra"><span class="ic">⚠️</span>
+          <span class="tx"><b>${esc(a)}</b></span></div>`).join("")}` : ""}
+      <div class="secaoP">O que você escreveu</div>
+      <p class="gabTexto suaResp">${esc(texto)}</p>
+    </div>`;
+  guardarRespostaDeProva(it, null, { texto, semCorrecao: porque });
+  $(".foot").innerHTML = barraTempoHTML()
+    + `<button class="btn ghost sm" id="tentarDeNovo">Tentar corrigir de novo</button>
+       <div style="height:8px"></div>
+       <button class="btn" id="seguirDisc">Continuar</button>`;
+  $("#seguirDisc").onclick = () => { SES.respondido = true; avancar(it, false); };
+  $("#tentarDeNovo").onclick = async () => {
+    $("#tentarDeNovo").disabled = true;
+    $("#tentarDeNovo").textContent = "Corrigindo…";
+    const c = correcaoLigada() ? await pedirCorrecao(it, texto) : null;
+    if(c) mostrarCorrecaoDoClaude(it, texto, c);
+    else { $("#tentarDeNovo").disabled = false; $("#tentarDeNovo").textContent = "Tentar corrigir de novo"; }
+  };
+  rolarParaCorrecao();
+}
+function rolarParaCorrecao(){
+  const el = document.getElementById("correcao");
+  if(el) setTimeout(() => el.scrollIntoView({ behavior:"smooth", block:"start" }), 80);
+}
+
+/* ---------- falar com a correção do Claude ----------
+
+   Quem chama é o app; quem tem a chave é a função no Firebase. O app manda
+   apenas o id da prova, o id da questão e o texto que a pessoa escreveu — o
+   gabarito NÃO vai daqui. A função lê o gabarito do próprio Firestore, e é por
+   isso que não adianta alguém mandar um gabarito inventado para ganhar nota.
+
+   Se a função não existir, não estiver ligada, ou der erro, a correção por
+   conta própria assume. O app nunca fica sem saída. */
+/* A correção não é uma opção que alguém liga: ela é a questão discursiva.
+   O app tenta corrigir sempre que tem com quem falar — logado, dentro de um
+   grupo, e com o módulo de funções carregado. Quem controla o gasto é a própria
+   função, que tem limite por pessoa e por grupo, por dia. Um interruptor aqui
+   só criaria um estado em que a discursiva não funciona e ninguém entende por
+   quê — foi o que a Isabela viu na primeira versão e cortou. */
+function correcaoLigada(){
+  return !!(N.ligado && N.usuario && N.grupo && N.funcoes && N.api && N.api.httpsCallable);
+}
+async function pedirCorrecao(it, texto){
+  const pv = SES && SES.prova;
+  /* Tentativas são por prova comprada — dona do grupo tem infinitas (testar
+     a prova não pode custar moeda dela). Sem tentativa sobrando, nem chama a
+     função: economiza o gasto real e explica por quê em português. */
+  if(pv && !souDonoDoGrupo() && tentativasRestantes(pv, it.id) <= 0){
+    N.erroCorrecao = `Suas correções desta questão acabaram. Recarregue por ${PRECO_RECARGA} moedas na tela de resultado da prova.`;
+    return null;
+  }
+  try{
+    N.erroCorrecao = null;
+    const chamar = N.api.httpsCallable(N.funcoes, "corrigirDiscursiva");
+    const r = await chamar({ grupo: N.grupo, prova: pv ? pv.id : null,
+                             questao: it.id, resposta: texto });
+    const d = r && r.data;
+    if(!d || d.nota == null) return null;
+    /* Só desconta a tentativa numa correção que de fato aconteceu — uma
+       chamada que falhou por rede ou teto do dia não deve custar nada. */
+    if(pv && !souDonoDoGrupo()){
+      S.provasCompradas = S.provasCompradas || {};
+      const acesso = S.provasCompradas[pv.id] || { tentativas: tentativasIniciais(pv) };
+      acesso.tentativas = acesso.tentativas || {};
+      acesso.tentativas[it.id] = Math.max(0, tentativasRestantes(pv, it.id) - 1);
+      S.provasCompradas[pv.id] = acesso;
+      salvar();
+    }
+    return d;
+  }catch(e){
+    /* Sem rede, limite do dia estourado, função fora do ar. A questão fica sem
+       nota e a pessoa lê, em português, por quê. Nunca trava a prova. */
+    N.erroCorrecao = (e && e.message) ? String(e.message) : null;
+    return null;
+  }
+}
+
+/* ============================================================
+   PROVAS ANTERIORES — o simulado da prova de verdade
+
+   Ideia da Isabela: reproduzir no app a prova que a professora aplicou em
+   outros anos, exatamente como ela cobrou — as de assinalar, as de V ou F, e
+   as discursivas. E a regra dela, que decide o resto do desenho:
+
+     "responder essas provas não entra no ranking"
+
+   Então uma prova aqui não dá XP, não mexe no XP da semana, e não mexe nas
+   caixas da repetição espaçada. Ela é um retrato de como você iria hoje, não
+   um jeito alternativo de pontuar.
+
+   O que ela mexe: o dia conta como estudado. Fazer uma prova inteira e o app
+   dizer que você não estudou hoje seria mentira — e a ofensiva mede estudo,
+   não competição.
+
+   Um exercício de prova vive em CURSO.provas, não em CURSO.itens: ele não é
+   sorteado nas baterias e não aparece na conta de "acertadas". São duas coisas
+   diferentes e misturá-las estragaria as duas.
+   ============================================================ */
+/* Compra de prova com moedas. Quem organiza o grupo (souDonoDoGrupo) nunca
+   paga — ela monta as provas e precisa testar. O preço dá acesso permanente
+   ao enunciado e a duas correções por questão discursiva; a "prévia da prova
+   inteira antes de comprar" que está no desenho AINDA NÃO existe nesta versão
+   — comprar já entra direto respondendo. */
+function jaTemAcesso(pv){ return souDonoDoGrupo() || !!(S.provasCompradas && S.provasCompradas[pv.id]); }
+function tentativasIniciais(pv){
+  const t = {};
+  (pv.questoes || []).forEach(q => { if(q.t === "discursiva") t[q.id] = TENTATIVAS_POR_COMPRA; });
+  return t;
+}
+function tentativasRestantes(pv, questaoId){
+  if(souDonoDoGrupo()) return Infinity;
+  const p = S.provasCompradas && S.provasCompradas[pv.id];
+  if(!p) return 0;
+  const n = p.tentativas ? p.tentativas[questaoId] : undefined;
+  return n == null ? TENTATIVAS_POR_COMPRA : n;
+}
+function garantirAcessoEAbrir(pv, abrir){
+  if(jaTemAcesso(pv)) return abrir();
+  if(saldoMoedas() < PRECO_PROVA){
+    return caixaAviso("Moedas insuficientes",
+      `Esta prova custa ${PRECO_PROVA} moedas e você tem ${saldoMoedas()} agora. Continue estudando — bateria, ofensiva, conquistas e liga rendem moedas.`);
+  }
+  caixaConfirma(`Comprar "${pv.nome}"?`,
+    `Custa ${PRECO_PROVA} moedas (seu saldo: ${saldoMoedas()}) e dá acesso permanente ao enunciado, com ${TENTATIVAS_POR_COMPRA} correções por questão discursiva. Depois disso, recarregar as tentativas custa ${PRECO_RECARGA}.`,
+    "Comprar",
+    () => {
+      gastarMoedas(PRECO_PROVA);
+      S.provasCompradas = S.provasCompradas || {};
+      S.provasCompradas[pv.id] = { tentativas: tentativasIniciais(pv) };
+      salvar(); publicarPlacar();
+      abrir();
+    });
+}
+function recarregarTentativas(pv){
+  if(saldoMoedas() < PRECO_RECARGA){
+    return caixaAviso("Moedas insuficientes",
+      `Recarregar custa ${PRECO_RECARGA} moedas e você tem ${saldoMoedas()}.`);
+  }
+  caixaConfirma("Recarregar tentativas?",
+    `Por ${PRECO_RECARGA} moedas, as correções desta prova voltam a ${TENTATIVAS_POR_COMPRA} por questão discursiva.`,
+    "Recarregar",
+    () => {
+      gastarMoedas(PRECO_RECARGA);
+      S.provasCompradas[pv.id] = { tentativas: tentativasIniciais(pv) };
+      salvar(); publicarPlacar();
+      telaProvaFim(pv);
+    });
+}
+
+function provasDisponiveis(){
+  return (CURSO.provas || []).slice().sort((a,b) =>
+    (b.ano || 0) - (a.ano || 0) || String(a.nome).localeCompare(String(b.nome)));
+}
+function provaPorId(id){ return (CURSO.provas || []).find(p => p.id === id) || null; }
+function valorDaQuestao(q){ return q.valor == null ? 1 : q.valor; }
+function feitoDaProva(id){ return (S.provasFeitas || {})[id] || null; }
+
+/* Quanto a pessoa tirou no que já respondeu desta prova. Cada questão devolve
+   uma nota entre 0 e o valor dela — as objetivas são 0 ou cheio, a discursiva
+   pode ser parcial, que é como a professora corrige. */
+function notaDaProva(pv, feito){
+  let tirou = 0, valeu = 0;
+  let esperando = 0;
+  questoesDaVez(pv, feito).forEach(q => {
+    const r = feito && feito.respostas ? feito.respostas[q.id] : null;
+    if(!r) return;
+    /* Questão respondida e ainda não corrigida NÃO conta como zero: ela sai da
+       conta inteira, de cima e de baixo. Zerar quem escreveu uma resposta que
+       ninguém leu seria inventar uma nota. */
+    if(r.nota == null){ esperando++; return; }
+    valeu += valorDaQuestao(q);
+    tirou += Math.max(0, Math.min(valorDaQuestao(q), r.nota));
+  });
+  return { tirou: Math.round(tirou * 10) / 10, valeu: Math.round(valeu * 10) / 10,
+           total: valorDaProva(pv, feito), esperando };
+}
+
+/* "Escolha quatro das questões abaixo e as responda."
+
+   A prova de verdade faz isso, e ignorar seria mudar a prova. As questões com
+   `opcional:true` só entram se a pessoa escolher, e a prova diz quantas em
+   `escolher`. As obrigatórias (V ou F, relacionar) entram sempre.
+
+   A escolha fica guardada com a tentativa: quem sai no meio volta para as
+   mesmas quatro, e a nota é calculada só sobre elas. */
+function opcionaisDa(pv){ return (pv.questoes || []).filter(q => q.opcional); }
+function escolhidasDa(pv, feito){
+  const op = opcionaisDa(pv);
+  if(!op.length) return null;
+  const guardadas = feito && feito.escolhidas;
+  if(guardadas && guardadas.length) return guardadas;
+  return null;
+}
+function questoesDaVez(pv, feito){
+  const esc = escolhidasDa(pv, feito);
+  return (pv.questoes || []).filter(q => !q.opcional || !esc || esc.includes(q.id));
+}
+function valorDaProva(pv, feito){
+  const esc = escolhidasDa(pv, feito);
+  const fixo = (pv.questoes || []).filter(q => !q.opcional)
+                 .reduce((s,q) => s + valorDaQuestao(q), 0);
+  const op = opcionaisDa(pv);
+  if(!op.length) return fixo;
+  if(esc) return fixo + op.filter(q => esc.includes(q.id))
+                          .reduce((s,q) => s + valorDaQuestao(q), 0);
+  /* Ainda não escolheu: vale o que a prova valeria: as obrigatórias mais o
+     número de opcionais que a prova manda escolher. Somar as sete opcionais
+     mostraria 100 numa prova de 70. */
+  const quantas = Math.min(pv.escolher || op.length, op.length);
+  const ordenadas = op.map(valorDaQuestao).sort((a,b) => b - a);
+  return fixo + ordenadas.slice(0, quantas).reduce((s,v) => s + v, 0);
+}
+
+function telaEscolherQuestoes(pv, aoTerminar){
+  const op = opcionaisDa(pv);
+  const quantas = pv.escolher || op.length;
+  let sel = [];
+  const desenhar = () => {
+    abrirCaixa(`
+      <h3>Escolha ${plural(quantas, "questão", "questões")}</h3>
+      <p class="cxSub">Parte discursiva — ${plural(op.length, "questão disponível", "questões disponíveis")}</p>
+      <p class="muted" style="margin:12px 0">Na prova de verdade você escolhe quais responder. Leia
+        todas antes de decidir — dá para ver os enunciados inteiros aqui.</p>
+      ${op.map((q, k) => `<button class="escQ ${sel.includes(q.id) ? "on" : ""}" data-escq="${esc(q.id)}">
+        <span class="ck2">${sel.includes(q.id) ? "✓" : ""}</span>
+        <span class="tx"><b>${k + 1}.</b> ${esc(q.enunciado)}
+          <span class="vale">${plural(valorDaQuestao(q), "ponto", "pontos")}</span></span>
+      </button>`).join("")}`,
+      `<button class="btn" id="okEsc" ${sel.length === quantas ? "" : "disabled"}>${
+        sel.length === quantas ? "Começar a prova"
+        : "Escolha mais " + plural(quantas - sel.length, "questão", "questões")}</button>
+       <div style="height:8px"></div>
+       <button class="btn ghost" id="cancelEsc">Cancelar</button>`,
+      null, "larga");
+    document.querySelectorAll("[data-escq]").forEach(b => b.onclick = () => {
+      const id = b.dataset.escq;
+      if(sel.includes(id)) sel = sel.filter(x => x !== id);
+      else if(sel.length < quantas) sel.push(id);
+      desenhar();
+    });
+    document.getElementById("okEsc").onclick = () => { fecharCaixa(); aoTerminar(sel); };
+    document.getElementById("cancelEsc").onclick = () => { fecharCaixa(); telaProvas(); };
+  };
+  desenhar();
+}
+
+function comecarProva(pv, recomecar){
+  const antes = feitoDaProva(pv.id);
+  if(antes && antes.terminada && !recomecar){
+    return caixaConfirma("Refazer esta prova?",
+      "Você já respondeu esta prova. Refazer apaga o resultado anterior e começa do zero.",
+      "Refazer", () => comecarProva(pv, true));
+  }
+  if(recomecar || !antes){
+    S.provasFeitas = S.provasFeitas || {};
+    S.provasFeitas[pv.id] = { comecou: Date.now(), respostas:{}, terminada:false };
+    salvar();
+  }
+  let feito = feitoDaProva(pv.id);
+  /* Prova com questão opcional pergunta antes quais entram, e só depois começa. */
+  if(opcionaisDa(pv).length && !escolhidasDa(pv, feito)){
+    return telaEscolherQuestoes(pv, sel => {
+      S.provasFeitas[pv.id].escolhidas = sel;
+      salvar();
+      comecarProva(pv, false);
+    });
+  }
+  const fila = questoesDaVez(pv, feito).filter(q => !feito.respostas[q.id]);
+  if(!fila.length) return telaProvaFim(pv);
+  SES = { fila, i:0, acertos:0, total: questoesDaVez(pv, feito).length, respondido:false,
+          vistos: Object.keys(feito.respostas), estourou:0, log:[],
+          inicio: Date.now(), valeRanking:false, prova: pv,
+          motivoSemRanking: "prova antiga não entra no ranking" };
+  /* Relógio só se a prova tiver duração declarada. Prova sem tempo marcado é
+     para estudar com calma; pôr um cronômetro inventado seria pressão à toa. */
+  SES.fim = pv.minutos ? Date.now() + pv.minutos * 60000 : null;
+  render();
+  if(SES.fim) tocarRelogio();
+}
+
+/* Guarda a resposta de uma questão da prova. `nota` vai de 0 ao valor dela. */
+function guardarRespostaDeProva(it, nota, extra){
+  const pv = SES && SES.prova;
+  if(!pv) return;
+  S.provasFeitas = S.provasFeitas || {};
+  const f = S.provasFeitas[pv.id] = S.provasFeitas[pv.id] || { comecou: Date.now(), respostas:{}, terminada:false };
+  f.respostas[it.id] = Object.assign({ nota, valor: valorDaQuestao(it), quando: Date.now() }, extra || {});
+  salvar();
+}
+
+/* ---------- lista de provas ---------- */
+/* Prévia da prova, para decidir se vale comprar antes de gastar moeda.
+   Mostra enunciado, texto de apoio e valor de cada questão — NUNCA o
+   gabarito, mesmo indiretamente (por isso relacionar/ordem não mostram os
+   pares/sequência aqui, só o enunciado). */
+function telaPreviaProva(pv){
+  aba = "estudar";
+  const corpo = `
+  <div class="hero"><h1>${esc(pv.nome)}</h1></div>
+  <p class="muted" style="margin:0 0 14px">Prévia — dá para ler todas as questões antes de
+    decidir. Nenhum gabarito aparece aqui, só o enunciado, do jeito que a professora cobrou.</p>
+  <div class="cardz" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;margin-bottom:14px">
+    <span>🪙 <b>${saldoMoedas()}</b> moedas</span>
+    <span class="muted" style="font-size:12.5px">esta prova custa ${PRECO_PROVA}</span>
+  </div>
+  ${(pv.questoes || []).map((q, k) => `
+    <div class="cardz" style="margin-bottom:10px;padding:14px 16px">
+      <p class="muted" style="margin:0 0 6px;font-size:12px">${k + 1}. ${TITULO_TIPO[q.t] || q.t} · ${
+        plural(valorDaQuestao(q), "ponto", "pontos")}${q.opcional ? " · opcional" : ""}</p>
+      <p style="margin:0">${esc(enunciadoDe(q).replace(/\[\[\d+\]\]/g, "___"))}</p>
+      ${q.apoio ? `<div class="apoio" style="margin-top:8px">${esc(q.apoio)}</div>` : ""}
+      ${(q.opcoes || []).length ? `<ul style="margin:8px 0 0;padding-left:18px">${
+        q.opcoes.map(o => `<li>${esc(o)}</li>`).join("")}</ul>` : ""}
+    </div>`).join("")}`;
+  montarTela(corpo, { rodape:
+    `<button class="btn" id="comprarDaPrevia">Comprar por ${PRECO_PROVA} moedas</button>
+     <div style="height:10px"></div>
+     <button class="btn ghost" id="voltarPrevia">Voltar</button>` });
+  $("#voltarPrevia").onclick = () => telaProvas();
+  $("#comprarDaPrevia").onclick = () => garantirAcessoEAbrir(pv, () => {
+    const feito = feitoDaProva(pv.id);
+    if(feito && feito.terminada) return telaProvaFim(pv);
+    comecarProva(pv);
+  });
+}
+
+function telaProvas(){
+  aba = "estudar";
+  const lista = provasDisponiveis();
+  const corpo = `
+  <div class="hero"><h1>Provas anteriores</h1></div>
+  <p class="muted" style="margin:0 0 16px">As provas que já caíram, do jeito que a professora
+    cobrou. Serve para saber como você iria hoje — por isso <b>não conta para o ranking</b>:
+    sem XP, sem mexer nas suas revisões.</p>
+  ${!souDonoDoGrupo() ? `<div class="cardz" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;margin-bottom:14px">
+    <span>🪙 <b>${saldoMoedas()}</b> moedas</span>
+    <span class="muted" style="font-size:12.5px">cada prova custa ${PRECO_PROVA}</span>
+  </div>` : ""}
+  ${!lista.length ? `<div class="cardz"><b>Ainda não tem prova cadastrada.</b>
+    <p class="muted" style="margin:6px 0 0">Quem organiza o grupo publica as provas junto com o
+    banco de questões.</p></div>` : lista.map(pv => {
+      const d = discPorId[pv.disc];
+      const feito = feitoDaProva(pv.id);
+      const n = feito ? notaDaProva(pv, feito) : null;
+      const respondidas = feito ? Object.keys(feito.respostas || {}).length : 0;
+      const total = questoesDaVez(pv, feito).length;
+      const trancada = !jaTemAcesso(pv);
+      return `<button class="esc" data-prova-abrir="${esc(pv.id)}">
+        <span class="ic">${trancada ? "🔒" : d ? esc(d.emoji) : "📄"}</span>
+        <span class="tx"><b>${esc(pv.nome)}</b><span>${esc(pv.sub || "")}${pv.sub ? " · " : ""}${
+          plural(total, "questão", "questões")}
+          · ${valorDaProva(pv, feito)} pontos${pv.minutos ? " · " + pv.minutos + " min" : ""}${
+          trancada ? ` · <b>${PRECO_PROVA} moedas</b>`
+          : feito && feito.terminada ? ` · <b>você tirou ${n.tirou} de ${n.total}</b>`
+          : respondidas ? ` · começada (${respondidas}/${total})` : ""}</span></span>
+        <span class="ck">›</span>
+      </button>`;
+    }).join("")}`;
+  montarTela(corpo, { rodape: `<button class="btn ghost" id="voltarEstudar">Voltar</button>` });
+  $("#voltarEstudar").onclick = () => telaEstudar();
+  document.querySelectorAll("[data-prova-abrir]").forEach(b => b.onclick = () => {
+    const pv = provaPorId(b.dataset.provaAbrir);
+    if(!pv) return;
+    if(!jaTemAcesso(pv)) return telaPreviaProva(pv);
+    const feito = feitoDaProva(pv.id);
+    if(feito && feito.terminada) return telaProvaFim(pv);
+    comecarProva(pv);
+  });
+}
+
+/* ---------- folha de resultado ---------- */
+function telaProvaFim(pv){
+  pararRelogio();
+  const feito = feitoDaProva(pv.id) || { respostas:{} };
+  feito.terminada = true; salvar();
+  const n = notaDaProva(pv, feito);
+  /* A nota é sobre o que foi corrigido, não sobre a prova inteira. Com uma
+     discursiva esperando correção, dividir pelo total daria uma porcentagem que
+     não quer dizer nada. */
+  const pc = n.valeu ? Math.round(100 * n.tirou / n.valeu) : 0;
+  const corpo = `
+  <div class="hero"><h1>${esc(pv.nome)}</h1></div>
+  <div class="cardz" style="text-align:center;padding:22px 16px">
+    <div class="notaGrande">${n.tirou}<small>/${n.valeu}</small></div>
+    <p class="muted" style="margin:6px 0 0">${pc}% do que foi corrigido${
+      n.valeu !== n.total ? ` · a prova toda vale ${n.total}` : ""}</p>
+  </div>
+  ${n.esperando ? `<div class="cardz avisoCorr">
+    <b>⏳ ${plural(n.esperando, "questão discursiva está", "questões discursivas estão")} esperando correção.</b>
+    <p class="muted" style="margin:6px 0 0">Elas não entraram na nota — e não valeram zero. Toque
+      nelas para ler a sua resposta ao lado do gabarito, ou para tentar corrigir de novo.</p>
+  </div>` : ""}
+  <p class="muted" style="margin:14px 0">Esta nota é só sua — não vai para o grupo, não entra no
+    ranking e não mexeu nas suas revisões. Toque numa questão para rever.</p>
+  ${questoesDaVez(pv, feito).map((q, k) => {
+    const r = feito.respostas[q.id];
+    const val = valorDaQuestao(q);
+    const semNota = r && r.nota == null;
+    const nota = (r && !semNota) ? Math.max(0, Math.min(val, r.nota)) : 0;
+    const cor = !r ? "vazia" : semNota ? "esperando"
+              : nota >= val ? "cheia" : nota > 0 ? "parcial" : "zero";
+    const rest = q.t === "discursiva" && !souDonoDoGrupo() ? tentativasRestantes(pv, q.id) : null;
+    return `<button class="qLinha ${cor}" data-rever-q="${esc(q.id)}">
+      <span class="nq">${k + 1}</span>
+      <span class="tx"><b>${esc(enunciadoDe(q).replace(/\[\[\d+\]\]/g, "___").slice(0, 70))}${
+        enunciadoDe(q).length > 70 ? "…" : ""}</b>
+        <span>${TITULO_TIPO[q.t] || q.t}${rest != null ? ` · ${rest} correç${rest===1?"ão":"ões"} restante${rest===1?"":"s"}` : ""}</span></span>
+      <span class="nt">${!r ? "—" : semNota ? "⏳" : nota}<small>/${val}</small></span>
+    </button>`;
+  }).join("")}`;
+  const semTentativas = !souDonoDoGrupo() && questoesDaVez(pv, feito)
+    .some(q => q.t === "discursiva" && tentativasRestantes(pv, q.id) <= 0);
+  montarTela(corpo, { comNav:false, rodape:
+    `${semTentativas ? `<button class="btn ghost" id="recarregar">🪙 Recarregar tentativas (${PRECO_RECARGA} moedas)</button>
+     <div style="height:10px"></div>` : ""}
+     <button class="btn ghost" id="refazer">Refazer esta prova</button>
+     <div style="height:10px"></div>
+     <button class="btn" id="voltarProvas">Voltar às provas</button>` });
+  $("#voltarProvas").onclick = () => { SES = null; telaProvas(); };
+  $("#refazer").onclick = () => comecarProva(pv, false);
+  if(semTentativas) $("#recarregar").onclick = () => recarregarTentativas(pv);
+  document.querySelectorAll("[data-rever-q]").forEach(b => b.onclick = () => {
+    const q = (pv.questoes || []).find(x => x.id === b.dataset.reverQ);
+    const ordem = questoesDaVez(pv, feito).indexOf(q) + 1;
+    const r = feito.respostas[q.id] || {};
+    const gab = `<b>O que a professora esperava:</b><br>${esc(gabaritoEmTexto(q))}`;
+    const minha = r.texto ? `<br><br><b>O que você escreveu:</b><br>${esc(r.texto)}` : "";
+    const pendente = r.nota == null && r.texto
+      ? `<br><br><i>${esc(r.semCorrecao || "Ainda sem correção.")}</i>` : "";
+    caixaAviso(`Questão ${ordem}`,
+      (r.comentario ? esc(r.comentario) + "<br><br>" : "") + gab + minha + pendente,
+      esc(enunciadoDe(q)));
+  });
+}
+/* O enunciado mora num campo diferente em cada tipo: `enunciado` na maioria,
+   `frase` no verdadeiro-ou-falso, `texto` nas lacunas. A folha de resultado
+   precisa de um só, senão a linha da questão aparece em branco — foi o que
+   aconteceu com a V ou F na primeira versão desta tela. */
+function enunciadoDe(q){
+  return q.enunciado || q.frase || q.p || q.texto || "";
+}
+function gabaritoEmTexto(q){
+  if(q.t === "discursiva") return (q.gab && q.gab.resposta) || "";
+  if(q.t === "vf")   return q.correta ? "Verdadeiro" : "Falso";
+  if(q.t === "mcq")  return (q.opcoes || [])[q.correta] || "";
+  if(q.t === "multi") return (q.corretas || []).map(i => (q.opcoes || [])[i]).join(" · ");
+  if(q.t === "escrita") return q.resp || "";
+  return "";
+}
+
 /* ============================================================
    NUVEM — Firebase (autenticação + Firestore)
 
@@ -3370,7 +4305,7 @@ function telaFim(){
 /* O endereço do SDK é trocável para os testes poderem rodar contra um dublê
    que obedece às mesmas regras. Em produção, window.SDK_BASE não existe. */
 const SDK = window.SDK_BASE || "https://www.gstatic.com/firebasejs/12.17.1/";
-const N = { ligado:false, pronto:false, auth:null, db:null, api:{},
+const N = { ligado:false, pronto:false, auth:null, db:null, funcoes:null, api:{},
             usuario:null, grupo:null, papel:null };
 
 const CHAVE_CACHE  = "fixaai_cache_banco";
@@ -3387,6 +4322,15 @@ async function nuvemCarregar(){
   N.auth = au.getAuth(app);
   N.db   = fs.getFirestore(app);
   N.api  = { ...au, ...fs };
+  /* A correção das discursivas é a única coisa no app que precisa de Cloud
+     Functions, e ela não pode derrubar o resto: sem o módulo, a discursiva
+     apenas fica sem nota e diz isso. Por isso o import é separado e com rede
+     de proteção. */
+  try{
+    const fn = await import(SDK + "firebase-functions.js");
+    N.funcoes = fn.getFunctions(app, window.REGIAO_FUNCOES || "southamerica-east1");
+    N.api.httpsCallable = fn.httpsCallable;
+  }catch(e){ N.funcoes = null; }
   N.ligado = true;
   /* Quem estava no meio de um redirecionamento de uma versão antiga do app
      ainda pode voltar por aqui. Recolhemos o resultado para não deixar essa
@@ -3600,13 +4544,22 @@ function acharListaAninhada(v, caminho){
 async function lerBancoDoGrupo(g){
   const q = await N.api.getDocs(cole("grupos", g, "banco"));
   if(q.empty) return null;
-  const curso = { disciplinas:[], topicos:[], itens:[] };
+  const curso = { disciplinas:[], topicos:[], itens:[], provas:[] };
   const vistos = new Set();
   q.forEach(d => {
     const b = d.data();
     (b.disciplinas || []).forEach(x => { if(!vistos.has("d"+x.id)){ vistos.add("d"+x.id); curso.disciplinas.push(x); } });
     (b.topicos || []).forEach(x => { if(!vistos.has("t"+x.id)){ vistos.add("t"+x.id); curso.topicos.push(x); } });
     (b.itens || []).forEach(x => { if(!vistos.has("i"+x.id)){ vistos.add("i"+x.id); curso.itens.push(daNuvem(x)); } });
+    /* As provas antigas moram num documento só, separado das questões do
+       banco: elas não são sorteadas nas baterias, e a Cloud Function que
+       corrige as discursivas precisa de um caminho fixo onde achar o gabarito.
+       Ver funcoes/index.js. */
+    (b.provas || []).forEach(pv => {
+      if(vistos.has("pv"+pv.id)) return;
+      vistos.add("pv"+pv.id);
+      curso.provas.push({ ...pv, questoes: (pv.questoes || []).map(daNuvem) });
+    });
   });
   return curso;
 }
@@ -3622,7 +4575,8 @@ function bancoGuardado(){
 /* ---------- progresso na nuvem ---------- */
 const CAMPOS_SINC = ["prog","xp","xpSemana","semana","ofensiva","ultimoDia","dia",
                      "feitosHoje","recorde",
-                     "datas","foco","historico","reportes","apelido","emoji",
+                     "datas","foco","historico","reportes","apelido","emoji","marcadas",
+                     "provasFeitas",
                      "horizonte","marcos","congelados",
                      "nivel","sala","semanaSala","semanaPassada","ligaVista","pod1","pod2","gelos",
                      "desafiosVistos","desafiosGanhos"];
@@ -3640,6 +4594,29 @@ function juntarProgresso(local, remoto){
   fora.prog = p;
   /* XP total só sobe: o maior dos dois é sempre o certo. */
   fora.xp = Math.max(local.xp || 0, remoto.xp || 0);
+  /* Moedas: ganhas só sobem, igual XP. Gastas também só sobem — mas aqui o
+     "maior dos dois" é o lado mais cauteloso: se um aparelho já gastou e o
+     outro ainda não sabe, o total gasto tem que refletir a compra real. */
+  fora.moedasGanhas = Math.max(local.moedasGanhas || 0, remoto.moedasGanhas || 0);
+  fora.moedasGastas = Math.max(local.moedasGastas || 0, remoto.moedasGastas || 0);
+  /* Provas compradas: união dos ids, e para tentativas restantes fica o MENOR
+     dos dois valores — nunca ressuscita uma correção já usada num aparelho
+     que o outro ainda não sabia. */
+  {
+    const pc = { ...(remoto.provasCompradas || {}) };
+    Object.entries(local.provasCompradas || {}).forEach(([pid, loc]) => {
+      const rem = pc[pid];
+      if(!rem){ pc[pid] = loc; return; }
+      const tent = { ...(rem.tentativas || {}) };
+      Object.entries(loc.tentativas || {}).forEach(([qid, n]) => {
+        tent[qid] = tent[qid] == null ? n : Math.min(tent[qid], n);
+      });
+      pc[pid] = { tentativas: tent };
+    });
+    fora.provasCompradas = pc;
+  }
+  fora.marcosMoedas = { ofensiva: Math.max((local.marcosMoedas||{}).ofensiva || 0,
+                                            (remoto.marcosMoedas||{}).ofensiva || 0) };
 
   /* Os outros três contadores zeram sozinhos — xpSemana no domingo, feitosHoje
      à meia-noite — e por isso não dá para pegar o maior sem olhar de que dia e
@@ -3666,14 +4643,6 @@ function juntarProgresso(local, remoto){
     if(diaR && !diaL) fora.dia = diaR;
   }
 
-  /* Ofensiva anda junto com o dia em que ela foi mantida. Pegar o maior número
-     solto quebraria assim: o tablet ficou três dias fechado com ofensiva 5, o
-     celular perdeu a sequência e recomeçou em 1 — o 5 não vale mais nada, mas
-     seria ele a ganhar. Então quem tem o ultimoDia mais recente leva o par. */
-  const udL = local.ultimoDia || null, udR = remoto.ultimoDia || null;
-  if(udR && (!udL || udR > udL)){ fora.ultimoDia = udR; fora.ofensiva = remoto.ofensiva || 0; }
-  else if(udL && (!udR || udL > udR)){ fora.ultimoDia = udL; fora.ofensiva = local.ofensiva || 0; }
-  else fora.ofensiva = Math.max(local.ofensiva || 0, remoto.ofensiva || 0);
   fora.historico = { ...(remoto.historico || {}), ...(local.historico || {}) };
   fora.datas     = { ...(remoto.datas || {}), ...(local.datas || {}) };
   if(remoto.recorde) fora.recorde = Math.min(local.recorde || 1e9, remoto.recorde);
@@ -3706,6 +4675,26 @@ function juntarProgresso(local, remoto){
   ["pod1","pod2","gelos","desafiosGanhos"].forEach(k =>
     fora[k] = Math.max(local[k] || 0, remoto[k] || 0));
   fora.congelados = [...new Set([ ...(local.congelados || []), ...(remoto.congelados || []) ])];
+  /* Marcou no celular, aparece marcada no tablet. União, nunca subtração:
+     desmarcar num aparelho e sincronizar do outro traz a marca de volta, e é
+     melhor errar para o lado de rever demais do que sumir com a marca. */
+  fora.marcadas = [...new Set([ ...(local.marcadas || []), ...(remoto.marcadas || []) ])];
+  /* Provas antigas: fica a tentativa mais recente de cada prova, e as respostas
+     das duas se somam — quem começou no celular e terminou no tablet não perde
+     o que já respondeu. */
+  const pf = { ...(remoto.provasFeitas || {}) };
+  Object.keys(local.provasFeitas || {}).forEach(id => {
+    const a = local.provasFeitas[id], b = pf[id];
+    if(!b){ pf[id] = a; return; }
+    if((a.comecou || 0) !== (b.comecou || 0)){ pf[id] = (a.comecou || 0) >= (b.comecou || 0) ? a : b; return; }
+    pf[id] = { ...b, ...a, respostas: { ...(b.respostas || {}), ...(a.respostas || {}) },
+               terminada: !!(a.terminada || b.terminada) };
+  });
+  fora.provasFeitas = pf;
+  /* Agora que histórico e dias congelados dos dois aparelhos estão juntos, a
+     ofensiva sai da conta — nenhum dos dois números que vieram é usado. É o
+     único jeito de os dois chegarem ao mesmo resultado sempre. */
+  arrumarOfensiva(fora);
   fora.desafiosVistos = [...new Set([ ...(local.desafiosVistos || []),
                                       ...(remoto.desafiosVistos || []) ])].slice(-200);
   ["nivel","sala","semanaSala","semanaPassada","ligaVista","horizonte"].forEach(k => {
@@ -3949,6 +4938,7 @@ async function fecharSemanaSePreciso(){
   S.nivel = sobe ? subirDescer(nivelAntigo, 1) : desce ? subirDescer(nivelAntigo, -1) : nivelAntigo;
   if(pos === 1) S.pod1 = (S.pod1 || 0) + 1;
   if(pos === 2) S.pod2 = (S.pod2 || 0) + 1;
+  ganharMoedas(MOEDAS_LIGA[pos] != null ? MOEDAS_LIGA[pos] : MOEDAS_LIGA_RESTO);
   const gelos = pos === 1 ? nivelDe(nivelAntigo).gelos : 0;
   if(gelos) S.gelos = Math.min(MAX_GELOS, (S.gelos || 0) + gelos);
   S.ligaVista = r.semana;
@@ -4124,6 +5114,7 @@ function acertarContasDosDesafios(lista){
     if(venc === eu){
       S.xp += XP_VITORIA; S.xpSemana += XP_VITORIA;
       S.desafiosGanhos = (S.desafiosGanhos || 0) + 1;
+      ganharMoedas(MOEDAS_DESAFIO);
       ganhos.push(d);
     }
   });
@@ -4563,6 +5554,8 @@ async function telaAdmin(aviso){
       const k = (i.disc || "geral") + "_" + (i.prova || "p");
       (porProva[k] = porProva[k] || []).push(paraNuvem(i));
     });
+    const provasAntigas = (curso.provas || []).map(pv =>
+      ({ ...pv, questoes: (pv.questoes || []).map(paraNuvem) }));
     // confere antes de mandar: erro do Firestore aqui não diz qual questão é
     for(const k of Object.keys(porProva)){
       const ruim = acharListaAninhada(porProva[k], k);
@@ -4581,7 +5574,10 @@ async function telaAdmin(aviso){
       const p = d && (d.provas || []).find(x => x.id === provaId);
       return p ? p.nome : String(provaId || "").toUpperCase();
     };
-    const resumo = Object.keys(porProva).sort().map(k => {
+    const resumoProvas = provasAntigas.length
+      ? `<li><b>Provas anteriores</b>: ${provasAntigas.length} (${
+          provasAntigas.reduce((n,pv) => n + (pv.questoes||[]).length, 0)} questões)</li>` : "";
+    const resumo = resumoProvas + Object.keys(porProva).sort().map(k => {
       const corte = k.lastIndexOf("_");
       const discId = k.slice(0, corte), provaId = k.slice(corte + 1);
       const antes = (jaPublicado[k] || 0);
@@ -4614,6 +5610,12 @@ async function telaAdmin(aviso){
           disciplinas: curso.disciplinas || [],
           topicos: curso.topicos || [],
           itens: porProva[k],
+          atualizadoEm: N.api.serverTimestamp()
+        });
+      }
+      if(provasAntigas.length){
+        await N.api.setDoc(ref("grupos", dono.id, "banco", "__provas"), {
+          provas: provasAntigas, itens: [],
           atualizadoEm: N.api.serverTimestamp()
         });
       }
