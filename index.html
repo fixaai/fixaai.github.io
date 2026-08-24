@@ -719,7 +719,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026dg-v02";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026dg-v03";</script>
 <script>window.VERSAO_BANCO = "684a01b441d4";</script>
 
 <script>
@@ -4054,6 +4054,10 @@ function telaFim(){
         <div><b>${segMedio != null ? segMedio + "s" : "—"}</b><span>por questão</span></div>
       </div>
       ${moedasRodada ? `<p class="muted" style="margin:8px 0 0">🪙 +${moedasRodada} moedas nesta rodada · saldo: ${saldoMoedas()}</p>` : ""}
+      <div class="muted" style="margin:10px 0;font-size:11px;border:1px dashed var(--line);border-radius:8px;padding:8px;word-break:break-all">
+        DIAGNÓSTICO — ids desta rodada e se ficaram salvos:
+        ${SES.vistos.map(id => `${esc(id)}:${S.prog[id] ? "SIM(reps=" + S.prog[id].reps + ")" : "NÃO"}`).join(" · ")}
+      </div>
       <div>
         ${bonus ? `<span class="pill" style="color:var(--gold)">⏱ +${bonus} de bônus por velocidade —
           menos de ${faixaBonus.seg}s por questão, sem errar nenhuma</span>` : ""}
