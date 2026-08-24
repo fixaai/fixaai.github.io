@@ -719,7 +719,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026dg-v03";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026rv-v03";</script>
 <script>window.VERSAO_BANCO = "684a01b441d4";</script>
 
 <script>
@@ -1648,7 +1648,17 @@ function montarSessao(){
   const n = naFrente(novos(pool));
   if(S.foco.soErros)   return { fila: errados(pool).slice(0, alvo), modo:"erros" };
   if(S.foco.soRevisao) return { fila: v.slice(0, alvo), modo:"revisao" };
-  let fila = v.concat(n).slice(0, alvo);
+  /* Revisão vencida sempre tinha prioridade total — o que é certo em geral,
+     mas quando o acúmulo de revisão passa do tamanho da própria bateria,
+     nunca sobra espaço pra questão nova nenhuma, mesmo com dezenas esperando.
+     Isso travava quem estuda todo dia numa disciplina grande: a fila de
+     revisão nunca esvazia sozinha, e "não vistas" fica parado pra sempre.
+     A partir de agora, um mínimo de vagas fica reservado pra novas — a
+     revisão continua vindo primeiro, só não engole a bateria inteira. */
+  const MIN_NOVAS_POR_BATERIA = 3;
+  const novasNaFila = n.length ? Math.min(n.length, Math.max(MIN_NOVAS_POR_BATERIA, alvo - v.length)) : 0;
+  const vencidasNaFila = Math.min(v.length, alvo - novasNaFila);
+  let fila = v.slice(0, vencidasNaFila).concat(n.slice(0, novasNaFila));
   if(fila.length) return { fila, modo:"normal" };
   // nada vencendo e nada novo: vira treino livre, que não é o mesmo que progresso
   return { fila: naFrente(pool).slice(0, Math.min(alvo, pool.length)), modo:"treino" };
@@ -2771,10 +2781,6 @@ function telaAjustes(op){
       <span>Versão do app</span>
       <b>${esc(window.VERSAO_BUILD || "—")}</b>
     </div>
-    <div class="linhaVer">
-      <span>Diagnóstico (temporário)</span>
-      <b>prog: ${Object.keys(S.prog || {}).length} · SES.prova: ${SES && SES.prova ? "SIM (" + esc(SES.prova.id || "?") + ")" : "não"}</b>
-    </div>
     ${N.ligado ? `<div class="linhaVer">
       <span>Última sincronia</span>
       <b>${sincUltimo ? esc(quandoFoi(sincUltimo)) : "ainda não"}</b>
@@ -2788,7 +2794,6 @@ function telaAjustes(op){
   const corpo = `
   <div class="hero"><h1>Ajustes</h1></div>
   ${conta}
-  ${aparelho}
   ${identidade}
 
   <div class="secao">Como estudar</div>
@@ -2870,6 +2875,8 @@ function telaAjustes(op){
     </div>
     <p class="muted" style="margin-top:12px">Exporte e me mande o arquivo — eu corrijo as questões e devolvo o app atualizado.</p>
   </div>` : ""}
+
+  ${aparelho}
 
   <p style="text-align:center;margin:22px 0 6px">
     <span class="linkish" id="zerar">zerar todo o progresso</span></p>`;
@@ -3204,11 +3211,7 @@ function concluir(it, acertou, textoExtra){
   try{
     ganho = registrar(it.id, acertou);
   }catch(e){
-    /* Diagnóstico temporário: se salvar o progresso quebrar no meio, isso
-       engolia o erro em silêncio e a pessoa só via "não avançou" sem saber
-       por quê. Agora aparece na tela, pra achar a causa de verdade. */
     console.error("Erro ao registrar progresso:", e);
-    alert("DIAGNÓSTICO — erro ao salvar progresso de \"" + it.id + "\": " + (e && e.message ? e.message : e));
   }
   const primeiraVez = !SES.vistos.includes(it.id);   // repetição do erro não conta como acerto de primeira
   if(primeiraVez) SES.vistos.push(it.id);
@@ -4054,10 +4057,6 @@ function telaFim(){
         <div><b>${segMedio != null ? segMedio + "s" : "—"}</b><span>por questão</span></div>
       </div>
       ${moedasRodada ? `<p class="muted" style="margin:8px 0 0">🪙 +${moedasRodada} moedas nesta rodada · saldo: ${saldoMoedas()}</p>` : ""}
-      <div class="muted" style="margin:10px 0;font-size:11px;border:1px dashed var(--line);border-radius:8px;padding:8px;word-break:break-all">
-        DIAGNÓSTICO — ids desta rodada e se ficaram salvos:
-        ${SES.vistos.map(id => `${esc(id)}:${S.prog[id] ? "SIM(reps=" + S.prog[id].reps + ")" : "NÃO"}`).join(" · ")}
-      </div>
       <div>
         ${bonus ? `<span class="pill" style="color:var(--gold)">⏱ +${bonus} de bônus por velocidade —
           menos de ${faixaBonus.seg}s por questão, sem errar nenhuma</span>` : ""}
@@ -4850,13 +4849,6 @@ function gabaritoEmTexto(q){
 /* O endereço do SDK é trocável para os testes poderem rodar contra um dublê
    que obedece às mesmas regras. Em produção, window.SDK_BASE não existe. */
 const SDK = window.SDK_BASE || "https://www.gstatic.com/firebasejs/12.17.1/";
-/* Diagnóstico temporário: qualquer erro de JS que aconteça em qualquer lugar
-   do app aparece numa caixinha, em vez de só sumir no console sem ninguém ver.
-   Tirar isso depois de achar o bug do progresso não salvando. */
-window.addEventListener("error", (ev) => {
-  console.error("Erro não tratado:", ev.error || ev.message);
-  alert("DIAGNÓSTICO — erro geral: " + (ev.error && ev.error.message ? ev.error.message : ev.message));
-});
 
 const N = { ligado:false, pronto:false, auth:null, db:null, funcoes:null, storage:null, api:{},
             usuario:null, grupo:null, papel:null };
@@ -6329,6 +6321,14 @@ async function telaAdmin(aviso){
 
     const mapa = {};
     const erros = [];
+    /* Se o Storage não estiver ativado no console (ou as regras não tiverem
+       sido publicadas), o pedido de upload fica esperando pra sempre, sem dar
+       erro nenhum — e a tela parece travada em "enviando 1 de N" pro resto da
+       vida. Um limite de tempo transforma isso num erro visível. */
+    const comLimite = (promessa, ms) => Promise.race([
+      promessa,
+      new Promise((_, falhou) => setTimeout(() => falhou(new Error("Demorou demais — o Storage pode não estar ativado, ou as regras não publicadas.")), ms))
+    ]);
     for(let i = 0; i < entradas.length; i++){
       const entrada = entradas[i];
       const nome = entrada.name.split("/").pop();   // tira qualquer pasta do meio, só o nome do arquivo
@@ -6340,8 +6340,8 @@ async function telaAdmin(aviso){
           continue;
         }
         const caminho = N.api.ref(N.storage, `grupos/${dono.id}/imagens/${nome}`);
-        await N.api.uploadBytes(caminho, blob);
-        mapa[nome] = await N.api.getDownloadURL(caminho);
+        await comLimite(N.api.uploadBytes(caminho, blob), 20000);
+        mapa[nome] = await comLimite(N.api.getDownloadURL(caminho), 15000);
       }catch(e){
         erros.push(`${nome} (${traduzErro(e)})`);
       }
@@ -6352,11 +6352,26 @@ async function telaAdmin(aviso){
         erros.length ? ` ${erros.length} falharam.` : ""}</p>
       <textarea readonly style="width:100%;height:160px;font-size:11.5px;font-family:monospace"
         id="mapaImagensPronto" onclick="this.select()">${esc(jsonPronto)}</textarea>
-      <p class="muted" style="margin:6px 0 0;font-size:12px">Toque no texto acima pra selecionar
-        tudo e copiar — é esse mapa que você cola na conversa que está montando as questões.</p>
+      <button class="minibt" id="bCopiarMapa" style="width:100%;margin-top:8px">📋 Copiar tudo</button>
+      <p class="muted" style="margin:6px 0 0;font-size:12px">É esse mapa que você cola na conversa
+        que está montando as questões.</p>
       ${erros.length ? `<p class="muted" style="margin-top:8px;color:var(--red)">Falharam: ${
         esc(erros.join(", "))}</p>` : ""}`;
     $("#arqZip").value = "";
+    $("#bCopiarMapa").onclick = async () => {
+      const btn = $("#bCopiarMapa");
+      try{
+        await navigator.clipboard.writeText(jsonPronto);
+        btn.textContent = "✓ Copiado!";
+      }catch(e){
+        /* Alguns navegadores recusam a área de transferência fora de HTTPS
+           ou sem permissão — cai pro jeito antigo, que sempre funciona. */
+        const t = $("#mapaImagensPronto"); t.select();
+        try{ document.execCommand("copy"); btn.textContent = "✓ Copiado!"; }
+        catch(e2){ btn.textContent = "Toque no texto acima e copie manualmente"; }
+      }
+      setTimeout(() => { btn.textContent = "📋 Copiar tudo"; }, 2500);
+    };
   };
 
   $("#bPubArq").onclick = () => $("#arq").click();
