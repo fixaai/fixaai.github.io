@@ -275,6 +275,11 @@ textarea.resposta.alta{width:100%;min-height:130px;resize:vertical;font-family:i
   font-size:15px;line-height:1.5;padding:12px 14px}
 .apoio{border-left:3px solid var(--line);padding:2px 0 2px 12px;margin:0 0 12px;
   color:var(--ink-2);font-size:14px;line-height:1.55;white-space:pre-wrap}
+.qImgBtn{display:block;width:100%;padding:0;border:1px solid var(--line);border-radius:12px;
+  overflow:hidden;margin:0 0 12px;background:var(--card);cursor:zoom-in}
+.qImg{display:block;width:100%;max-height:280px;object-fit:cover}
+.caixaImagem .caixaCorpo{max-width:none;background:transparent;box-shadow:none}
+.caixaImagem .caixaRol{padding:0}
 .corr{margin-top:16px;border:2px solid var(--line);border-radius:14px;padding:14px;background:var(--card)}
 .cabNota{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;margin-bottom:10px}
 .cabNota b{font-size:30px;font-weight:900;color:var(--brand);line-height:1}
@@ -714,7 +719,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026qf-v06";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026im-v04";</script>
 <script>window.VERSAO_BANCO = "684a01b441d4";</script>
 
 <script>
@@ -3121,6 +3126,7 @@ function render(){
     return;
   }
   desenhar(it);
+  ligarImagensDaQuestao();
   const bt = $("#btInfo");
   if(bt) bt.onclick = () => {
     const cx = $("#boxFonte");
@@ -3160,8 +3166,23 @@ function cabecalho(it, titulo){
       <span class="raiobox">${raioHTML()}</span>
       ${it.fonte ? `<button class="info" id="btInfo" title="De onde veio esta questão" aria-label="De onde veio esta questão">i</button>` : ""}
     </div>
+    ${imagemDaQuestao(it)}
     <div class="qtitle">${esc(titulo)}</div>
     ${blocoFonte(it)}`;
+}
+/* Lâmina de histologia, foto de equipamento, ECG — qualquer questão pode ter
+   uma imagem. Fica entre a tag e o enunciado, igual o caso clínico (apoio).
+   Toque abre em tamanho cheio, pra dar pra ver detalhe de verdade. */
+function imagemDaQuestao(it){
+  if(!it.imagem) return "";
+  return `<button class="qImgBtn" data-ver-imagem="${esc(it.imagem)}" aria-label="Ver imagem em tamanho cheio">
+    <img src="${esc(it.imagem)}" alt="${esc(it.imagemAlt || "Imagem da questão")}" class="qImg" loading="lazy"></button>`;
+}
+function ligarImagensDaQuestao(){
+  document.querySelectorAll("[data-ver-imagem]").forEach(b => b.onclick = () => {
+    abrirCaixa(`<img src="${esc(b.dataset.verImagem)}" style="width:100%;border-radius:10px;display:block">`,
+      "", "", "caixaImagem");
+  });
 }
 function pedirVerificar(fn, ativo){
   $(".foot").innerHTML = barraTempoHTML()
@@ -4122,6 +4143,7 @@ function rDiscursiva(it){
       <span class="raiobox">${raioHTML()}</span>
       ${it.fonte ? `<button class="info" id="btInfo" title="De onde veio esta questão" aria-label="De onde veio esta questão">i</button>` : ""}
     </div>
+    ${imagemDaQuestao(it)}
     ${it.apoio ? `<div class="apoio">${esc(it.apoio)}</div>` : ""}
     ${partes ? "" : `<div class="qtitle">${esc(it.enunciado || it.p)}</div>`}
     ${blocoFonte(it)}
@@ -4574,6 +4596,7 @@ function telaPreviaProva(pv){
     <div class="cardz" style="margin-bottom:10px;padding:14px 16px">
       <p class="muted" style="margin:0 0 6px;font-size:12px">${k + 1}. ${TITULO_TIPO[q.t] || q.t} · ${
         plural(valorDaQuestao(q), "ponto", "pontos")}${q.opcional ? " · opcional" : ""}</p>
+      ${imagemDaQuestao(q)}
       ${q.apoio ? `<div class="apoio" style="margin-bottom:8px">${esc(q.apoio)}</div>` : ""}
       <p style="margin:0">${esc(enunciadoDe(q).replace(/\[\[\d+\]\]/g, "___"))}</p>
       ${extra}
@@ -4584,6 +4607,7 @@ function telaPreviaProva(pv){
      <div style="height:10px"></div>
      <button class="btn ghost" id="voltarPrevia">Voltar</button>` });
   $("#voltarPrevia").onclick = () => telaProvas();
+  ligarImagensDaQuestao();
   $("#comprarDaPrevia").onclick = () => garantirAcessoEAbrir(pv, () => {
     const feito = feitoDaProva(pv.id);
     if(feito && feito.terminada) return telaProvaFim(pv);
@@ -4809,7 +4833,7 @@ function gabaritoEmTexto(q){
 /* O endereço do SDK é trocável para os testes poderem rodar contra um dublê
    que obedece às mesmas regras. Em produção, window.SDK_BASE não existe. */
 const SDK = window.SDK_BASE || "https://www.gstatic.com/firebasejs/12.17.1/";
-const N = { ligado:false, pronto:false, auth:null, db:null, funcoes:null, api:{},
+const N = { ligado:false, pronto:false, auth:null, db:null, funcoes:null, storage:null, api:{},
             usuario:null, grupo:null, papel:null };
 
 const CHAVE_CACHE  = "fixaai_cache_banco";
@@ -4835,6 +4859,14 @@ async function nuvemCarregar(){
     N.funcoes = fn.getFunctions(app, window.REGIAO_FUNCOES || "us-central1");
     N.api.httpsCallable = fn.httpsCallable;
   }catch(e){ N.funcoes = null; }
+  /* Upload de imagem (lâmina, equipamento de laboratório) é opcional — se o
+     módulo não carregar, só o botão de enviar imagem some, o resto do app
+     continua de pé. */
+  try{
+    const st = await import(SDK + "firebase-storage.js");
+    N.storage = st.getStorage(app);
+    N.api = { ...N.api, ...st };
+  }catch(e){ N.storage = null; }
   N.ligado = true;
   /* Quem estava no meio de um redirecionamento de uma versão antiga do app
      ainda pode voltar por aqui. Recolhemos o resultado para não deixar essa
@@ -5083,7 +5115,8 @@ const CAMPOS_SINC = ["prog","xp","xpSemana","semana","ofensiva","ultimoDia","dia
                      "provasFeitas",
                      "horizonte","marcos","congelados",
                      "nivel","sala","semanaSala","semanaPassada","ligaVista","pod1","pod2","gelos",
-                     "desafiosVistos","desafiosGanhos"];
+                     "desafiosVistos","desafiosGanhos",
+                     "moedasGanhas","moedasGastas","provasCompradas","marcosMoedas","brindeBoasVindas"];
 
 function juntarProgresso(local, remoto){
   /* Mesma conta em dois aparelhos: fica o mais adiantado de cada questão,
@@ -6004,6 +6037,18 @@ async function telaAdmin(aviso){
     </div>
 
     <div class="cx">
+      <b>Enviar imagens de questões (um zip só)</b>
+      <p class="muted" style="margin:8px 0 10px">Peça pra outra conversa juntar todas as imagens num
+        <code>.zip</code>, com cada arquivo nomeado igual ao id da questão que vai usar ele (ex:
+        <code>micro-pratica-q01.jpg</code>). Escolha esse zip aqui — sobem todas de uma vez, e no
+        final aparece um mapa pronto (nome do arquivo → endereço) pra você colar de volta na
+        conversa que está montando as questões.</p>
+      <input type="file" id="arqZip" accept=".zip,application/zip" style="display:none">
+      <button class="minibt" id="bEnviarZip" style="width:100%">Escolher o zip e enviar</button>
+      <div id="resultadoImagem" style="margin-top:10px"></div>
+    </div>
+
+    <div class="cx">
       <b>Questões publicadas</b>
       <p class="muted" style="margin:8px 0 10px">
         ${nQuestoes ? nQuestoes + " exercícios no ar" : "Nenhuma ainda — publique o banco abaixo."}</p>
@@ -6210,6 +6255,85 @@ async function telaAdmin(aviso){
     }catch(e){ caixaAviso("Não consegui mandar", esc(traduzErro(e))); }
     btn.disabled = false; btn.textContent = "Mandar";
   };
+
+  $("#bEnviarZip").onclick = () => {
+    if(!N.storage) return caixaAviso("Sem conexão de imagem",
+      "O envio de imagens não carregou nesta sessão. Feche e abra o app de novo.");
+    $("#arqZip").click();
+  };
+  $("#arqZip").onchange = async () => {
+    const zipArq = $("#arqZip").files[0];
+    if(!zipArq) return;
+    const alvo = $("#resultadoImagem");
+    alvo.innerHTML = `<p class="muted">Abrindo o zip…</p>`;
+
+    let JSZip;
+    try{
+      /* Só carrega essa biblioteca quando alguém realmente vai usar o zip —
+         ninguém mais no app paga o custo dela. */
+      if(!window.JSZip){
+        await new Promise((okResolve, falhou) => {
+          const s = document.createElement("script");
+          s.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+          s.onload = okResolve; s.onerror = falhou;
+          document.head.appendChild(s);
+        });
+      }
+      JSZip = window.JSZip;
+    }catch(e){
+      alvo.innerHTML = `<p class="muted">Não consegui carregar o abridor de zip. Confere a internet e tenta de novo.</p>`;
+      return;
+    }
+
+    let zip;
+    try{ zip = await JSZip.loadAsync(zipArq); }
+    catch(e){
+      alvo.innerHTML = `<p class="muted">Esse arquivo não parece ser um zip válido.</p>`;
+      return;
+    }
+
+    /* Só as imagens de dentro — zip de Mac às vezes traz uma pasta
+       "__MACOSX" cheia de lixo junto, e pastas não são arquivo nenhum. */
+    const entradas = Object.values(zip.files).filter(f =>
+      !f.dir && !f.name.startsWith("__MACOSX/") && /\.(jpe?g|png|webp|gif)$/i.test(f.name));
+
+    if(!entradas.length){
+      alvo.innerHTML = `<p class="muted">Não achei nenhuma imagem dentro desse zip.</p>`;
+      return;
+    }
+
+    const mapa = {};
+    const erros = [];
+    for(let i = 0; i < entradas.length; i++){
+      const entrada = entradas[i];
+      const nome = entrada.name.split("/").pop();   // tira qualquer pasta do meio, só o nome do arquivo
+      alvo.innerHTML = `<p class="muted">Enviando ${i + 1} de ${entradas.length}: ${esc(nome)}…</p>`;
+      try{
+        const blob = await entrada.async("blob");
+        if(blob.size > 5 * 1024 * 1024){
+          erros.push(`${nome} (maior que 5 MB)`);
+          continue;
+        }
+        const caminho = N.api.ref(N.storage, `grupos/${dono.id}/imagens/${nome}`);
+        await N.api.uploadBytes(caminho, blob);
+        mapa[nome] = await N.api.getDownloadURL(caminho);
+      }catch(e){
+        erros.push(`${nome} (${traduzErro(e)})`);
+      }
+    }
+    const jsonPronto = JSON.stringify(mapa, null, 2);
+    alvo.innerHTML = `
+      <p class="muted">${Object.keys(mapa).length} de ${entradas.length} enviadas.${
+        erros.length ? ` ${erros.length} falharam.` : ""}</p>
+      <textarea readonly style="width:100%;height:160px;font-size:11.5px;font-family:monospace"
+        id="mapaImagensPronto" onclick="this.select()">${esc(jsonPronto)}</textarea>
+      <p class="muted" style="margin:6px 0 0;font-size:12px">Toque no texto acima pra selecionar
+        tudo e copiar — é esse mapa que você cola na conversa que está montando as questões.</p>
+      ${erros.length ? `<p class="muted" style="margin-top:8px;color:var(--red)">Falharam: ${
+        esc(erros.join(", "))}</p>` : ""}`;
+    $("#arqZip").value = "";
+  };
+
   $("#bPubArq").onclick = () => $("#arq").click();
   $("#arq").onchange = async ev => {
     const f = ev.target.files[0];
