@@ -719,7 +719,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026dg-v01";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026dg-v02";</script>
 <script>window.VERSAO_BANCO = "684a01b441d4";</script>
 
 <script>
@@ -3200,7 +3200,16 @@ function concluir(it, acertou, textoExtra){
   SES.respondido = true;
   if(!SES.vistos) SES.vistos = [];
   virarODia();
-  const ganho = registrar(it.id, acertou);
+  let ganho = 0;
+  try{
+    ganho = registrar(it.id, acertou);
+  }catch(e){
+    /* Diagnóstico temporário: se salvar o progresso quebrar no meio, isso
+       engolia o erro em silêncio e a pessoa só via "não avançou" sem saber
+       por quê. Agora aparece na tela, pra achar a causa de verdade. */
+    console.error("Erro ao registrar progresso:", e);
+    alert("DIAGNÓSTICO — erro ao salvar progresso de \"" + it.id + "\": " + (e && e.message ? e.message : e));
+  }
   const primeiraVez = !SES.vistos.includes(it.id);   // repetição do erro não conta como acerto de primeira
   if(primeiraVez) SES.vistos.push(it.id);
   if(acertou && primeiraVez) SES.acertos++;
@@ -4837,6 +4846,14 @@ function gabaritoEmTexto(q){
 /* O endereço do SDK é trocável para os testes poderem rodar contra um dublê
    que obedece às mesmas regras. Em produção, window.SDK_BASE não existe. */
 const SDK = window.SDK_BASE || "https://www.gstatic.com/firebasejs/12.17.1/";
+/* Diagnóstico temporário: qualquer erro de JS que aconteça em qualquer lugar
+   do app aparece numa caixinha, em vez de só sumir no console sem ninguém ver.
+   Tirar isso depois de achar o bug do progresso não salvando. */
+window.addEventListener("error", (ev) => {
+  console.error("Erro não tratado:", ev.error || ev.message);
+  alert("DIAGNÓSTICO — erro geral: " + (ev.error && ev.error.message ? ev.error.message : ev.message));
+});
+
 const N = { ligado:false, pronto:false, auth:null, db:null, funcoes:null, storage:null, api:{},
             usuario:null, grupo:null, papel:null };
 
