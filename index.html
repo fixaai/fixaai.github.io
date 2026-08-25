@@ -667,6 +667,21 @@ input.blankInput.no{background:var(--wrong-soft);border-bottom-color:var(--wrong
   padding:9px 13px;font-weight:700;font-size:15px;transition:.1s}
 .chip:active{transform:translateY(2px);box-shadow:none}
 .chip.used{opacity:.28;pointer-events:none}
+.chip.sel{border-color:var(--brand);background:var(--brand-soft);box-shadow:0 2px 0 var(--brand);color:var(--brand-dark)}
+.chip.ok{border-color:var(--brand);background:var(--brand-soft);box-shadow:0 2px 0 var(--brand)}
+.chip.no{border-color:var(--wrong);background:var(--wrong-soft);box-shadow:0 2px 0 var(--wrong)}
+/* ---------- lição: simulação passo a passo ---------- */
+.simGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px;margin:16px 0}
+.simFerr{background:var(--card);border:2px solid var(--line);box-shadow:0 2px 0 var(--line);
+  border-radius:14px;padding:12px 6px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.simFerr .e{font-size:28px;line-height:1}
+.simFerr .n{font-size:11px;font-weight:700;color:var(--ink-2);text-align:center;line-height:1.2}
+.simFerr:active{transform:translateY(2px);box-shadow:none}
+.simFerr.shake{animation:simShake .35s}
+@keyframes simShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.simInstrucao{background:var(--brand-soft);border:2px solid var(--brand);border-radius:var(--r);
+  padding:14px 16px;margin-bottom:4px;font-weight:700;font-size:15px;line-height:1.4;color:var(--ink)}
+.simProgresso{font-size:12.5px;font-weight:800;color:var(--brand);margin-top:6px}
 
 .slots{min-height:56px;border:2px dashed var(--line);border-radius:var(--r);padding:8px;margin-bottom:14px;background:var(--card)}
 .slots:empty::after{content:"Toque nas etapas abaixo, na ordem certa";color:var(--ink-2);font-size:13px;
@@ -690,6 +705,7 @@ input.blankInput.no{background:var(--wrong-soft);border-bottom-color:var(--wrong
 .mi:active{transform:translateY(2px);box-shadow:none}
 .mi.sel{border-color:var(--blue);background:#2f7fd118}
 .mi.done{border-color:var(--brand);background:var(--brand-soft);opacity:.55;pointer-events:none;box-shadow:none}
+.mi.ok{border-color:var(--brand);background:var(--brand-soft);box-shadow:0 2px 0 var(--brand)}
 .mi.err{border-color:var(--wrong);background:var(--wrong-soft);animation:shake .35s}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 
@@ -746,7 +762,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026on-v13";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026on-v19";</script>
 <script>window.VERSAO_BANCO = "684a01b441d4";</script>
 
 <script>
@@ -954,22 +970,43 @@ const PRECO_PALETA  = 100;    // moedas pra destravar a escolha de paleta
 
 const PALETAS = [
   { id:"padrao", nome:"Verde (padrão)", cor:"#1f9d55",
-    vars:{ "--brand":"#1f9d55", "--brand-dark":"#178044", "--brand-soft":"#e8f6ee" } },
+    vars:{ "--brand":"#1f9d55", "--brand-dark":"#178044", "--brand-soft":"#e8f6ee" },
+    varsEscuro:{ "--brand-soft":"#1f9d5535" } },
   { id:"azul",   nome:"Azul",   cor:"#2f7fd1",
-    vars:{ "--brand":"#2f7fd1", "--brand-dark":"#2565a8", "--brand-soft":"#e7f1fb" } },
+    vars:{ "--brand":"#2f7fd1", "--brand-dark":"#2565a8", "--brand-soft":"#e7f1fb" },
+    varsEscuro:{ "--brand-soft":"#2f7fd135" } },
   { id:"roxo",   nome:"Roxo",   cor:"#6b5bd2",
-    vars:{ "--brand":"#6b5bd2", "--brand-dark":"#5445ab", "--brand-soft":"#eeecfb" } },
+    vars:{ "--brand":"#6b5bd2", "--brand-dark":"#5445ab", "--brand-soft":"#eeecfb" },
+    varsEscuro:{ "--brand-soft":"#6b5bd235" } },
   { id:"marsala",nome:"Marsala", cor:"#8b2942",
-    vars:{ "--brand":"#8b2942", "--brand-dark":"#641f30", "--brand-soft":"#f8e2e6" } },
+    vars:{ "--brand":"#8b2942", "--brand-dark":"#641f30", "--brand-soft":"#f8e2e6" },
+    varsEscuro:{ "--brand-soft":"#8b294235" } },
   { id:"rosa",   nome:"Rosa", cor:"#d1477f",
-    vars:{ "--brand":"#d1477f", "--brand-dark":"#6b4030", "--brand-soft":"#fbe8f0" } },
+    vars:{ "--brand":"#d1477f", "--brand-dark":"#6b4030", "--brand-soft":"#fbe8f0" },
+    varsEscuro:{ "--brand-soft":"#d1477f35" } },
 ];
 
 /* Aplica a paleta escolhida nas variáveis CSS do :root. Chamada no boot e
-   toda vez que a pessoa troca — não precisa recarregar a página. */
+   toda vez que a pessoa troca — não precisa recarregar a página.
+
+   BUG REAL, achado em 2026-08-25: isso sempre aplicava os valores de MODO
+   CLARO na mão, via JS — e estilo inline em <html> pesa mais que a regra
+   `@media (prefers-color-scheme: dark)` do CSS, então no celular com tema
+   escuro o `--brand-soft` virava um verde-menta bem claro (o de modo claro)
+   enquanto o texto (`--ink`) continuava branco (o de modo escuro): fundo
+   claro, letra clara, invisível. Não era só a lição — era qualquer coisa no
+   app inteiro que usasse `--brand-soft` de fundo (alternativa marcada,
+   assunto selecionado, chip escolhido...) no celular de quem usa tema
+   escuro. Agora a paleta carrega uma versão escura de `--brand-soft`
+   também, e `aplicarPaleta` escolhe qual aplicar conforme o tema do
+   aparelho. */
 function aplicarPaleta(){
   const p = PALETAS.find(x => x.id === S.paleta) || PALETAS[0];
   Object.entries(p.vars).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
+  const escuro = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  if(escuro && p.varsEscuro){
+    Object.entries(p.varsEscuro).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
+  }
 }
 
 const padrao = () => ({
@@ -1661,6 +1698,20 @@ function registrar(id, acertou){
     if(!p.estagio) p.estagio = 1;
     if(acertou) p.estagio = Math.min(p.estagio + 1, 3);
   }
+  /* `relacionar` também progride em estágio, só que em dois níveis (não três):
+     estágio 1 é o jeito antigo — corrige par por par, na hora — e uma
+     tentativa só conta como acerto pra subir de estágio se NENHUM par ficou
+     vermelho durante ela (mesmo que a pessoa tenha corrigido depois). Pedido
+     da Isabela, 2026-08-25: "eu percebi que era mais fácil, porque eu escolho
+     um... e se está errado já é corrigida na hora... aprendo do processo" —
+     ela quer essa correção imediata de volta pra conteúdo que ainda não
+     domina, e o estágio 2 (responde tudo, só corrige no Verificar) fica pra
+     quando ela já teve uma passada limpa. Prova sempre usa o estágio 2,
+     não importa o que está guardado aqui — ver `rRel`/`rRelFacil`. */
+  if(itReg && itReg.t === "relacionar"){
+    if(!p.estagio) p.estagio = 1;
+    if(acertou) p.estagio = Math.min(p.estagio + 1, 2);
+  }
   if(acertou){
     /* A caixa sobe no máximo uma vez por dia: repetir o mesmo exercício hoje
        treina, mas não é prova de que ficou fixado — isso só o tempo mostra.
@@ -2241,7 +2292,7 @@ function telaLicao(licId, origem){
     else telaEstudar();
   }
 
-  /* Só o botão grande de baixo (Continuar/Verificar/Concluir) avança pra um
+  /* Só o botão grande de baixo (Continuar/Confirmar/Concluir) avança pra um
      passo novo — e é isso que empurra `maisAlto`. As setinhas do topo só
      movem o `passo` dentro do que já foi visto; nunca pulam à frente. */
   function avancar(novoPasso){
@@ -2252,32 +2303,53 @@ function telaLicao(licId, origem){
 
   function render(){
     const p = lic.passos[passo];
+    const c = p.simulacao ? null : p.check;   // simulação substitui a checagem — o teste de
+                                                 // verdade vem depois, na questão de ordenar
     const pct = Math.round((passo / lic.passos.length) * 100);
     const barra = `<div style="height:6px;background:var(--line);border-radius:99px;margin-bottom:18px">
       <div style="height:100%;width:${pct}%;background:var(--brand);border-radius:99px"></div></div>`;
 
-    let corpo;
-    if(p.tipo === "explica"){
-      corpo = `${barra}
-        <div class="qtag">Lição · ${esc(lic.nome)}</div>
-        <div class="qtitle" style="margin-top:8px">${esc(p.titulo)}</div>
-        <div style="font-size:15px;line-height:1.6">${p.corpo}</div>`;
-    } else {
-      const ordem = embaralhar(p.opcoes.map((o,i) => ({o,i})));
-      corpo = `${barra}
-        <div class="qtag">Lição · checagem rápida</div>
-        <div class="qtitle" style="margin-top:8px">${esc(p.pergunta)}</div>
-        ${p.formato === "multi" ? `<p class="dica">Pode haver mais de uma certa — marque todas.</p>` : ""}
-        <div id="licOpcoes">${ordem.map((x,n) => `<div class="optrow">
-          <button class="opt" data-li="${x.i}"><span class="k">${"ABCDE"[n]}</span><span>${esc(x.o)}</span></button>
-        </div>`).join("")}</div>
-        <div id="licFeedback" style="margin-top:8px;font-size:14px;line-height:1.5"></div>`;
-    }
+    /* O check usa chips (toque solto, fica verde) por padrão quando é de
+       marcar mais de uma — é o mesmo visual do banco de palavras do cloze,
+       mais rápido de escanear que uma lista de alternativa cheia. `mcq`
+       (uma resposta só) continua em lista, a não ser que peça chips. */
+    const usaChips = c && (c.estilo === "chips" || (c.formato === "multi" && c.estilo !== "lista"));
+    const ordem = c ? embaralhar(c.opcoes.map((o,i) => ({o,i}))) : [];
+    const checkHTML = !c ? "" : `
+      <div class="qtitle" style="margin-top:${p.corpo ? "18px" : "8px"};font-size:17px">${esc(c.pergunta)}</div>
+      ${c.formato === "multi" ? `<p class="dica">Pode haver mais de uma certa — toque em todas.</p>` : ""}
+      ${usaChips
+        ? `<div class="bank" id="licOpcoes">${ordem.map(x => `<button class="chip" data-li="${x.i}">${esc(x.o)}</button>`).join("")}</div>`
+        : `<div id="licOpcoes">${ordem.map((x,n) => `<div class="optrow">
+             <button class="opt" data-li="${x.i}"><span class="k">${"ABCDE"[n]}</span><span>${esc(x.o)}</span></button>
+           </div>`).join("")}</div>`}
+      <div id="licFeedback" style="margin-top:10px;font-size:14px;line-height:1.5"></div>`;
 
+    /* Simulação: aparece o roteiro real, uma instrução de cada vez, e ela toca
+       na ferramenta certa pra avançar. Errar só balança — sem mensagem, sem
+       punir, só não deixa seguir até acertar. O relógio (ou qualquer
+       ferramenta com `cliques` > 1) precisa de vários toques seguidos, pra
+       simular a espera. */
+    const s = p.simulacao;
+    const simHTML = !s ? "" : `
+      <div id="simInstrucao" class="simInstrucao"></div>
+      <p class="muted" style="font-style:italic;margin:8px 0 0">Toque no ícone certo pra avançar.</p>
+      <div class="simGrid" id="simGrid">${s.ferramentas.map(f => `
+        <button class="simFerr" data-ferr="${esc(f.id)}">
+          <span class="e">${f.emoji}</span><span class="n">${esc(f.nome)}</span>
+        </button>`).join("")}</div>`;
+
+    const corpo = `${barra}
+      <div class="qtag">Lição · ${esc(lic.nome)}</div>
+      ${p.titulo ? `<div class="qtitle" style="margin-top:8px">${esc(p.titulo)}</div>` : ""}
+      ${p.corpo ? `<div style="font-size:15px;line-height:1.6">${p.corpo}</div>` : ""}
+      ${checkHTML}${simHTML}`;
+
+    let simOk = !s ? true : false;   // sem simulação, o botão nunca fica travado por causa dela
     const ultimo = passo === lic.passos.length - 1;
-    const rodapeBtn = p.tipo === "explica"
-      ? `<button class="btn" id="licAvanca">${ultimo ? "Concluir" : "Continuar"}</button>`
-      : `<button class="btn" id="licVerificar" disabled>Verificar</button>`;
+    const rodapeBtn = !c
+      ? `<button class="btn" id="licAvanca" ${simOk ? "" : "disabled"}>${ultimo ? "Concluir" : "Continuar"}</button>`
+      : `<button class="btn" id="licVerificar" disabled>Confirmar</button>`;
 
     montarTela(corpo, { topo: `<div class="topbar">
         <button class="xbtn" id="licVoltar" aria-label="Passo anterior" ${passo===0?"disabled":""}>‹</button>
@@ -2292,7 +2364,37 @@ function telaLicao(licId, origem){
     const bProximo = document.getElementById("licProximo");
     if(!bProximo.disabled) bProximo.onclick = () => { passo++; render(); };
 
-    if(p.tipo === "explica"){
+    if(s){
+      let etapa = 0;
+      let feitos = 0;   // cliques já dados na ferramenta certa da etapa atual
+      const btAvanca = document.getElementById("licAvanca");
+      function mostrarEtapa(){
+        const e = s.etapas[etapa];
+        document.getElementById("simInstrucao").innerHTML = esc(e.instrucao) +
+          ((e.cliques || 1) > 1 ? `<div class="simProgresso">${feitos}/${e.cliques}</div>` : "");
+      }
+      mostrarEtapa();
+      document.querySelectorAll("#simGrid [data-ferr]").forEach(b => b.onclick = () => {
+        const e = s.etapas[etapa];
+        if(b.dataset.ferr !== e.ferramenta){
+          b.classList.remove("shake"); void b.offsetWidth; b.classList.add("shake");
+          return;
+        }
+        feitos++;
+        if(feitos < (e.cliques || 1)){ mostrarEtapa(); return; }
+        feitos = 0; etapa++;
+        if(etapa >= s.etapas.length){
+          document.getElementById("simInstrucao").innerHTML =
+            "Pronto — foi assim que você fez, do início ao fim. É essa ordem que a questão de ordenar vai cobrar.";
+          document.getElementById("simGrid").style.display = "none";
+          btAvanca.disabled = false;
+          return;
+        }
+        mostrarEtapa();
+      });
+    }
+
+    if(!c){
       document.getElementById("licAvanca").onclick = () => {
         if(ultimo){ sair(); return; }
         avancar(passo + 1);
@@ -2300,13 +2402,13 @@ function telaLicao(licId, origem){
       return;
     }
 
-    // passo "check"
-    const sel = p.formato === "multi" ? new Set() : { v: null };
+    // passo com checagem (sozinha, ou junto de conteúdo acima)
+    const sel = c.formato === "multi" ? new Set() : { v: null };
     let respondido = false;
     document.querySelectorAll("#licOpcoes [data-li]").forEach(b => b.onclick = () => {
       if(respondido) return;
       const i = +b.dataset.li;
-      if(p.formato === "multi"){
+      if(c.formato === "multi"){
         if(sel.has(i)){ sel.delete(i); b.classList.remove("sel"); }
         else { sel.add(i); b.classList.add("sel"); }
         document.getElementById("licVerificar").disabled = sel.size === 0;
@@ -2319,8 +2421,8 @@ function telaLicao(licId, origem){
     document.getElementById("licVerificar").onclick = () => {
       if(respondido) return;
       respondido = true;
-      const gab = p.formato === "multi" ? new Set(p.corretas) : new Set([p.correta]);
-      const marcado = p.formato === "multi" ? sel : new Set([sel.v]);
+      const gab = c.formato === "multi" ? new Set(c.corretas) : new Set([c.correta]);
+      const marcado = c.formato === "multi" ? sel : new Set([sel.v]);
       document.querySelectorAll("#licOpcoes [data-li]").forEach(b => {
         const i = +b.dataset.li;
         b.classList.remove("sel");
@@ -2329,7 +2431,7 @@ function telaLicao(licId, origem){
       });
       const acertou = marcado.size === gab.size && [...marcado].every(i => gab.has(i));
       document.getElementById("licFeedback").innerHTML =
-        `<b>${acertou ? "Isso aí ✓" : "Quase"}</b><br>${esc(p.exp)}`;
+        `<b>${acertou ? "Isso aí ✓" : "Quase"}</b><br>${esc(c.exp)}`;
       const btV = document.getElementById("licVerificar");
       btV.textContent = ultimo ? "Concluir" : "Continuar";
       btV.disabled = false;
@@ -3792,7 +3894,7 @@ function render(){
   SES.respondido = false;
   if(SES.fim) tocarRelogio();
   const desenhar = { vf:rVF, mcq:rMCQ, multi:rMulti, escrita:rEscrita, cloze:rCloze,
-                     ordem:rOrdem, relacionar:rRel, discursiva:rDiscursiva, vfjust:rVFJust }[it.t];
+                     ordem:rOrdem, relacionar:rRelDespacha, discursiva:rDiscursiva, vfjust:rVFJust }[it.t];
   if(!desenhar){
     /* Tipo que este app ainda não sabe desenhar — banco novo em programa velho.
        Melhor dizer isso e seguir do que quebrar a bateria inteira. */
@@ -4630,11 +4732,81 @@ function listaDePares(it){
   return `<div class="pares">${it.pares.map(p =>
     `<div class="par"><b>${esc(p[0])}</b><span class="seta">→</span><span>${esc(p[1])}</span></div>`).join("")}</div>`;
 }
+/* Dois jeitos de responder relacionar, por estágio (ver `registrar`/`estagioDe`):
+   estágio 1 (`rRelFacil`) corrige par a par, na hora — é o jeito antigo, que
+   valia pra todo mundo até 2026-08-23, quando virou só o de baixo pra treinar
+   sem chute. Isabela pediu de volta em 2026-08-25, mas só pra conteúdo que
+   ainda não domina: "eu estou exercitando um conteúdo que eu não domino...
+   escolho um e marco o da coluna da direita e se está errado já é corrigida
+   na hora. Então eu aprendo do processo." Estágio 2 (`rRel`) é o atual: forma
+   todos os pares primeiro, corrige tudo junto no Verificar. Prova SEMPRE usa
+   o estágio 2, não importa o que está guardado no progresso — repetir uma
+   prova de anos atrás não é "aprender o conteúdo pela primeira vez". */
+function rRelDespacha(it){
+  const facil = !SES.prova && estagioDe(it) < 2;
+  return facil ? rRelFacil(it) : rRel(it);
+}
+/* Estágio 1 — corrige na hora. Formar um par errado pisca vermelho e volta os
+   dois pra baixo pra tentar de novo; formar certo fica verde e sai da lista.
+   Um ÚNICO par errado durante a tentativa inteira já faz a questão contar
+   como errada pro registro/repetição espaçada (`semErro`) — mesmo que ela
+   acerte todos depois de tentar de novo. Só uma passada 100% limpa avança
+   pro estágio 2 na próxima vez que essa questão aparecer. */
+function rRelFacil(it){
+  const esqL = embaralhar(it.pares.map((p, i) => ({txt:p[0], i})));
+  const dirL = embaralhar(it.pares.map((p, i) => ({txt:p[1], i})));
+  const tot = it.pares.length;
+  $("#q").innerHTML = cabecalho(it, it.enunciado) +
+    `<p class="dica">Toque num item da esquerda e depois no par dele à direita. Corrige na hora.</p>
+     <div class="mgrid" id="mgrid">
+       <div class="mcol" id="colE"></div>
+       <div class="mcol" id="colD"></div>
+     </div>`;
+
+  const formados = new Set();   // índices (do par original) já acertados
+  let selE = null;
+  let semErro = true;
+  let travado = false;          // trava input enquanto o par errado pisca
+
+  function pintar(){
+    $("#colE").innerHTML = esqL.map((x, k) => formados.has(x.i) ? "" :
+      `<button class="mi ${selE === k ? "sel" : ""}" data-l="${k}" ${travado ? "disabled" : ""}>${esc(x.txt)}</button>`).join("");
+    $("#colD").innerHTML = dirL.map((x, k) => formados.has(x.i) ? "" :
+      `<button class="mi" data-r="${k}" ${travado ? "disabled" : ""}>${esc(x.txt)}</button>`).join("");
+    document.querySelectorAll("[data-l]").forEach(b => b.onclick = () => {
+      if(travado) return;
+      selE = +b.dataset.l; pintar();
+    });
+    document.querySelectorAll("[data-r]").forEach(b => b.onclick = () => {
+      if(travado || selE === null) return;
+      const idxE = esqL[selE].i, r = +b.dataset.r;
+      const certo = dirL[r].txt === it.pares[idxE][1];
+      travado = true;
+      const be = document.querySelector(`[data-l="${selE}"]`);
+      const bd = b;
+      [be, bd].forEach(x => x && x.classList.add(certo ? "ok" : "err"));
+      if(certo){
+        formados.add(idxE);
+        setTimeout(() => {
+          travado = false; selE = null; pintar();
+          if(formados.size === tot) concluir(it, semErro, listaDePares(it) + esc(it.exp));
+        }, 450);
+      } else {
+        semErro = false;
+        setTimeout(() => {
+          [be, bd].forEach(x => x && x.classList.remove("ok", "err"));
+          travado = false; selE = null; pintar();
+        }, 650);
+      }
+    });
+  }
+  pintar();
+}
 /* Formar par sobe ele pra uma área confirmada em cima — igual a "colocar em
    ordem" — e some do campo visual de baixo. Errar não avisa na hora: o par
    errado sobe do mesmo jeito, e só fica sabendo se acertou ou não quando
-   tocar em Verificar. Antes isso corrigia par a par, na hora, e dava pra
-   tentar de novo até acertar — a Isabela não queria esse tipo de chute. */
+   tocar em Verificar. É o estágio 2 — quem já teve uma passada limpa no
+   estágio 1 treina assim, sem chute; e é sempre o modo usado em prova. */
 function rRel(it){
   const esqL = embaralhar(it.pares.map((p, i) => ({txt:p[0], i})));
   const dirL = embaralhar(it.pares.map((p, i) => ({txt:p[1], i})));
