@@ -742,7 +742,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026on-v02";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026on-v03";</script>
 <script>window.VERSAO_BANCO = "684a01b441d4";</script>
 
 <script>
@@ -5615,6 +5615,19 @@ function juntarProgresso(local, remoto){
   const aparelhoNovo = !Object.keys(local.prog || {}).length
                     && !Object.keys(local.datas || {}).length
                     && !(local.apelido || "").trim();
+  /* Bug que a Isabela pegou: tablet já em uso (não é "aparelho novo"), fez o
+     onboarding no celular, sincronizou — o `onboardingCompleto:true` veio da
+     nuvem (é um OR, mais abaixo), então o tablet nunca mostrou a tela de
+     onboarding, mas o emoji/apelido antigos do tablet ganhavam da nuvem pela
+     regra acima, porque "aparelho já em uso" protegia o valor local. Resultado:
+     emoji velho, mesmo com o onboarding "completo".
+
+     Corrigido tratando esse caso como se fosse aparelho novo PARA ESTES campos:
+     se ESTE aparelho nunca fez o próprio onboarding (local.onboardingCompleto
+     ainda não era true) mas está herdando o "completo" da nuvem agora, a
+     identidade (apelido/emoji) também deveria vir de lá — é a mesma pessoa
+     dizendo "sou eu" pela primeira vez neste aparelho. */
+  const herdouIdentidade = !local.onboardingCompleto && !!remoto.onboardingCompleto;
   /* marcos são acumulados: o que foi conquistado num aparelho vale nos dois */
   const m = { ...(remoto.marcos || {}), ...(local.marcos || {}) };
   m.perfeitas   = Math.max((local.marcos||{}).perfeitas   || 0, (remoto.marcos||{}).perfeitas   || 0);
@@ -5674,7 +5687,7 @@ function juntarProgresso(local, remoto){
   }
 
   ["apelido","emoji"].forEach(k => {
-    fora[k] = aparelhoNovo ? (remoto[k] || local[k] || "") : (local[k] || remoto[k] || "");
+    fora[k] = (aparelhoNovo || herdouIdentidade) ? (remoto[k] || local[k] || "") : (local[k] || remoto[k] || "");
   });
   fora.meta = SESSAO; fora.segPorQuestao = SEG_POR_QUESTAO; fora.esperaMin = ESPERA_MIN;
   return fora;
