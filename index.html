@@ -742,7 +742,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026on-v06";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026on-v07";</script>
 <script>window.VERSAO_BANCO = "684a01b441d4";</script>
 
 <script>
@@ -1836,7 +1836,7 @@ function telaOnboarding(){
     S.termosVersao = TERMOS_VERSAO;
     S.onboardingCompleto = true;
     tocarIdentidade();
-    salvar(); agendarSincronia();
+    salvar(); sincronizarAgora();
     telaInicio();
   };
 }
@@ -3145,11 +3145,19 @@ function telaAjustes(op){
     telaAjustes();
   });
   /* O apelido salva enquanto se digita, mas só redesenha a tela ao sair do
-     campo — redesenhar a cada letra tiraria o cursor do lugar. */
+     campo — redesenhar a cada letra tiraria o cursor do lugar.
+
+     Apelido, emoji e paleta usam SINCRONIA IMEDIATA (`sincronizarAgora`), não
+     a agendada de 15s (`agendarSincronia`). Motivo: a Isabela trocou de
+     ícone no celular e abriu o tablet minutos depois, mas ainda dentro da
+     janela de espera — a escrita na nuvem nem tinha saído do celular ainda.
+     Progresso de exercício pode esperar 15s sem problema (ninguém decide
+     nada olhando aquele número na hora); identidade é o tipo de mudança que
+     a pessoa faz e IMEDIATAMENTE quer ver refletida no outro aparelho. */
   const iApel = $("#apelido");
   if(iApel){
     iApel.oninput = () => { S.apelido = iApel.value.slice(0, 14); tocarIdentidade(); salvar(); };
-    iApel.onblur  = () => { agendarSincronia(); telaAjustes(); };
+    iApel.onblur  = () => { sincronizarAgora(); telaAjustes(); };
     iApel.onkeydown = ev => { if(ev.key === "Enter") iApel.blur(); };
   }
   document.querySelectorAll("[data-emoji]").forEach(b => b.onclick = () => {
@@ -3157,7 +3165,7 @@ function telaAjustes(op){
     const comprados = new Set(S.emojisComprados || []);
     const desbloqueado = i < EMOJIS_GRATIS || comprados.has(e);
     if(desbloqueado){
-      S.emoji = e; tocarIdentidade(); salvar(); agendarSincronia(); telaAjustes();
+      S.emoji = e; tocarIdentidade(); salvar(); sincronizarAgora(); telaAjustes();
       return;
     }
     if(saldoMoedas() < PRECO_EMOJI){
@@ -3175,11 +3183,11 @@ function telaAjustes(op){
         S.emojisComprados = [...comprados, e];
         S.emoji = e;
         tocarIdentidade();
-        salvar(); agendarSincronia(); telaAjustes();
+        salvar(); sincronizarAgora(); telaAjustes();
       });
   });
   document.querySelectorAll("[data-paleta]").forEach(b => b.onclick = () => {
-    S.paleta = b.dataset.paleta; tocarIdentidade(); salvar(); agendarSincronia(); aplicarPaleta(); telaAjustes();
+    S.paleta = b.dataset.paleta; tocarIdentidade(); salvar(); sincronizarAgora(); aplicarPaleta(); telaAjustes();
   });
   if($("#comprarPaleta")) $("#comprarPaleta").onclick = () => {
     if(saldoMoedas() < PRECO_PALETA){
