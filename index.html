@@ -401,10 +401,33 @@ textarea.resposta.alta{width:100%;min-height:130px;resize:vertical;font-family:i
 /* escolha do emoji */
 .emojis{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:6px}
 .emj{height:44px;border:1px solid var(--line);border-radius:12px;background:var(--card);
-  font-size:21px;line-height:1;display:grid;place-items:center}
+  font-size:21px;line-height:1;display:grid;place-items:center;position:relative}
 .emj.on{border-color:var(--brand);background:rgba(31,157,85,.10);box-shadow:0 0 0 2px rgba(31,157,85,.18)}
+.emj.trancado{opacity:.55}
+.emj.trancado span.cad{position:absolute;bottom:-2px;right:-2px;font-size:10px;background:var(--card);
+  border-radius:50%;line-height:1;padding:2px}
+.emj .precoTag{position:absolute;top:-6px;right:-6px;background:var(--gold);color:#fff;font-size:9px;
+  font-weight:800;border-radius:8px;padding:1px 4px;line-height:1.4}
+/* onboarding: gênero e paleta */
+.generos{display:flex;gap:8px;margin-top:6px}
+.generoBt{flex:1;padding:12px 6px;border:1px solid var(--line);border-radius:12px;background:var(--card);
+  font-weight:700;font-size:13.5px;color:var(--ink)}
+.generoBt.on{border-color:var(--brand);background:rgba(31,157,85,.10);box-shadow:0 0 0 2px rgba(31,157,85,.18)}
+.paletas{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.paletaBt{width:44px;height:44px;border-radius:50%;border:2px solid var(--line);position:relative}
+.paletaBt.on{border-color:var(--ink);box-shadow:0 0 0 2px var(--card),0 0 0 4px var(--ink)}
+.paletaBt.trancada::after{content:"🔒";position:absolute;inset:0;display:grid;place-items:center;
+  font-size:14px;background:rgba(0,0,0,.35);border-radius:50%}
+.termosBox{display:flex;gap:10px;align-items:flex-start;margin-top:14px;cursor:pointer}
+.termosBox input{margin-top:3px;flex:0 0 auto;width:18px;height:18px}
+.termosBox span{font-size:13px;line-height:1.5;color:var(--ink-2)}
 .adminGente{border-top:1px solid var(--line)}
 .agLinha{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.badgeRep{display:inline-block;background:var(--wrong);color:#fff;font-size:11px;font-weight:800;
+  border-radius:10px;padding:1px 8px;margin-left:6px;vertical-align:middle}
+.repLinha .agTx{display:flex;flex-direction:column;gap:2px}
+.repLinha .agTx span{font-size:11.5px;color:var(--ink-2);font-weight:600}
+.repLinha.lido{opacity:.55}
 .agLinha:last-child{border-bottom:none}
 .agTx{flex:1;min-width:0}
 .agTx b{display:block;font-size:14px;font-weight:800}
@@ -719,7 +742,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026rv-v03";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026on-v02";</script>
 <script>window.VERSAO_BANCO = "684a01b441d4";</script>
 
 <script>
@@ -911,6 +934,40 @@ const SEG_POR_QUESTAO = 90;   // 1 min e 30 por questão, somado para a sessão 
 const ESPERA_MIN     = 30;    // minutos entre sessões que valem ranking
 const MIN_ATE_VOLTAR = 25;    // quanto uma questão errada descansa antes de voltar
 
+/* ============================================================
+   Emoji e paleta de cores — desbloqueio com moedas
+
+   Ideia de uma amiga da Isabela no almoço: dá pra estilizar o app, mas tem
+   que "fazer exercício antes" — reforça a mesma lógica de moeda que já vale
+   pra provas antigas. Os cinco primeiros emojis de EMOJIS continuam de graça
+   (sempre foram); os de baixo custam moeda, um preço fixo por emoji. A
+   paleta de cores é um desbloqueio único: paga uma vez, escolhe à vontade
+   depois entre as opções de PALETAS.
+   ============================================================ */
+const EMOJIS_GRATIS = 5;      // quantos primeiros de EMOJIS são de graça
+const PRECO_EMOJI   = 15;     // moedas por emoji extra
+const PRECO_PALETA  = 100;    // moedas pra destravar a escolha de paleta
+
+const PALETAS = [
+  { id:"padrao", nome:"Verde (padrão)", cor:"#1f9d55",
+    vars:{ "--brand":"#1f9d55", "--brand-dark":"#178044", "--brand-soft":"#e8f6ee" } },
+  { id:"azul",   nome:"Azul",   cor:"#2f7fd1",
+    vars:{ "--brand":"#2f7fd1", "--brand-dark":"#2565a8", "--brand-soft":"#e7f1fb" } },
+  { id:"roxo",   nome:"Roxo",   cor:"#6b5bd2",
+    vars:{ "--brand":"#6b5bd2", "--brand-dark":"#5445ab", "--brand-soft":"#eeecfb" } },
+  { id:"marsala",nome:"Marsala", cor:"#8b2942",
+    vars:{ "--brand":"#8b2942", "--brand-dark":"#641f30", "--brand-soft":"#f8e2e6" } },
+  { id:"rosa",   nome:"Rosa", cor:"#d1477f",
+    vars:{ "--brand":"#d1477f", "--brand-dark":"#6b4030", "--brand-soft":"#fbe8f0" } },
+];
+
+/* Aplica a paleta escolhida nas variáveis CSS do :root. Chamada no boot e
+   toda vez que a pessoa troca — não precisa recarregar a página. */
+function aplicarPaleta(){
+  const p = PALETAS.find(x => x.id === S.paleta) || PALETAS[0];
+  Object.entries(p.vars).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
+}
+
 const padrao = () => ({
   v:4, prog:{}, ofensiva:0, ultimoDia:null, dia:null, feitosHoje:0, xp:0,
   meta:SESSAO, segPorQuestao:SEG_POR_QUESTAO, esperaMin:ESPERA_MIN,
@@ -940,7 +997,23 @@ const padrao = () => ({
   datas:{},                                     // "fisio/p3" -> "2026-08-26"
   foco:{ disc:null, prova:null, tops:[], tipos:[], soRevisao:false, soErros:false, soMarcadas:false },
   reportes:[],
-  historico:{}
+  historico:{},
+  /* ONBOARDING — gênero (pra textos do sistema não vir sempre no feminino),
+     e o de-acordo com o uso do app. `onboardingCompleto` é o portão: fica
+     falso tanto pra conta nova quanto pra quem já usava o app antes desta
+     versão — todo mundo passa por aqui uma vez, sem exceção. */
+  onboardingCompleto:false,
+  genero:null,                                  // "m" | "f" | null (prefere não dizer / neutro)
+  termosAceitos:false, termosVersao:null,
+  /* EMOJIS e PALETA — desbloqueio com moedas, mora perto da identidade em Ajustes.
+     Os 5 primeiros emojis de EMOJIS são sempre grátis; o resto (`emojisComprados`)
+     custa PRECO_EMOJI cada. A paleta de cores é um desbloqueio único
+     (PRECO_PALETA) que libera a escolha entre as opções de PALETAS. */
+  emojisComprados:[],
+  paletaComprada:false, paleta:"padrao",
+  /* desafios expirados sem resposta que já foram avisados — pra não mostrar
+     o mesmo aviso toda vez que a pessoa abre a aba do grupo */
+  desafiosExpiradosVistos:[]
 });
 let S = carregar();
 let aba = "inicio";
@@ -1198,24 +1271,18 @@ function provasNaMistura(){
 /* ============================================================
    O que vale para o ranking
 
-   O XP da semana é o que compara as pessoas, então precisa ser difícil de
-   fabricar. Escolhendo um assunto de 22 exercícios e um tipo só, dá para
-   montar uma bateria de dez questões conhecidas, emendar dez acertos e levar
-   200 XP mais o bônus de tempo — sem ter estudado nada.
+   Antes, só a sessão de foco largo pontuava — escolher um assunto, um tipo de
+   exercício, ou "só o que eu errei" tirava a sessão do ranking, pra ninguém
+   fabricar 200 XP treinando sempre nos mesmos dez exercícios conhecidos.
 
-   Então o ranking só conta a sessão de foco largo: sem filtro de tipo, sem
-   escolher assunto, e sem o modo "só o que eu errei", que gira sempre em cima
-   dos mesmos poucos exercícios. Escolher a matéria ou a prova inteira continua
-   valendo — é o recorte que a Isabela usa para estudar de verdade na véspera.
-
-   Nada disso impede ninguém de estudar do jeito que quiser. Só não pontua.
+   Decisão da Isabela: essa regra saiu. Fazer uma bateria só de um assunto, só
+   de V/F, só de um grupo de fármacos — tudo isso pontua normalmente agora.
+   O único freio contra abuso (alguém emendar 500 questões de uma vez e disparar
+   no ranking) é a espera de `esperaMin` entre uma sessão que pontua e a
+   seguinte — ver `iniciarSessao`. Ela sozinha já limita quanto XP dá pra
+   fabricar por hora, então a restrição de conteúdo virou redundante.
    ============================================================ */
 function focoValeRanking(f){
-  f = f || S.foco;
-  if((f.tipos || []).length) return { vale:false, porque:"você escolheu tipos de exercício" };
-  if((f.tops  || []).length) return { vale:false, porque:"você escolheu assuntos soltos" };
-  if(f.soErros)              return { vale:false, porque:"“só o que eu errei” repete os mesmos exercícios" };
-  if(f.soMarcadas)           return { vale:false, porque:"“só as marcadas” é uma lista escolhida por você" };
   return { vale:true, porque:null };
 }
 
@@ -1508,7 +1575,7 @@ function selosDeOutraPessoa(dela){
     if(dela.has(c.id) && minhas.has(c.id))
       return `<div class="selo tem"><span class="fig">${c.emoji}</span><span class="nm">${esc(c.nome)}</span></div>`;
     if(dela.has(c.id))
-      return `<div class="selo dela" title="Ela conquistou esta — você ainda não"><span class="fig">🏅</span><span class="nm">?</span></div>`;
+      return `<div class="selo dela" title="Essa pessoa já conquistou esta — você ainda não"><span class="fig">🏅</span><span class="nm">?</span></div>`;
     return `<div class="selo"><span class="fig">🔒</span><span class="nm">?</span></div>`;
   }).join("")}</div>`;
 }
@@ -1571,6 +1638,16 @@ function registrar(id, acertou){
   const h = hoje();
   const p = S.prog[id] || { caixa:0, venc:h, erros:0, reps:0 };
   p.reps++;
+  /* Progressão de dificuldade das questões "escrita" (regra 7):
+     estágio 1 = múltipla escolha, 2 = completar a primeira palavra,
+     3 = digitar tudo de cabeça. Acertar avança; errar mantém o estágio —
+     a correção já mostra a resposta certa, então na próxima vez a pessoa
+     tenta de novo no MESMO nível, agora sabendo. Nunca volta estágio. */
+  const itReg = porId[id];
+  if(itReg && itReg.t === "escrita"){
+    if(!p.estagio) p.estagio = 1;
+    if(acertou) p.estagio = Math.min(p.estagio + 1, 3);
+  }
   if(acertou){
     /* A caixa sobe no máximo uma vez por dia: repetir o mesmo exercício hoje
        treina, mas não é prova de que ficou fixado — isso só o tempo mostra.
@@ -1662,6 +1739,98 @@ function montarSessao(){
   if(fila.length) return { fila, modo:"normal" };
   // nada vencendo e nada novo: vira treino livre, que não é o mesmo que progresso
   return { fila: naFrente(pool).slice(0, Math.min(alvo, pool.length)), modo:"treino" };
+}
+
+/* ============================================================
+   TELA: Onboarding (gênero + termos de uso)
+
+   Todo mundo passa por aqui uma vez: conta nova E conta que já usava o app
+   antes desta versão — o gate é `S.onboardingCompleto`, que só existe true
+   depois que a pessoa concorda com os termos. Sem isso, nada de aba, nada
+   de bateria: a tela ocupa a tela inteira (comNav:false) até isso ficar
+   resolvido.
+
+   Apelido, emoji e gênero são sugeridos mas não travam o "Continuar" — só
+   os termos de uso travam, porque sem eles a pessoa nem devia estar com
+   dado nenhum aparecendo pros colegas do grupo. */
+const TERMOS_VERSAO = "1";
+const TERMOS_TEXTO = `Ao usar o Fixa aí, seu apelido, emoji e desempenho (XP, acertos, sequência)
+  ficam visíveis para as outras pessoas do seu grupo — é assim que o ranking e os desafios
+  funcionam. Quando você reporta um problema numa questão (a bandeirinha 🚩), essa informação
+  é usada internamente para corrigir e melhorar o banco de questões.`;
+
+function telaOnboarding(){
+  aba = null;
+  let genero = S.genero;
+  let generoEscolhido = false;      // só liga o "on" do botão depois de um clique explícito
+  let emoji = S.emoji || "🧠";
+  const gratis = EMOJIS.slice(0, EMOJIS_GRATIS);
+
+  const corpo = `
+  <div class="hero"><h1>Antes de começar</h1>
+    <div class="sub">Só isso e você já entra — leva menos de um minuto.</div>
+  </div>
+
+  <div class="secao">Como você quer ser chamada</div>
+  <div class="cardz">
+    <label class="f">Apelido (opcional)</label>
+    <input id="obApelido" maxlength="14" autocomplete="off" placeholder="como te chamam"
+      value="${esc((S.apelido || "").trim())}">
+    <label class="f" style="margin-top:14px">Seu emoji</label>
+    <div class="emojis">
+      ${gratis.map(e => `<button class="emj ${e === emoji ? "on" : ""}"
+        data-ob-emoji="${e}" aria-label="Escolher ${e}">${e}</button>`).join("")}
+    </div>
+    <p class="muted" style="margin-top:10px">Esses cinco são de graça. Depois, em Ajustes,
+      dá pra destravar mais emojis com moedas.</p>
+  </div>
+
+  <div class="secao">Como podemos te chamar nos textos do app</div>
+  <div class="cardz">
+    <div class="generos">
+      <button class="generoBt ${genero === "f" ? "on" : ""}" data-ob-genero="f">Feminino</button>
+      <button class="generoBt ${genero === "m" ? "on" : ""}" data-ob-genero="m">Masculino</button>
+      <button class="generoBt ${genero === null && generoEscolhido ? "on" : ""}" data-ob-genero="">Prefiro não dizer</button>
+    </div>
+    <p class="muted" style="margin-top:10px">Usamos isso só pra ajustar palavras tipo
+      "aluno/aluna" nos textos do app. Sem resposta, usamos uma forma neutra.</p>
+  </div>
+
+  <div class="secao">Antes de continuar</div>
+  <div class="cardz">
+    <p style="margin:0;font-size:13.5px;line-height:1.55">${TERMOS_TEXTO}</p>
+    <label class="termosBox">
+      <input type="checkbox" id="obTermos">
+      <span>Li e concordo com o uso dos meus dados dentro do grupo, como descrito acima.</span>
+    </label>
+  </div>`;
+
+  montarTela(corpo, { comNav:false, rodape:
+    `<button class="btn" id="obContinuar" disabled>Continuar</button>` });
+
+  document.querySelectorAll("[data-ob-emoji]").forEach(b => b.onclick = () => {
+    emoji = b.dataset.obEmoji;
+    document.querySelectorAll("[data-ob-emoji]").forEach(x => x.classList.toggle("on", x.dataset.obEmoji === emoji));
+  });
+  document.querySelectorAll("[data-ob-genero]").forEach(b => b.onclick = () => {
+    genero = b.dataset.obGenero || null;
+    generoEscolhido = true;
+    document.querySelectorAll("[data-ob-genero]").forEach(x => x.classList.toggle("on",
+      (x.dataset.obGenero || null) === genero));
+  });
+  const cxTermos = $("#obTermos"), btContinuar = $("#obContinuar");
+  cxTermos.onchange = () => { btContinuar.disabled = !cxTermos.checked; };
+  const iApel = $("#obApelido");
+  btContinuar.onclick = () => {
+    S.apelido = (iApel.value || "").trim().slice(0, 14);
+    S.emoji = emoji;
+    S.genero = genero;
+    S.termosAceitos = true;
+    S.termosVersao = TERMOS_VERSAO;
+    S.onboardingCompleto = true;
+    salvar(); agendarSincronia();
+    telaInicio();
+  };
 }
 
 /* ============================================================
@@ -2171,8 +2340,12 @@ async function telaGrupo(){
      lista por padrão, e pode se mostrar pelo interruptor em #organizar — o caso
      de quem organiza E estuda no mesmo grupo. */
   const escondida = m => m.oculto === true || (m.oculto === undefined && m.papel === "dono");
+  /* "Todo mundo do grupo" ordena por XP total, maior primeiro — pedido da
+     Isabela. Antes vinha em ordem alfabética com "eu" fixado no topo; agora
+     o topo é de quem estuda mais, você incluída. */
+  const xpDe = m => (m.uid === eu ? (S.xp || 0) : (m.placar && m.placar.xp) || 0);
   const lista = CACHE_MEMBROS.filter(m => m.uid === eu || !escondida(m)).sort((a, b) =>
-    (a.uid === eu ? -1 : b.uid === eu ? 1 : 0) ||
+    xpDe(b) - xpDe(a) ||
     String(a.nome || "").localeCompare(String(b.nome || ""), "pt-BR"));
 
   const semanaAtual = S.semana || domingoDa(hoje());
@@ -2187,6 +2360,11 @@ async function telaGrupo(){
      próprias cinco questões, então o desafio nunca fechava. Quem manda responde
      na hora, e se largar no meio encontra o desafio aqui esperando. */
   const aResponder = desafios.filter(d => desafioAberto(d) && !d["res" + meuLado(d)]);
+  /* Desafio que expirou sem que o outro lado respondesse: avisa uma vez só,
+     depois some das listas — não fica reaparecendo toda vez que a pessoa
+     abre a aba. "Expirou" aqui é só do MEU lado (eu respondi, esperando),
+     porque quem nunca respondeu já sabe que perdeu o prazo — não precisa
+     de aviso. (Fica logo abaixo de `nome`, que este trecho usa.) */
   const placar = CACHE_PLACAR || {};
   const naLiga = minhaLiga(placar, semanaAtual, CACHE_MEMBROS);
   const meuNivel = nivelDe(S.nivel);
@@ -2200,6 +2378,25 @@ async function telaGrupo(){
      estudou nela — quem não abriu o app não ocupa cadeira. Ainda não é a liga
      com níveis e limite de oito; é o placar cru, que já é o que estava faltando. */
   const medalha = i => i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}º`;
+
+  /* Desafio que expirou sem que o outro lado respondesse: avisa uma vez só,
+     depois some das listas — não fica reaparecendo toda vez que a pessoa
+     abre a aba. "Expirou" aqui é só do MEU lado (eu respondi, esperando),
+     porque quem nunca respondeu já sabe que perdeu o prazo — não precisa
+     de aviso. */
+  const vistosExp = new Set(S.desafiosExpiradosVistos || []);
+  const novosExpirados = desafios.filter(d =>
+    desafioVencido(d) && d["res" + meuLado(d)] && !d["res" + outroLado(d)] && !vistosExp.has(d.id));
+  if(novosExpirados.length){
+    novosExpirados.forEach(d => vistosExp.add(d.id));
+    S.desafiosExpiradosVistos = [...vistosExp].slice(-200);
+    salvar();
+    const nomes = novosExpirados.map(d =>
+      (d.de === euUid ? nome(CACHE_MEMBROS.find(m => m.uid === d.para) || {}) : d.nomeDe) || "alguém");
+    setTimeout(() => caixaAviso(
+      novosExpirados.length === 1 ? "Um desafio expirou sem resposta" : `${novosExpirados.length} desafios expiraram sem resposta`,
+      `${nomes.map(esc).join(", ")} não respondeu a tempo. O desafio saiu da sua lista.`), 300);
+  }
 
   montarTela(`
   <div class="hero"><h1>Seu grupo ⚔️</h1>
@@ -2262,25 +2459,29 @@ async function telaGrupo(){
   </div>` : ""}
 
   ${(() => {
-    const meus = desafios.filter(d => !desafioAberto(d) || d["res" + meuLado(d)]);
-    if(!meus.length) return "";
-    return `<div class="secao">Seus desafios</div>
+    /* "Seus desafios" agora é só o que está de fato pendente: os que eu mandei
+       e ainda esperam resposta do outro lado. (Os que ainda esperam MINHA
+       resposta já aparecem em "Desafios esperando você", acima — não duplica.)
+       Decisão da Isabela: desafio respondido pelos dois lados, ou expirado,
+       sai daqui — não é mais "seu" no sentido de pendência, é história, e
+       história não precisa ocupar espaço nesta lista toda vez que ela abre a
+       aba. Linguagem sem gênero: nunca sabemos se quem está do outro lado é
+       homem ou mulher, então nada de "dela"/"adversária". */
+    const pendentesMeu = desafios.filter(d => desafioAberto(d) && d["res" + meuLado(d)]);
+    return pendentesMeu.length ? `<div class="secao">Seus desafios</div>
     <div class="cardz" style="padding:6px 14px">
-      ${meus.slice(0, 8).map(d => {
-        const dela = d["res" + outroLado(d)], meu = d["res" + meuLado(d)];
-        const venc = quemVenceu(d);
-        const nomeDela = d.de === euUid ? "sua adversária" : (d.nomeDe || "alguém");
-        const situacao = !meu ? "expirou sem você responder"
-          : !dela ? (desafioVencido(d) ? "expirou sem resposta dela" : "esperando a resposta dela")
-          : venc === euUid ? `você venceu · ${meu.acertos} × ${dela.acertos}`
-          : venc === "empate" ? `empate · ${meu.acertos} × ${dela.acertos}`
-          : `você perdeu · ${meu.acertos} × ${dela.acertos}`;
+      ${pendentesMeu.slice(0, 8).map(d => {
+        const outroNome = d.de === euUid
+          ? (nome(CACHE_MEMBROS.find(m => m.uid === d.para) || {}) || "alguém")
+          : (d.nomeDe || "alguém");
+        const h = Math.max(0, Math.round((emMilissegundos(d.expiraEm) - Date.now()) / 3600000));
         return `<div class="gpLinha">
-          <span class="gpIc">${venc === euUid ? "🏆" : venc === "empate" ? "🤝" : "⚔️"}</span>
-          <span class="gpTx"><b>${esc(nomeDela)}</b><span>${esc(situacao)}</span></span>
+          <span class="gpIc">⚔️</span>
+          <span class="gpTx"><b>${esc(outroNome)}</b>
+            <span>esperando resposta · ${plural(h, "hora", "horas")} restantes</span></span>
         </div>`;
       }).join("")}
-    </div>`;
+    </div>` : "";
   })()}
 
   <div class="secao">Todo mundo do grupo</div>
@@ -2317,7 +2518,7 @@ async function telaGrupo(){
        desafio — ele fica esperando aqui até as 48 horas acabarem. */
     const h = Math.max(0, Math.round((emMilissegundos(d.expiraEm) - Date.now()) / 3600000));
     abrirCaixa(`<h3>⚔️ ${esc(d.nomeDe || "Alguém")} te desafiou</h3>
-      <p class="cxSub">${DESAFIO_TAM} exercícios, os mesmos que ${esc(d.nomeDe || "ela")} respondeu</p>
+      <p class="cxSub">${DESAFIO_TAM} exercícios, os mesmos que ${esc(d.nomeDe || "essa pessoa")} respondeu</p>
       <p style="margin:14px 0 0">Ganha quem acertar mais. Empatou no acerto, ganha quem fez em
         menos tempo. Você tem <b>${plural(h, "hora", "horas")}</b> para responder.</p>`,
       `<button class="btn" id="agora">Responder agora</button>
@@ -2332,7 +2533,7 @@ async function telaGrupo(){
     if(m && N.usuario && m.uid === N.usuario.uid){ aba = "perfil"; return telaPerfil(); }
     if(!m) return;
     if(!m.placar) return caixaAviso(esc(nome(m)),
-      "Esta pessoa ainda não estudou por aqui, então não há nada para mostrar no perfil dela.");
+      "Esta pessoa ainda não estudou por aqui, então não há nada para mostrar no perfil.");
     caixaPerfilDoGrupo(m, nome(m), cara(m), daSemana(m));
   });
   document.querySelectorAll("[data-desafiar]").forEach(b => b.onclick = () => {
@@ -2491,10 +2692,10 @@ function caixaPerfilDoGrupo(m, nome, emoji, xpSemana){
     </div>
     <div class="secao" style="margin-top:18px">Conquistas · ${tem.size} de ${CONQUISTAS.length}</div>
     ${selosDeOutraPessoa(tem)}
-    <p class="muted" style="margin-top:12px">Você vê <b>quantas</b> ela já tem, mas o nome só
-      aparece nas que você também conquistou. Descobrir o que cada uma pede faz parte — e não
-      valeria nada se bastasse abrir o perfil de quem estuda mais. O que ela errou nas questões
-      continua só com ela: isso nunca sai do aparelho dela.</p>`,
+    <p class="muted" style="margin-top:12px">Você vê <b>quantas</b> conquistas essa pessoa já tem, mas
+      o nome só aparece nas que você também conquistou. Descobrir o que cada uma pede faz parte — e
+      não valeria nada se bastasse abrir o perfil de quem estuda mais. O que essa pessoa errou nas
+      questões continua privado: isso nunca sai do aparelho de quem respondeu.</p>`,
     `<button class="btn ghost" id="pgOk">Fechar</button>`);
   document.getElementById("pgOk").onclick = fecharCaixa;
 }
@@ -2536,7 +2737,6 @@ function telaPerfil(){
       <div><b>⚔️ ${S.desafiosGanhos || 0}</b><span>desafios ganhos</span></div>
       <div><b>🥇 ${S.pod1 || 0}</b><span>semanas em primeiro</span></div>
       <div><b>🥈 ${S.pod2 || 0}</b><span>semanas em segundo</span></div>
-      <div><b>🪙 ${saldoMoedas()}</b><span>moedas</span></div>
     </div>
   </div>
 
@@ -2755,6 +2955,8 @@ function telaAjustes(op){
 
   const apelido = (S.apelido || "").trim();
   const emojiAtual = S.emoji || "🧠";
+  const comprados = new Set(S.emojisComprados || []);
+  const emojiDesbloqueado = (e, i) => i < EMOJIS_GRATIS || comprados.has(e);
   const identidade = `
   <div class="secao">Como você aparece</div>
   <div class="cardz">
@@ -2763,12 +2965,38 @@ function telaAjustes(op){
       value="${esc(apelido)}">
     <label class="f" style="margin-top:14px">Seu emoji</label>
     <div class="emojis">
-      ${EMOJIS.map(e => `<button class="emj ${e === emojiAtual ? "on" : ""}"
-        data-emoji="${e}" aria-label="Escolher ${e}">${e}</button>`).join("")}
+      ${EMOJIS.map((e, i) => {
+        const on = emojiDesbloqueado(e, i);
+        return `<button class="emj ${e === emojiAtual ? "on" : ""} ${on ? "" : "trancado"}"
+          data-emoji="${e}" data-emoji-i="${i}" aria-label="${on ? "Escolher" : "Destravar"} ${e}">${e}
+          ${on ? "" : `<span class="precoTag">🪙${PRECO_EMOJI}</span>`}</button>`;
+      }).join("")}
     </div>
-    <p class="muted" style="margin-top:12px">Na tela inicial vai aparecer
+    <p class="muted" style="margin-top:12px">Os ${EMOJIS_GRATIS} primeiros são de graça. Os outros
+      custam <b>🪙${PRECO_EMOJI} cada</b> pra destravar — depois de destravado, é seu pra sempre.
+      Saldo atual: <b>🪙${saldoMoedas()}</b>.</p>
+    <p class="muted" style="margin-top:8px">Na tela inicial vai aparecer
       <b>Fixa aí${apelido ? ", " + esc(apelido) : ""} ${esc(emojiAtual)}</b>.
       Isso viaja com a sua conta: escolheu no celular, aparece no tablet também.</p>
+  </div>
+
+  <div class="secao">Paleta de cores</div>
+  <div class="cardz">
+    ${S.paletaComprada ? `
+      <div class="paletas">
+        ${PALETAS.map(p => `<button class="paletaBt ${p.id === S.paleta ? "on" : ""}"
+          data-paleta="${p.id}" style="background:${p.cor}" aria-label="${esc(p.nome)}"></button>`).join("")}
+      </div>
+      <p class="muted" style="margin-top:10px">Escolha à vontade — já está destravada.</p>`
+    : `
+      <div class="paletas">
+        ${PALETAS.map(p => `<button class="paletaBt trancada" style="background:${p.cor}"
+          disabled aria-label="${esc(p.nome)} (trancada)"></button>`).join("")}
+      </div>
+      <button class="minibt larga" id="comprarPaleta" style="margin-top:12px">
+        🪙 Destravar por ${PRECO_PALETA} moedas</button>
+      <p class="muted" style="margin-top:10px">Faça exercícios pra ganhar moeda — quem estuda
+        de verdade ganha muito mais do que gastar ${PRECO_PALETA} custa. Saldo atual: <b>🪙${saldoMoedas()}</b>.</p>`}
   </div>`;
 
   /* A versão fica fora do cartão da conta de propósito: quando alguém escreve
@@ -2873,7 +3101,8 @@ function telaAjustes(op){
       <button class="btn ghost sm" id="expRep">Exportar reportes</button>
       <button class="btn ghost sm" id="limpaRep">Limpar lista</button>
     </div>
-    <p class="muted" style="margin-top:12px">Exporte e me mande o arquivo — eu corrijo as questões e devolvo o app atualizado.</p>
+    <p class="muted" style="margin-top:12px">Isso já foi enviado direto pra organizadora do grupo
+      quando você reportou — esta lista é só o seu histórico pessoal do que você já sinalizou.</p>
   </div>` : ""}
 
   ${aparelho}
@@ -2913,8 +3142,50 @@ function telaAjustes(op){
     iApel.onkeydown = ev => { if(ev.key === "Enter") iApel.blur(); };
   }
   document.querySelectorAll("[data-emoji]").forEach(b => b.onclick = () => {
-    S.emoji = b.dataset.emoji; salvar(); agendarSincronia(); telaAjustes();
+    const e = b.dataset.emoji, i = +b.dataset.emojiI;
+    const comprados = new Set(S.emojisComprados || []);
+    const desbloqueado = i < EMOJIS_GRATIS || comprados.has(e);
+    if(desbloqueado){
+      S.emoji = e; salvar(); agendarSincronia(); telaAjustes();
+      return;
+    }
+    if(saldoMoedas() < PRECO_EMOJI){
+      caixaAviso("Moedas insuficientes",
+        `Esse emoji custa 🪙${PRECO_EMOJI} e seu saldo é 🪙${saldoMoedas()}. Continue fazendo
+         exercícios pra juntar moeda.`);
+      return;
+    }
+    caixaConfirma(`Destravar ${e}?`,
+      `Custa 🪙${PRECO_EMOJI}. Depois de destravado é seu pra sempre, e você pode trocar
+       de emoji quando quiser sem pagar de novo.`,
+      "Destravar",
+      () => {
+        gastarMoedas(PRECO_EMOJI);
+        S.emojisComprados = [...comprados, e];
+        S.emoji = e;
+        salvar(); agendarSincronia(); telaAjustes();
+      });
   });
+  document.querySelectorAll("[data-paleta]").forEach(b => b.onclick = () => {
+    S.paleta = b.dataset.paleta; salvar(); agendarSincronia(); aplicarPaleta(); telaAjustes();
+  });
+  if($("#comprarPaleta")) $("#comprarPaleta").onclick = () => {
+    if(saldoMoedas() < PRECO_PALETA){
+      caixaAviso("Moedas insuficientes",
+        `A paleta de cores custa 🪙${PRECO_PALETA} e seu saldo é 🪙${saldoMoedas()}. Continue
+         fazendo exercícios pra juntar moeda.`);
+      return;
+    }
+    caixaConfirma("Destravar paleta de cores?",
+      `Custa 🪙${PRECO_PALETA}, uma vez só. Depois disso você escolhe entre as cores
+       quando quiser, sem pagar de novo.`,
+      "Destravar",
+      () => {
+        gastarMoedas(PRECO_PALETA);
+        S.paletaComprada = true;
+        salvar(); agendarSincronia(); telaAjustes();
+      });
+  };
   if($("#expRep")) $("#expRep").onclick = () => {
     const linhas = S.reportes.map(r => {
       const it = porId[r.id] || {};
@@ -3361,15 +3632,34 @@ function painelReporte(it, acertou, exp){
   $("#cancelRep").onclick = () => rodapeFeedback(it, acertou, exp);
   $("#enviarRep").onclick = () => {
     if(!motivo) return;
+    const obs = ($("#obs").value || "").trim().slice(0, 500);
     S.reportes = (S.reportes || []).filter(r => r.id !== it.id);
-    S.reportes.push({
-      id: it.id, disc: it.disc, prova: it.prova, tipo: it.t,
-      motivo, obs: ($("#obs").value || "").trim().slice(0, 500), quando: hoje()
-    });
+    S.reportes.push({ id: it.id, disc: it.disc, prova: it.prova, tipo: it.t,
+      motivo, obs, quando: hoje() });
     salvar();
+    publicarReporte(it, motivo, obs);
     rodapeFeedback(it, acertou, exp,
-      "🚩 Anotado, obrigada. Fica guardado em Ajustes → Questões reportadas, para você me mandar depois.");
+      "🚩 Anotado, obrigada. A organizadora do grupo já recebe isso do lado dela.");
   };
+}
+/* Publica o reporte no grupo (regra 5 — relatório de bandeira de verdade).
+   Antes, o reporte só existia no aparelho de quem clicou, guardado em
+   `S.reportes` — a Isabela nunca via nada sem a pessoa lembrar de exportar e
+   mandar manualmente. Agora todo reporte também vai para
+   `grupos/{grupo}/reportes`, e a organizadora vê tudo em #organizar. Melhor
+   esforço: se falhar (sem rede, sem grupo), o reporte continua salvo local
+   em `S.reportes` normalmente — não trava a experiência de quem reportou. */
+async function publicarReporte(it, motivo, obs){
+  if(!N.ligado || !N.usuario || !N.grupo) return;
+  try{
+    await N.api.addDoc(cole("grupos", N.grupo, "reportes"), {
+      questaoId: it.id, disc: it.disc || null, prova: it.prova || null, tipo: it.t || null,
+      motivo, obs: obs || "",
+      nomeDe: (S.apelido || "").trim() || (N.usuario.displayName || "").trim() || "alguém",
+      uid: N.usuario.uid, lido:false, quando: hoje(),
+      criadoEm: N.api.serverTimestamp(), criadoEmMs: Date.now()
+    });
+  }catch(e){ /* sem rede ou sem permissão: fica só local, tenta de novo não é crítico aqui */ }
 }
 
 /* ---------- 1. Verdadeiro ou falso ---------- */
@@ -3645,7 +3935,108 @@ function conferirEscrita(it, digitado){
   return { certo:false, quase:false };
 }
 
+/* ---------- 2c. Escrever a resposta — em 3 estágios ----------
+   Regra 7 (progressão de dificuldade): a primeira vez que a pessoa vê uma
+   questão de identificação, ela reconhece entre alternativas; depois de
+   acertar, completa só a primeira palavra; depois de acertar de novo,
+   escreve tudo de cabeça. O estágio mora em `S.prog[it.id].estagio` (ver
+   `registrar`) — sem precisar de nenhum campo novo no banco de questões:
+   os distratores do estágio 1 vêm de outras respostas do mesmo assunto, e a
+   lacuna do estágio 2 é sempre a primeira palavra, por convenção. */
+function estagioDe(it){
+  const p = S.prog[it.id];
+  return (p && p.estagio) || 1;
+}
+function distratoresEscrita(it, n){
+  const doTopico = (CURSO.itens || []).filter(x =>
+    x.t === "escrita" && x.top === it.top && x.id !== it.id && (x.resp || "") !== (it.resp || ""));
+  let pool = doTopico;
+  if(pool.length < n){
+    const daDisc = (CURSO.itens || []).filter(x =>
+      x.t === "escrita" && x.disc === it.disc && x.top !== it.top && x.id !== it.id);
+    pool = pool.concat(daDisc);
+  }
+  return embaralhar(pool).slice(0, n).map(x => x.resp);
+}
+function partirPrimeiraPalavra(resp){
+  const s = (resp || "").trim();
+  const i = s.indexOf(" ");
+  return i < 0 ? { primeira:s, resto:"" } : { primeira:s.slice(0, i), resto:s.slice(i + 1) };
+}
+
 function rEscrita(it){
+  const estagio = estagioDe(it);
+  if(estagio <= 1) return rEscritaEscolha(it);
+  if(estagio === 2) return rEscritaLacuna(it);
+  return rEscritaLivre(it);
+}
+
+/* Estágio 1: múltipla escolha — igual à MCQ comum, mas montada na hora com
+   distratores tirados de outras respostas do banco. Se o assunto não tiver
+   respostas suficientes pra formar 4 opções, cai direto pro estágio 3
+   (digitação livre) — melhor isso do que uma múltipla escolha capenga com
+   duas alternativas só. */
+function rEscritaEscolha(it){
+  const distratores = distratoresEscrita(it, 3);
+  if(distratores.length < 2) return rEscritaLivre(it);
+  const opcoes = embaralhar([it.resp, ...distratores]);
+  const certa = opcoes.indexOf(it.resp);
+  $("#q").innerHTML = cabecalho(it, it.enunciado) +
+    `<p class="dica">Primeira vez vendo esta questão — reconheça entre as opções.</p>` +
+    opcoes.map((o, n) => linhaOpcao(n, "ABCD"[n], o)).join("");
+  let sel = null;
+  pedirVerificar(() => {
+    if(sel === null) return;
+    travarRiscar();
+    document.querySelectorAll(".opt[data-i]").forEach(x => {
+      if(+x.dataset.i === certa) x.classList.add("ok");
+      else if(+x.dataset.i === sel) x.classList.add("no");
+      x.classList.remove("sel");
+    });
+    concluir(it, sel === certa, `<b>Resposta: ${esc(it.resp)}</b><br>${esc(it.exp)}`);
+  }, false);
+  document.querySelectorAll(".opt[data-i]").forEach(b => b.onclick = () => {
+    if(SES.respondido) return;
+    document.querySelectorAll(".opt[data-i]").forEach(x => x.classList.remove("sel"));
+    b.classList.add("sel"); sel = +b.dataset.i; atualizaVerificar(true);
+  });
+  ligarRiscar((i, alvo) => { alvo.classList.remove("sel"); sel = null; atualizaVerificar(false); });
+}
+
+/* Estágio 2: a resposta aparece quase inteira, só falta a primeira palavra —
+   convenção simples, sem precisar marcar no banco qual pedaço é a lacuna. Se
+   a resposta for uma palavra só, não tem o que lacunar parcialmente: cai
+   direto pro estágio 3. */
+function rEscritaLacuna(it){
+  const { primeira, resto } = partirPrimeiraPalavra(it.resp);
+  if(!resto) return rEscritaLivre(it);
+  $("#q").innerHTML = cabecalho(it, it.enunciado) +
+    `<p class="dica">Você já reconheceu essa — agora complete a primeira palavra.</p>
+     <p class="pista" style="font-size:16px;font-weight:800">___ ${esc(resto)}</p>
+     <input class="resposta" id="txtResp" type="text" inputmode="text"
+       autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+       placeholder="digite a palavra que falta" aria-label="Sua resposta">`;
+  const campo = $("#txtResp");
+  const responder = () => {
+    if(SES.respondido) return;
+    if(!campo.value.trim()) return;
+    const r = conferirEscrita({ resp:primeira, aceita:[] }, campo.value);
+    campo.disabled = true;
+    campo.classList.add(r.certo ? "ok" : "no");
+    const grafia = r.quase
+      ? `<b>Quase na grafia — o certo é «${esc(it.resp)}».</b> Vou contar como acerto.<br>`
+      : (r.certo ? "" : `<b>Resposta: ${esc(it.resp)}</b><br>`);
+    concluir(it, r.certo, grafia + esc(it.exp));
+  };
+  pedirVerificar(responder, false);
+  campo.oninput = () => atualizaVerificar(!!campo.value.trim());
+  campo.onkeydown = e => { if(e.key === "Enter"){ e.preventDefault(); responder(); } };
+  setTimeout(() => { try{ campo.focus({ preventScroll:true }); }catch(e){ campo.focus(); } }, 60);
+}
+
+/* Estágio 3 (e comportamento de sempre pra quem não tem progressão aplicável):
+   digitação livre da resposta inteira, de cabeça. */
+function rEscritaLivre(it){
   /* "Uma palavra basta" só é verdade quando a resposta certa É uma palavra
      só — "vitamina K" e "tromboxano A2" têm duas, e prometer isso enganava
      quem via a dica e escrevia só metade da resposta. */
@@ -4073,10 +4464,10 @@ function telaFim(){
       ${novoRecorde ? `<p style="margin-top:16px;font-weight:800;color:var(--gold)">🏅 Novo recorde de tempo, sem errar nenhuma!</p>` : ""}
       ${SES.desafio ? (() => {
         const d = SES.desafio, meu = "res" + meuLado(d), dela = "res" + outroLado(d);
-        const nomeDela = d.de === (N.usuario && N.usuario.uid) ? "sua adversária" : esc(d.nomeDe || "quem te desafiou");
+        const nomeDela = d.de === (N.usuario && N.usuario.uid) ? "a pessoa desafiada" : esc(d.nomeDe || "quem te desafiou");
         if(!d[dela]) return `<div class="desFim">⚔️ <b>Resultado enviado</b>
-          <span>Você fez ${SES.acertos} de ${SES.total}. Falta ${nomeDela} responder — quando ela
-          responder, o resultado aparece na aba do grupo.</span></div>`;
+          <span>Você fez ${SES.acertos} de ${SES.total}. Falta ${nomeDela} responder — quando
+          isso acontecer, o resultado aparece na aba do grupo.</span></div>`;
         const venc = quemVenceu(d);
         const eu = N.usuario && N.usuario.uid;
         return `<div class="desFim ${venc === eu ? "ganhou" : venc === "empate" ? "" : "perdeu"}">
@@ -5132,8 +5523,10 @@ const CAMPOS_SINC = ["prog","xp","xpSemana","semana","ofensiva","ultimoDia","dia
                      "provasFeitas",
                      "horizonte","marcos","congelados",
                      "nivel","sala","semanaSala","semanaPassada","ligaVista","pod1","pod2","gelos",
-                     "desafiosVistos","desafiosGanhos",
-                     "moedasGanhas","moedasGastas","provasCompradas","marcosMoedas","brindeBoasVindas"];
+                     "desafiosVistos","desafiosGanhos","desafiosExpiradosVistos",
+                     "moedasGanhas","moedasGastas","provasCompradas","marcosMoedas","brindeBoasVindas",
+                     "onboardingCompleto","genero","termosAceitos","termosVersao",
+                     "emojisComprados","paletaComprada","paleta"];
 
 function juntarProgresso(local, remoto){
   /* Mesma conta em dois aparelhos: fica o mais adiantado de cada questão,
@@ -5172,6 +5565,19 @@ function juntarProgresso(local, remoto){
   fora.marcosMoedas = { ofensiva: Math.max((local.marcosMoedas||{}).ofensiva || 0,
                                             (remoto.marcosMoedas||{}).ofensiva || 0) };
   fora.brindeBoasVindas = !!(local.brindeBoasVindas || remoto.brindeBoasVindas);
+  /* Onboarding: uma vez feito em qualquer aparelho, vale pros dois — ninguém
+     deveria responder gênero/termos de novo só porque trocou de celular. Os
+     dados escolhidos (apelido/emoji/gênero) já vêm de outros campos da lista;
+     aqui só o "aconteceu ou não" e a versão dos termos aceitos. */
+  fora.onboardingCompleto = !!(local.onboardingCompleto || remoto.onboardingCompleto);
+  fora.termosAceitos = !!(local.termosAceitos || remoto.termosAceitos);
+  fora.termosVersao = local.termosVersao || remoto.termosVersao || null;
+  fora.genero = local.genero != null ? local.genero : remoto.genero;
+  /* Emoji e paleta comprados: união — comprou num aparelho, vale nos dois. */
+  fora.emojisComprados = [...new Set([...(local.emojisComprados || []), ...(remoto.emojisComprados || [])])];
+  fora.paletaComprada = !!(local.paletaComprada || remoto.paletaComprada);
+  fora.desafiosExpiradosVistos = [...new Set([...(local.desafiosExpiradosVistos || []),
+                                              ...(remoto.desafiosExpiradosVistos || [])])].slice(-200);
 
   /* Os outros três contadores zeram sozinhos — xpSemana no domingo, feitosHoje
      à meia-noite — e por isso não dá para pegar o maior sem olhar de que dia e
@@ -5977,12 +6383,56 @@ async function telaAdmin(aviso){
     });
   }catch(e){}
 
+  /* Relatório de bandeira (regra 5): antes, cada reporte ficava só no
+     aparelho de quem reportou, guardado em `S.reportes` — a Isabela nunca
+     via nada sem a pessoa lembrar de exportar e mandar manualmente. Agora
+     todo reporte é publicado em `grupos/{id}/reportes`, e o organizador vê
+     tudo aqui, sem precisar olhar todo dia: quando entra em #organizar, o
+     card já mostra quantos estão pendentes. Não há aviso por e-mail nesta
+     versão — isso depende de uma Cloud Function que não está neste arquivo
+     (mora em `funcoes/index.js`), e fica pra quando você tiver esse arquivo
+     em mãos. */
+  let reportes = [];
+  try{
+    const rs = await N.api.getDocs(cole("grupos", dono.id, "reportes"));
+    rs.forEach(d => reportes.push({ id:d.id, ...d.data() }));
+    reportes.sort((a, b) => (b.criadoEmMs || 0) - (a.criadoEmMs || 0));
+  }catch(e){}
+  const pendentes = reportes.filter(r => !r.lido);
+
   const vencMs = convite ? emMilissegundos(convite.expiraEm) : 0;
   const venc = vencMs ? new Date(vencMs).toLocaleDateString("pt-BR") : null;
 
   app.innerHTML = `<div class="rolagem"><div class="admin" style="padding:18px 16px 30px">
     <div class="secao">${esc(dono.nome)}</div>
     ${aviso ? `<div class="erro" style="margin-bottom:12px">${esc(aviso)}</div>` : ""}
+
+    ${reportes.length ? `<div class="cx" style="${pendentes.length ? "border-color:var(--wrong)" : ""}">
+      <b>🚩 Questões reportadas ${pendentes.length ? `<span class="badgeRep">${pendentes.length}</span>` : ""}</b>
+      <p class="muted" style="margin:8px 0 10px">${pendentes.length
+        ? `${plural(pendentes.length, "reporte novo", "reportes novos")} pra você olhar. ${
+            plural(reportes.length - pendentes.length, "já resolvido", "já resolvidos")}.`
+        : `Tudo em dia — ${plural(reportes.length, "reporte resolvido", "reportes resolvidos")} até agora.`}</p>
+      <div class="adminGente">
+        ${reportes.slice(0, 30).map(r => {
+          const it = porId[r.questaoId] || {};
+          const rot = (MOTIVOS.find(m => m[0] === r.motivo) || [null, r.motivo])[1];
+          return `<div class="agLinha repLinha ${r.lido ? "lido" : ""}">
+            <span class="agTx">
+              <b>${esc(rot || "Motivo não informado")}</b>
+              <span>${esc((it.enunciado || it.frase || r.questaoId || "").slice(0, 90))}${
+                (it.enunciado || it.frase || "").length > 90 ? "…" : ""}</span>
+              ${r.obs ? `<span style="font-style:italic">"${esc(r.obs)}"</span>` : ""}
+              <span>${esc(r.nomeDe || "alguém")} · ${esc(r.questaoId || "")} · ${esc(r.quando || "")}</span>
+            </span>
+            ${r.lido ? `<button class="minibt" data-reabrir="${esc(r.id)}">Reabrir</button>`
+                     : `<button class="minibt" data-marcarLido="${esc(r.id)}">Marcar resolvido</button>`}
+          </div>`;
+        }).join("")}
+      </div>
+      <p class="muted" style="margin:10px 0 0;font-size:12.5px">Sem aviso por e-mail nesta versão —
+        isso pede uma Cloud Function que ainda não está neste arquivo. Por enquanto, é olhar aqui.</p>
+    </div>` : ""}
 
     <div class="cx">
       <b>Código de convite</b>
@@ -6218,12 +6668,28 @@ async function telaAdmin(aviso){
      na liga, que é montada a partir do placar) e as datas de prova que ela tinha
      compartilhado com a turma. O progresso de estudo dela NÃO é tocado: mora na
      conta dela, e se ela voltar com o código, volta de onde parou. */
+  /* Reportes: marcar como resolvido (ou reabrir) só grava `lido` no
+     documento — nunca apaga, então o histórico de "já corrigi isso" fica
+     preservado se você quiser conferir depois. */
+  document.querySelectorAll("[data-marcarLido]").forEach(b => b.onclick = async () => {
+    const id = b.dataset.marcarLido;
+    try{ await N.api.setDoc(ref("grupos", dono.id, "reportes", id), { lido:true }, { merge:true }); }
+    catch(e){}
+    telaAdmin();
+  });
+  document.querySelectorAll("[data-reabrir]").forEach(b => b.onclick = async () => {
+    const id = b.dataset.reabrir;
+    try{ await N.api.setDoc(ref("grupos", dono.id, "reportes", id), { lido:false }, { merge:true }); }
+    catch(e){}
+    telaAdmin();
+  });
+
   document.querySelectorAll("[data-tirar]").forEach(b => b.onclick = () => {
     const m = listaMembros.find(x => x.uid === b.dataset.tirar);
     if(!m) return;
     caixaConfirma(`Remover ${esc(m.nome || "esta pessoa")}?`,
-      "Ela sai da lista, da liga e do ranking deste grupo, e o placar dela aqui é apagado. "
-      + "O progresso de estudo continua na conta dela — voltando com o código, volta de onde parou.",
+      "Essa pessoa sai da lista, da liga e do ranking deste grupo, e o placar aqui é apagado. "
+      + "O progresso de estudo continua na conta — voltando com o código, volta de onde parou.",
       "Remover do grupo", async () => {
         try{
           await N.api.deleteDoc(ref("grupos", dono.id, "membros", m.uid));
@@ -6410,7 +6876,9 @@ async function abrirComGrupo(g){
 
   const remoto = await baixarProgresso();
   if(remoto){ S = { ...S, ...juntarProgresso(S, remoto) }; salvar(); }
+  aplicarPaleta();
 
+  if(!S.onboardingCompleto){ telaOnboarding(); sincronizarAgora(); return; }
   telaInicio();
   sincronizarAgora();
   conferirPresentePendente();
@@ -6434,7 +6902,8 @@ async function iniciar(){
     try{ await nuvemCarregar(); }
     catch(e){
       const guardado = bancoGuardado();
-      if(guardado){ window.CURSO = guardado; indexarBanco(); return telaInicio(); }
+      if(guardado){ window.CURSO = guardado; indexarBanco(); aplicarPaleta();
+        return S.onboardingCompleto ? telaInicio() : telaOnboarding(); }
       return molduraEntrada('<h1>Sem conexão</h1><p class="sub">Não consegui falar com o servidor. ' +
         'Conecte-se à internet e abra de novo.</p>');
     }
@@ -6477,7 +6946,9 @@ async function iniciar(){
     }
   }
   indexarBanco();
-  telaInicio();
+  aplicarPaleta();
+  if(!S.onboardingCompleto) telaOnboarding();
+  else telaInicio();
 }
 iniciar();
 </script>
