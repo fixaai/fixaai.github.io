@@ -742,7 +742,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026on-v05";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026on-v06";</script>
 <script>window.VERSAO_BANCO = "684a01b441d4";</script>
 
 <script>
@@ -3959,16 +3959,20 @@ function estagioDe(it){
   const p = S.prog[it.id];
   return (p && p.estagio) || 1;
 }
+/* Distratores do estágio 1 SÓ do mesmo tópico — nunca de outro assunto.
+   Cruzar tópicos (versão antiga: caía pra "qualquer escrita da mesma
+   disciplina" quando o tópico não tinha o suficiente) misturava respostas de
+   "formato" diferente — ex: nome de equipamento junto com tempo/temperatura
+   — e aí só uma alternativa "parecia" a pergunta, entregando a resposta sem
+   precisar saber nada. Se o tópico não tiver pelo menos 2 outras respostas
+   pra usar como distrator, a questão pula direto pro estágio de digitação
+   livre (ver `rEscritaEscolha`) — e é isso mesmo: um tópico com uma questão
+   só nunca deveria virar múltipla escolha. Documentado em
+   regras-de-boa-questao.md. */
 function distratoresEscrita(it, n){
   const doTopico = (CURSO.itens || []).filter(x =>
     x.t === "escrita" && x.top === it.top && x.id !== it.id && (x.resp || "") !== (it.resp || ""));
-  let pool = doTopico;
-  if(pool.length < n){
-    const daDisc = (CURSO.itens || []).filter(x =>
-      x.t === "escrita" && x.disc === it.disc && x.top !== it.top && x.id !== it.id);
-    pool = pool.concat(daDisc);
-  }
-  return embaralhar(pool).slice(0, n).map(x => x.resp);
+  return embaralhar(doTopico).slice(0, n).map(x => x.resp);
 }
 function partirPrimeiraPalavra(resp){
   const s = (resp || "").trim();
@@ -3984,10 +3988,12 @@ function rEscrita(it){
 }
 
 /* Estágio 1: múltipla escolha — igual à MCQ comum, mas montada na hora com
-   distratores tirados de outras respostas do banco. Se o assunto não tiver
-   respostas suficientes pra formar 4 opções, cai direto pro estágio 3
-   (digitação livre) — melhor isso do que uma múltipla escolha capenga com
-   duas alternativas só. */
+   distratores tirados de OUTRAS RESPOSTAS DO MESMO TÓPICO (nunca de outro
+   assunto — ver `distratoresEscrita`). Se o tópico não tiver pelo menos duas
+   outras respostas pra formar alternativas plausíveis, cai direto pro
+   estágio 3 (digitação livre) — melhor pular a múltipla escolha do que
+   montar uma capenga, com opções de outro assunto que entregam a resposta
+   pelo formato. */
 function rEscritaEscolha(it){
   const distratores = distratoresEscrita(it, 3);
   if(distratores.length < 2) return rEscritaLivre(it);
