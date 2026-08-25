@@ -762,7 +762,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026on-v19";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026on-v21";</script>
 <script>window.VERSAO_BANCO = "684a01b441d4";</script>
 
 <script>
@@ -3905,8 +3905,23 @@ function render(){
     $("#pula").onclick = () => { SES.i++; render(); };
     return;
   }
-  desenhar(it);
-  ligarImagensDaQuestao();
+  /* Uma questão com dado estranho (par sem correspondência, lacuna que não
+     bate com o texto...) pode fazer o desenho inteiro estourar um erro no
+     meio — e sem isto aqui, `#q` fica vazio e preto pro resto da bateria,
+     sem jeito de seguir, só de sair. Isolado num try/catch, essa questão
+     específica vira um "pular" em vez de travar a sessão inteira. */
+  try{
+    desenhar(it);
+    ligarImagensDaQuestao();
+  }catch(e){
+    console.error("Questão travou ao desenhar:", it.id, e);
+    $("#q").innerHTML = cabecalho(it, enunciadoDe(it) || "Exercício")
+      + `<p class="dica">Essa questão tem algo errado no dado dela e não abriu — não é você, é o banco.
+         Toque em avisar erro (ou me mande o id <code>${esc(it.id)}</code>) e pula pra próxima.</p>`;
+    $(".foot").innerHTML = `<button class="btn" id="pula">Pular</button>`;
+    $("#pula").onclick = () => { SES.i++; render(); };
+    return;
+  }
   const bt = $("#btInfo");
   if(bt) bt.onclick = () => {
     const cx = $("#boxFonte");
