@@ -69,6 +69,7 @@ button{font-family:inherit;font-size:inherit;cursor:pointer;border:none;backgrou
 .xbtn{flex:0 0 34px;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);
   background:var(--card);font-size:17px;line-height:1;color:var(--ink-2);font-weight:700;
   display:grid;place-items:center}
+.xbtn[disabled]{opacity:.35;cursor:default}
 .bar{flex:1;display:flex;gap:3px;height:14px}
 .bar > i{flex:1;background:var(--line);border-radius:3px;transition:background .25s}
 .bar > i:first-child{border-radius:99px 3px 3px 99px}
@@ -503,6 +504,9 @@ textarea.resposta.alta{width:100%;min-height:130px;resize:vertical;font-family:i
 .esc.on{border-color:var(--brand);background:var(--brand-soft);box-shadow:0 2px 0 var(--brand)}
 .esc.on .ck{background:var(--brand);border-color:var(--brand)}
 .esc.off{opacity:.5;pointer-events:none}
+.escVazia{opacity:.55}
+.escVazia .ic{filter:grayscale(1)}
+.saldoTopo{font-weight:800;font-size:14px}
 .provas{margin:-4px 0 12px 55px;display:flex;flex-direction:column;gap:7px}
 .provas button{text-align:left;background:var(--card);border:2px solid var(--line);border-radius:12px;
   padding:9px 12px;font-size:13.5px;font-weight:700;box-shadow:0 2px 0 var(--line)}
@@ -742,7 +746,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026on-v07";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026on-v13";</script>
 <script>window.VERSAO_BANCO = "684a01b441d4";</script>
 
 <script>
@@ -1207,10 +1211,12 @@ function ofertarBoasVindasSePreciso(){
   ganharMoedas(50);
   S.gelos = Math.min(MAX_GELOS, (S.gelos || 0) + 1);
   salvar(); publicarPlacar();
-  caixaAviso("🎉 Bem-vinda ao Fixa aí!",
+  const vindo = S.genero === "m" ? "Bem-vindo" : S.genero === "f" ? "Bem-vinda" : "Seja bem-vindo(a)";
+  const tranquilo = S.genero === "m" ? "tranquilo" : "tranquila";
+  caixaAviso(`🎉 ${vindo} ao Fixa aí!`,
     `Ganhou de presente <b>50 moedas</b> e <b>1 congelamento de ofensiva</b> pra começar.
      <br><br>Moedas servem pra comprar acesso a provas antigas e às correções das discursivas
-     pela IA — cada prova custa ${PRECO_PROVA}. Mas fica tranquila: você ganha muito mais
+     pela IA. Mas fica ${tranquilo}: você ganha muito mais
      estudando de verdade — terminando baterias de questões, pontuando no ranking, e ficando
      em primeiro lugar na liga toda semana.`);
 }
@@ -2155,12 +2161,33 @@ function caixaConfirma(titulo, texto, rotulo, aoConfirmar, perigo){
 /* Começar a estudar é uma coisa que a pessoa tem que decidir, não descobrir. A
    primeira versão disparava a bateria no toque, e a Isabela levou um susto:
    tocou para ver o assunto e caiu dentro do exercício. */
+function licoesDoTopico(topId){
+  return (CURSO.licoes || []).filter(l => (l.topicos || []).includes(topId));
+}
+/* Diz se o foco atual da aba Exercícios toca algum assunto que tem lição —
+   pra mostrar a chamada acima do botão Começar. Só quando o foco é
+   específico o bastante pra fazer sentido (uma disciplina escolhida); no
+   "mix de tudo" a chamada seria vaga demais pra ser útil. */
+function licaoRelevanteAoFoco(){
+  const f = S.foco;
+  if(!f || !f.disc || !(CURSO.licoes || []).length) return null;
+  const tops = (f.tops && f.tops.length)
+    ? f.tops
+    : CURSO.topicos.filter(t => t.disc === f.disc
+        && (!f.prova || itensDaProva(f.disc, f.prova).some(i => i.top === t.id))).map(t => t.id);
+  for(const topId of tops){
+    const achadas = licoesDoTopico(topId);
+    if(achadas.length) return achadas[0];
+  }
+  return null;
+}
 function perguntarAssunto(discId, topId){
   const t = CURSO.topicos.find(x => x.id === topId);
   const lista = CURSO.itens.filter(i => i.top === topId);
   const pc = progresso(lista);
   const um = lista[0];
   const fr = focoValeRanking({ tops:[topId], tipos:[] });
+  const licoes = licoesDoTopico(topId);
   abrirCaixa(`
     <h3>${esc(t ? t.nome : "Este assunto")}</h3>
     <p class="cxSub">${esc((discPorId[discId] || {}).nome || "")}</p>
@@ -2169,8 +2196,12 @@ function perguntarAssunto(discId, topId){
       ${pc}% dominado · a bateria traz ${SESSAO}.</p>
     ${fr.vale ? "" : `<p class="muted" style="margin:10px 0 0">Assunto sozinho <b>não conta para o
       ranking</b> — é recorte estreito demais para comparar com as outras pessoas. O seu XP total
-      sobe normalmente, e a espera do ranking não começa a correr.</p>`}`,
+      sobe normalmente, e a espera do ranking não começa a correr.</p>`}
+    ${licoes.length ? `<p class="muted" style="margin:14px 0 0">Não sabe por onde começar? Tem uma
+      lição explicando o assunto antes — não é obrigatório, é só pra quem quiser.</p>` : ""}`,
     `<button class="btn" id="vai">Começar</button>
+     ${licoes.length ? `<div style="height:8px"></div>
+     <button class="btn ghost" id="verLicao">Ver lição primeiro</button>` : ""}
      <div style="height:8px"></div>
      <button class="btn ghost" id="volta">Agora não</button>`);
   document.getElementById("vai").onclick = () => {
@@ -2179,7 +2210,133 @@ function perguntarAssunto(discId, topId){
                soRevisao:false, soErros:false };
     salvar(); iniciarSessao();
   };
+  if(licoes.length) document.getElementById("verLicao").onclick = () => {
+    fecharCaixa();
+    telaLicao(licoes[0].id, { discId, topId });
+  };
   document.getElementById("volta").onclick = fecharCaixa;
+}
+
+/* ============================================================
+   MODO LIÇÃO
+
+   Um jeito de ensinar o assunto antes do exercício, pra quem quer — nunca
+   obrigatório. "Vai ter vez que vamos fazer exercícios depois da aula e não
+   precisamos da lição" (Isabela, 2026-08-25). Por isso ela é um botão à
+   parte no diálogo do assunto, nunca um portão na frente da bateria.
+
+   Sem XP, sem moeda, sem streak: as perguntas de checagem são só formativas,
+   erra e acerta na hora, sem gravar nada em S. É o mesmo espírito das provas
+   antigas — o dia até pode contar como estudado (`marcarDiaEstudado`, se
+   existir), mas não mexe no placar.
+   ============================================================ */
+function telaLicao(licId, origem){
+  const lic = (CURSO.licoes || []).find(l => l.id === licId);
+  if(!lic) return telaInicio();
+  let passo = 0;
+  let maisAlto = 0;          // até onde ela já avançou de verdade (confirmando)
+
+  function sair(){
+    if(origem && origem.discId && origem.topId) perguntarAssunto(origem.discId, origem.topId);
+    else telaEstudar();
+  }
+
+  /* Só o botão grande de baixo (Continuar/Verificar/Concluir) avança pra um
+     passo novo — e é isso que empurra `maisAlto`. As setinhas do topo só
+     movem o `passo` dentro do que já foi visto; nunca pulam à frente. */
+  function avancar(novoPasso){
+    passo = novoPasso;
+    if(passo > maisAlto) maisAlto = passo;
+    render();
+  }
+
+  function render(){
+    const p = lic.passos[passo];
+    const pct = Math.round((passo / lic.passos.length) * 100);
+    const barra = `<div style="height:6px;background:var(--line);border-radius:99px;margin-bottom:18px">
+      <div style="height:100%;width:${pct}%;background:var(--brand);border-radius:99px"></div></div>`;
+
+    let corpo;
+    if(p.tipo === "explica"){
+      corpo = `${barra}
+        <div class="qtag">Lição · ${esc(lic.nome)}</div>
+        <div class="qtitle" style="margin-top:8px">${esc(p.titulo)}</div>
+        <div style="font-size:15px;line-height:1.6">${p.corpo}</div>`;
+    } else {
+      const ordem = embaralhar(p.opcoes.map((o,i) => ({o,i})));
+      corpo = `${barra}
+        <div class="qtag">Lição · checagem rápida</div>
+        <div class="qtitle" style="margin-top:8px">${esc(p.pergunta)}</div>
+        ${p.formato === "multi" ? `<p class="dica">Pode haver mais de uma certa — marque todas.</p>` : ""}
+        <div id="licOpcoes">${ordem.map((x,n) => `<div class="optrow">
+          <button class="opt" data-li="${x.i}"><span class="k">${"ABCDE"[n]}</span><span>${esc(x.o)}</span></button>
+        </div>`).join("")}</div>
+        <div id="licFeedback" style="margin-top:8px;font-size:14px;line-height:1.5"></div>`;
+    }
+
+    const ultimo = passo === lic.passos.length - 1;
+    const rodapeBtn = p.tipo === "explica"
+      ? `<button class="btn" id="licAvanca">${ultimo ? "Concluir" : "Continuar"}</button>`
+      : `<button class="btn" id="licVerificar" disabled>Verificar</button>`;
+
+    montarTela(corpo, { topo: `<div class="topbar">
+        <button class="xbtn" id="licVoltar" aria-label="Passo anterior" ${passo===0?"disabled":""}>‹</button>
+        <button class="xbtn" id="licProximo" aria-label="Próximo passo" ${passo>=maisAlto?"disabled":""}>›</button>
+        <div style="flex:1"></div>
+        <button class="xbtn" id="licSair" aria-label="Sair da lição">✕</button>
+      </div>`,
+      rodape: rodapeBtn, comNav:false });
+    document.getElementById("licSair").onclick = sair;
+    const bVoltar = document.getElementById("licVoltar");
+    if(!bVoltar.disabled) bVoltar.onclick = () => { passo--; render(); };
+    const bProximo = document.getElementById("licProximo");
+    if(!bProximo.disabled) bProximo.onclick = () => { passo++; render(); };
+
+    if(p.tipo === "explica"){
+      document.getElementById("licAvanca").onclick = () => {
+        if(ultimo){ sair(); return; }
+        avancar(passo + 1);
+      };
+      return;
+    }
+
+    // passo "check"
+    const sel = p.formato === "multi" ? new Set() : { v: null };
+    let respondido = false;
+    document.querySelectorAll("#licOpcoes [data-li]").forEach(b => b.onclick = () => {
+      if(respondido) return;
+      const i = +b.dataset.li;
+      if(p.formato === "multi"){
+        if(sel.has(i)){ sel.delete(i); b.classList.remove("sel"); }
+        else { sel.add(i); b.classList.add("sel"); }
+        document.getElementById("licVerificar").disabled = sel.size === 0;
+      } else {
+        document.querySelectorAll("#licOpcoes [data-li]").forEach(x => x.classList.remove("sel"));
+        b.classList.add("sel"); sel.v = i;
+        document.getElementById("licVerificar").disabled = false;
+      }
+    });
+    document.getElementById("licVerificar").onclick = () => {
+      if(respondido) return;
+      respondido = true;
+      const gab = p.formato === "multi" ? new Set(p.corretas) : new Set([p.correta]);
+      const marcado = p.formato === "multi" ? sel : new Set([sel.v]);
+      document.querySelectorAll("#licOpcoes [data-li]").forEach(b => {
+        const i = +b.dataset.li;
+        b.classList.remove("sel");
+        if(gab.has(i)) b.classList.add("ok");
+        else if(marcado.has(i)) b.classList.add("no");
+      });
+      const acertou = marcado.size === gab.size && [...marcado].every(i => gab.has(i));
+      document.getElementById("licFeedback").innerHTML =
+        `<b>${acertou ? "Isso aí ✓" : "Quase"}</b><br>${esc(p.exp)}`;
+      const btV = document.getElementById("licVerificar");
+      btV.textContent = ultimo ? "Concluir" : "Continuar";
+      btV.disabled = false;
+      btV.onclick = () => { if(ultimo){ sair(); return; } avancar(passo + 1); };
+    };
+  }
+  render();
 }
 
 /* ============================================================
@@ -2779,15 +2936,230 @@ function redesenhaEstudar(){          // mantém a rolagem onde estava ao marcar
   const y = el ? el.scrollTop : 0;
   telaEstudar(y);
 }
+/* A aba Estudar virou três modos — exercícios, lições, provas — em vez de um
+   link escondido ("Fazer uma prova antiga") dentro de exercícios. Pedido da
+   Isabela quando o app já tinha lições E provas antigas ao mesmo tempo: "vai
+   ficar muita coisa", e cada modo merece a mesma estrutura de navegação
+   (todas as disciplinas do ano, coloridas as que têm conteúdo, cinza as que
+   não têm — mas cinza ainda toca, e explica por quê). */
+let subAbaEstudar = "exercicios";      // "exercicios" | "licoes" | "provas"
+let discAbertaLicoes = null;
+let discAbertaProvasSub = null;
+
+function switcherEstudarHTML(){
+  const itens = [["exercicios","Exercícios"], ["licoes","Lições"], ["provas","Provas"]];
+  return `<div class="tipos" style="margin-bottom:18px">${itens.map(([id,nome]) =>
+    `<button class="tipo ${subAbaEstudar===id?"on":""}" data-subaba="${id}">${esc(nome)}</button>`).join("")}</div>`;
+}
+/* Barra fixa no topo com o saldo de moedas — fica visível rolando a página,
+   porque fica FORA da área que rola (é o "topo" do montarTela, não o "corpo").
+   Só aparece pra quem não é dona do grupo (a dona não gasta moeda com nada). */
+function topoSaldoHTML(){
+  if(souDonoDoGrupo()) return "";
+  return `<div class="topbar" style="justify-content:flex-end;padding-bottom:0">
+    <span class="saldoTopo">🪙 ${saldoMoedas()}</span>
+  </div>`;
+}
+function ligarSwitcherEstudar(){
+  document.querySelectorAll("[data-subaba]").forEach(b => b.onclick = () => {
+    if(subAbaEstudar === b.dataset.subaba) return;
+    subAbaEstudar = b.dataset.subaba;
+    telaEstudar();
+  });
+}
 function telaEstudar(rolagemAnterior){
   virarODia(); aba = "estudar";
+  if(subAbaEstudar === "licoes") return telaEstudarLicoes(rolagemAnterior);
+  if(subAbaEstudar === "provas") return telaEstudarProvas(rolagemAnterior);
+  return telaEstudarExercicios(rolagemAnterior);
+}
+
+/* ---------- Lições ---------- */
+function telaEstudarLicoes(rolagemAnterior){
+  const porDisc = {};
+  (CURSO.licoes || []).forEach(l => { (porDisc[l.disc] = porDisc[l.disc] || []).push(l); });
+  /* Mesma hierarquia disciplina → prova (P3, P1 Prática...) das outras duas
+     abas — nome vindo de d.provas, nunca inventado aqui. */
+  const nomeGrupoProva = (discId, provaId) => {
+    const d = discPorId[discId];
+    const p = d && (d.provas || []).find(x => x.id === provaId);
+    return p ? p.nome : String(provaId || "").toUpperCase();
+  };
+  const corpo = `
+  <div class="hero"><h1>O que vamos estudar?</h1></div>
+  <p class="muted" style="margin:0 0 16px">Lições explicam o assunto antes do exercício — nunca
+    obrigatórias, sem XP e sem moeda, só pra quando você quiser uma base antes de testar.</p>
+  ${switcherEstudarHTML()}
+  <div class="secao">Por disciplina</div>
+  ${CURSO.disciplinas.map(d => {
+    const licoesDaDisc = porDisc[d.id] || [];
+    const tem = licoesDaDisc.length > 0;
+    const aberta = discAbertaLicoes === d.id;
+    const porGrupo = {};
+    licoesDaDisc.forEach(l => { const g = l.prova || "outras"; (porGrupo[g] = porGrupo[g] || []).push(l); });
+    return `
+    <button class="esc ${aberta?"on":""} ${tem?"":"escVazia"}" data-lic-disc="${d.id}" data-lic-tem="${tem?1:0}">
+      <span class="ic">${d.emoji}</span>
+      <span class="tx"><b>${esc(d.nome)}</b><span>${tem
+        ? plural(licoesDaDisc.length, "lição pronta", "lições prontas")
+        : "ainda sem lição"}</span></span>
+      <span class="ck">${tem ? (aberta?"⌄":"›") : ""}</span>
+    </button>
+    ${aberta ? `<div class="provas">
+      ${Object.keys(porGrupo).sort().map(g => {
+        const chave = "lic/" + d.id + "/" + g;
+        const abertoGrupo = gruposProvasAbertos.has(chave);
+        const licoesDoGrupo = porGrupo[g];
+        const nomeG = nomeGrupoProva(d.id, g);
+        return `
+        <button data-licgrupo-abre="${esc(chave)}" class="${abertoGrupo?"on":""}">${esc(nomeG)}
+        <span>${plural(licoesDoGrupo.length, "lição", "lições")}</span></button>
+        ${abertoGrupo ? `<div class="assuntos">
+          ${licoesDoGrupo.map(l => `
+            <button class="tp" data-lic-abrir="${esc(l.id)}">
+              <div class="nm">${esc(l.nome)}</div>
+              <div class="pc" style="font-weight:600;opacity:.7">${plural((l.passos||[]).length, "passo", "passos")}</div>
+            </button>`).join("")}
+        </div>` : ""}`;
+      }).join("")}
+    </div>` : ""}`;
+  }).join("")}`;
+  montarTela(corpo, { topo: topoSaldoHTML(), manterRolagem: rolagemAnterior !== undefined });
+  if(rolagemAnterior){ const el = areaRolavel(); if(el){ el.scrollTop = rolagemAnterior; atualizaSombra(); } }
+  ligarSwitcherEstudar();
+  document.querySelectorAll("[data-lic-disc]").forEach(b => b.onclick = () => {
+    const id = b.dataset.licDisc;
+    if(b.dataset.licTem === "0"){
+      const d = discPorId[id];
+      caixaAviso(`${d ? d.emoji + " " : ""}${esc(d ? d.nome : "")}`,
+        "Ainda não tem lição pronta pra essa disciplina.");
+      return;
+    }
+    discAbertaLicoes = (discAbertaLicoes === id) ? null : id;
+    redesenhaEstudar();
+  });
+  document.querySelectorAll("[data-licgrupo-abre]").forEach(b => b.onclick = () => {
+    const chave = b.dataset.licgrupoAbre;
+    if(gruposProvasAbertos.has(chave)) gruposProvasAbertos.delete(chave);
+    else gruposProvasAbertos.add(chave);
+    redesenhaEstudar();
+  });
+  document.querySelectorAll("[data-lic-abrir]").forEach(b => b.onclick = () => {
+    telaLicao(b.dataset.licAbrir);
+  });
+}
+
+/* ---------- Provas ---------- */
+function telaEstudarProvas(rolagemAnterior){
+  const lista = provasDisponiveis();
+  const porDisc = {};
+  lista.forEach(pv => { (porDisc[pv.disc] = porDisc[pv.disc] || []).push(pv); });
+  /* O nome do grupo (P3, P1 Prática...) vem do mesmo cadastro que a aba
+     Exercícios usa (d.provas) — nunca um texto genérico "Provas" — pra bater
+     com a mesma hierarquia disciplina → prova que a pessoa já reconhece lá. */
+  const nomeGrupoProva = (discId, provaId) => {
+    const d = discPorId[discId];
+    const p = d && (d.provas || []).find(x => x.id === provaId);
+    return p ? p.nome : String(provaId || "").toUpperCase();
+  };
+  const corpo = `
+  <div class="hero"><h1>O que vamos estudar?</h1></div>
+  <p class="muted" style="margin:0 0 16px">Provas que já caíram, do jeito que a professora cobrou.
+    Serve pra saber como você iria hoje — por isso <b>não conta pra ranking</b>: sem XP, sem mexer
+    nas suas revisões.</p>
+  ${switcherEstudarHTML()}
+  <div class="secao">Por disciplina</div>
+  ${CURSO.disciplinas.map(d => {
+    const provasDaDisc = porDisc[d.id] || [];
+    const tem = provasDaDisc.length > 0;
+    const aberta = discAbertaProvasSub === d.id;
+    const porGrupo = {};
+    provasDaDisc.forEach(pv => { const g = pv.prova || "outras"; (porGrupo[g] = porGrupo[g] || []).push(pv); });
+    return `
+    <button class="esc ${aberta?"on":""} ${tem?"":"escVazia"}" data-pv-disc="${d.id}" data-pv-tem="${tem?1:0}">
+      <span class="ic">${d.emoji}</span>
+      <span class="tx"><b>${esc(d.nome)}</b><span>${tem
+        ? plural(provasDaDisc.length, "prova cadastrada", "provas cadastradas")
+        : "ainda sem prova"}</span></span>
+      <span class="ck">${tem ? (aberta?"⌄":"›") : ""}</span>
+    </button>
+    ${aberta ? `<div class="provas">
+      ${Object.keys(porGrupo).sort().map(g => {
+        const chave = d.id + "/" + g;
+        const abertoGrupo = gruposProvasAbertos.has(chave);
+        const provasDoGrupo = porGrupo[g];
+        const nomeG = nomeGrupoProva(d.id, g);
+        return `
+        <button data-grupo-abre="${esc(chave)}" class="${abertoGrupo?"on":""}">${esc(nomeG)}
+        <span>${plural(provasDoGrupo.length, "prova", "provas")}</span></button>
+        ${abertoGrupo ? `<div class="assuntos">
+          ${provasDoGrupo.map(pv => {
+            const feito = feitoDaProva(pv.id);
+            const n = feito ? notaDaProva(pv, feito) : null;
+            const respondidas = feito ? Object.keys(feito.respostas || {}).length : 0;
+            const total = questoesDaVez(pv, feito).length;
+            const trancada = !jaTemAcesso(pv);
+            return `<button class="esc" data-prova-abrir="${esc(pv.id)}">
+              <span class="ic" style="${trancada ? "filter:grayscale(1);opacity:.45" : ""}">${esc(d.emoji)}</span>
+              <span class="tx"><b>${esc(pv.nome)}</b><span>${esc(pv.sub || "")}${pv.sub ? " · " : ""}${
+                plural(total, "questão", "questões")}
+                · ${valorDaProva(pv, feito)} pontos${pv.minutos ? " · " + pv.minutos + " min" : ""}${
+                !trancada && feito && feito.terminada ? ` · <b>você tirou ${n.tirou} de ${n.total}</b>`
+                : !trancada && respondidas ? ` · começada (${respondidas}/${total})` : ""}</span></span>
+              ${trancada
+                ? `<span style="text-align:center;line-height:1.25">
+                     <span style="display:block;font-weight:800;white-space:nowrap;font-size:12px">🪙 ${PRECO_PROVA}</span>
+                     <span style="display:block;font-size:10.5px;font-weight:800;color:var(--brand)">LIBERAR</span>
+                   </span>`
+                : `<span class="ck">›</span>`}
+            </button>`;
+          }).join("")}
+        </div>` : ""}`;
+      }).join("")}
+    </div>` : ""}`;
+  }).join("")}`;
+  montarTela(corpo, { topo: topoSaldoHTML(), manterRolagem: rolagemAnterior !== undefined });
+  if(rolagemAnterior){ const el = areaRolavel(); if(el){ el.scrollTop = rolagemAnterior; atualizaSombra(); } }
+  ligarSwitcherEstudar();
+  document.querySelectorAll("[data-pv-disc]").forEach(b => b.onclick = () => {
+    const id = b.dataset.pvDisc;
+    if(b.dataset.pvTem === "0"){
+      const d = discPorId[id];
+      caixaAviso(`${d ? d.emoji + " " : ""}${esc(d ? d.nome : "")}`,
+        "Ainda não tem prova cadastrada pra essa disciplina.");
+      return;
+    }
+    discAbertaProvasSub = (discAbertaProvasSub === id) ? null : id;
+    redesenhaEstudar();
+  });
+  document.querySelectorAll("[data-grupo-abre]").forEach(b => b.onclick = () => {
+    const chave = b.dataset.grupoAbre;
+    if(gruposProvasAbertos.has(chave)) gruposProvasAbertos.delete(chave);
+    else gruposProvasAbertos.add(chave);
+    redesenhaEstudar();
+  });
+  document.querySelectorAll("[data-prova-abrir]").forEach(b => b.onclick = () => {
+    const pv = provaPorId(b.dataset.provaAbrir);
+    if(!pv) return;
+    if(!jaTemAcesso(pv)) return telaPreviaProva(pv);
+    const feito = feitoDaProva(pv.id);
+    if(feito && feito.terminada) return telaProvaFim(pv);
+    comecarProva(pv);
+  });
+}
+
+/* ---------- Exercícios (o que já existia) ---------- */
+function telaEstudarExercicios(rolagemAnterior){
   const f = S.foco;
   const nVencTotal = vencidos().length;
   const mixOn = !f.disc && !f.soRevisao;
 
+  const licLigada = licaoRelevanteAoFoco();
+
   const corpo = `
   <div class="hero"><h1>O que vamos estudar?</h1></div>
   <p class="muted" style="margin:0 0 16px">Escolha um foco — ele fica valendo até você trocar.</p>
+  ${switcherEstudarHTML()}
 
   <div class="secao">Modos rápidos</div>
   <button class="esc ${mixOn?"on":""}" data-modo="mix">
@@ -2816,23 +3188,13 @@ function telaEstudar(rolagemAnterior){
     <span class="ck">${f.soMarcadas?"✓":""}</span>
   </button>
 
-  ${(CURSO.provas || []).length ? `
-  <div class="secao">Provas anteriores</div>
-  <button class="esc" id="irProvas">
-    <span class="ic">📄</span>
-    <span class="tx"><b>Fazer uma prova antiga</b><span>${
-      plural((CURSO.provas || []).length, "prova já aplicada", "provas já aplicadas")
-      } · não conta para o ranking</span></span>
-    <span class="ck">›</span>
-  </button>` : ""}
-
   <div class="secao">Por disciplina</div>
   ${CURSO.disciplinas.map(d => {
     const pronta = d.provas.length > 0;
     const its = itensDaProva(d.id);
     const escolhida = f.disc === d.id && !f.soRevisao;
     return `
-    <button class="esc ${escolhida?"on":""} ${pronta?"":"off"}" data-disc="${d.id}">
+    <button class="esc ${escolhida?"on":""} ${pronta?"":"escVazia"}" data-disc="${d.id}" data-disc-tem="${pronta?1:0}">
       <span class="ic">${d.emoji}</span>
       <span class="tx"><b>${esc(d.nome)}</b><span>${pronta
         ? plural(its.length,"exercício","exercícios") + " · " + acertadas(its) + "% acertadas"
@@ -2875,7 +3237,14 @@ function telaEstudar(rolagemAnterior){
   const pool = itensDoFoco();
   const disponivel = f.soErros ? errados(pool).length
                    : f.soRevisao ? vencidos(pool).length : pool.length;
-  montarTela(corpo, { rodape:
+  const avisoLicao = licLigada ? `<button class="esc" id="irLicaoDoFoco" style="margin-bottom:10px">
+      <span class="ic">📘</span>
+      <span class="tx"><b>Tem uma lição pra isso</b><span>Aprenda antes de testar seus
+        conhecimentos — ${esc(licLigada.nome)}</span></span>
+      <span style="font-weight:800;color:var(--brand);font-size:13px;white-space:nowrap">Ver lição ›</span>
+    </button>` : "";
+  montarTela(corpo, { topo: topoSaldoHTML(), rodape:
+    avisoLicao +
     `<button class="btn" id="ir" ${disponivel?"":"disabled"}>${disponivel ? "Começar" : "Nada para estudar aqui"}
      <small>${esc(nomeDoFoco())} · ${esc(resumoTipos())} · ${disponivel} disponíveis</small></button>` });
 
@@ -2884,7 +3253,8 @@ function telaEstudar(rolagemAnterior){
     if(el){ el.scrollTop = rolagemAnterior; atualizaSombra(); }
   }
 
-  const bp = $("#irProvas"); if(bp) bp.onclick = telaProvas;
+  ligarSwitcherEstudar();
+  if($("#irLicaoDoFoco")) $("#irLicaoDoFoco").onclick = () => telaLicao(licLigada.id);
   document.querySelectorAll("[data-modo]").forEach(b => b.onclick = () => {
     const m = b.dataset.modo;
     if(m === "mix"){ S.foco.disc = null; S.foco.prova = null; S.foco.tops = [];
@@ -2896,6 +3266,12 @@ function telaEstudar(rolagemAnterior){
   });
   document.querySelectorAll("[data-disc]").forEach(b => b.onclick = () => {
     const id = b.dataset.disc;
+    if(b.dataset.discTem === "0"){
+      const d = discPorId[id];
+      caixaAviso(`${d ? d.emoji + " " : ""}${esc(d ? d.nome : "")}`,
+        esc((d && d.embreve) || "Ainda não tem exercício pronto pra essa disciplina."));
+      return;
+    }
     S.foco.soRevisao = false; S.foco.soErros = false; S.foco.tops = [];
     if(S.foco.disc === id){ S.foco.disc = null; S.foco.prova = null; }
     else { S.foco.disc = id; S.foco.prova = null; }
@@ -5048,90 +5424,13 @@ function telaPreviaProva(pv){
   });
 }
 
+/* A listagem de provas virou a aba "Provas" da tela Estudar
+   (telaEstudarProvas, mesma estrutura de exercícios/lições). Quem ainda
+   chama telaProvas() — voltar de uma prévia, voltar do resultado de uma
+   prova — cai direto lá. */
 function telaProvas(){
-  aba = "estudar";
-  const lista = provasDisponiveis();
-  /* Três níveis: disciplina → grupo (P3, P4...) → prova específica.
-     Sem o grupo no meio, Farmacologia mostrava duas provas com o nome
-     "Farmacologia P3" repetido, e a diferença entre elas só aparecia num
-     texto pequeno embaixo — fácil de confundir qual é qual. */
-  const porDisc = {};
-  lista.forEach(pv => { (porDisc[pv.disc] = porDisc[pv.disc] || []).push(pv); });
-  const discsComProva = Object.keys(porDisc)
-    .map(id => discPorId[id])
-    .filter(Boolean)
-    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
-
-  const corpo = `
-  <div class="hero"><h1>Provas anteriores</h1></div>
-  <p class="muted" style="margin:0 0 16px">As provas que já caíram, do jeito que a professora
-    cobrou. Serve para saber como você iria hoje — por isso <b>não conta para o ranking</b>:
-    sem XP, sem mexer nas suas revisões.</p>
-  ${!souDonoDoGrupo() ? `<div class="cardz" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;margin-bottom:14px">
-    <span>🪙 <b>${saldoMoedas()}</b> moedas</span>
-    <span class="muted" style="font-size:12.5px">cada prova custa ${PRECO_PROVA}</span>
-  </div>` : ""}
-  ${!lista.length ? `<div class="cardz"><b>Ainda não tem prova cadastrada.</b>
-    <p class="muted" style="margin:6px 0 0">Quem organiza o grupo publica as provas junto com o
-    banco de questões.</p></div>` : discsComProva.map(d => {
-      const porGrupo = {};
-      porDisc[d.id].forEach(pv => {
-        const g = pv.grupo || "Provas";
-        (porGrupo[g] = porGrupo[g] || []).push(pv);
-      });
-      return `
-      <div class="secao">${esc(d.emoji)} ${esc(d.nome)}</div>
-      <div class="cardz" style="padding:6px 14px;margin-bottom:14px">
-        ${Object.keys(porGrupo).sort().map(g => {
-          const chave = d.id + "/" + g;
-          const aberto = gruposProvasAbertos.has(chave);
-          const provasDoGrupo = porGrupo[g];
-          return `
-          <button class="dhead ${aberto ? "on" : ""}" data-grupo-abre="${esc(chave)}">
-            <span class="ic">📄</span>
-            <span class="tx"><b>${esc(g)}</b><span>${plural(provasDoGrupo.length, "prova", "provas")}</span></span>
-            <span class="dseta">${aberto ? "⌄" : "›"}</span>
-          </button>
-          ${aberto ? provasDoGrupo.map(pv => {
-            const feito = feitoDaProva(pv.id);
-            const n = feito ? notaDaProva(pv, feito) : null;
-            const respondidas = feito ? Object.keys(feito.respostas || {}).length : 0;
-            const total = questoesDaVez(pv, feito).length;
-            const trancada = !jaTemAcesso(pv);
-            return `<button class="esc" style="padding-left:12px" data-prova-abrir="${esc(pv.id)}">
-              <span class="ic" style="${trancada ? "filter:grayscale(1);opacity:.45" : ""}">${esc(d.emoji)}</span>
-              <span class="tx"><b>${esc(pv.nome)}</b><span>${esc(pv.sub || "")}${pv.sub ? " · " : ""}${
-                plural(total, "questão", "questões")}
-                · ${valorDaProva(pv, feito)} pontos${pv.minutos ? " · " + pv.minutos + " min" : ""}${
-                !trancada && feito && feito.terminada ? ` · <b>você tirou ${n.tirou} de ${n.total}</b>`
-                : !trancada && respondidas ? ` · começada (${respondidas}/${total})` : ""}</span></span>
-              ${trancada
-                ? `<span style="text-align:center;line-height:1.25">
-                     <span style="display:block;font-weight:800;white-space:nowrap">${PRECO_PROVA} 🪙</span>
-                     <span style="display:block;font-size:10.5px;font-weight:800;color:var(--brand)">LIBERAR</span>
-                   </span>`
-                : `<span class="ck">›</span>`}
-            </button>`;
-          }).join("") : ""}`;
-        }).join("")}
-      </div>`;
-    }).join("")}`;
-  montarTela(corpo, { rodape: `<button class="btn ghost" id="voltarEstudar">Voltar</button>` });
-  $("#voltarEstudar").onclick = () => telaEstudar();
-  document.querySelectorAll("[data-grupo-abre]").forEach(b => b.onclick = () => {
-    const chave = b.dataset.grupoAbre;
-    if(gruposProvasAbertos.has(chave)) gruposProvasAbertos.delete(chave);
-    else gruposProvasAbertos.add(chave);
-    telaProvas();
-  });
-  document.querySelectorAll("[data-prova-abrir]").forEach(b => b.onclick = () => {
-    const pv = provaPorId(b.dataset.provaAbrir);
-    if(!pv) return;
-    if(!jaTemAcesso(pv)) return telaPreviaProva(pv);
-    const feito = feitoDaProva(pv.id);
-    if(feito && feito.terminada) return telaProvaFim(pv);
-    comecarProva(pv);
-  });
+  subAbaEstudar = "provas";
+  telaEstudar();
 }
 
 /* ---------- folha de resultado ---------- */
@@ -5514,7 +5813,7 @@ function acharListaAninhada(v, caminho){
 async function lerBancoDoGrupo(g){
   const q = await N.api.getDocs(cole("grupos", g, "banco"));
   if(q.empty) return null;
-  const curso = { disciplinas:[], topicos:[], itens:[], provas:[] };
+  const curso = { disciplinas:[], topicos:[], itens:[], provas:[], licoes:[] };
   const vistos = new Set();
   q.forEach(d => {
     const b = d.data();
@@ -5529,6 +5828,14 @@ async function lerBancoDoGrupo(g){
       if(vistos.has("pv"+pv.id)) return;
       vistos.add("pv"+pv.id);
       curso.provas.push({ ...pv, questoes: (pv.questoes || []).map(daNuvem) });
+    });
+    /* Lições moram num documento próprio (__licoes), igual às provas antigas:
+       não são sorteadas em bateria, não dão XP nem moeda — são um modo à
+       parte, opcional, que a pessoa abre antes de um assunto se quiser. */
+    (b.licoes || []).forEach(l => {
+      if(vistos.has("lc"+l.id)) return;
+      vistos.add("lc"+l.id);
+      curso.licoes.push(l);
     });
   });
   return curso;
@@ -6646,10 +6953,15 @@ async function telaAdmin(aviso){
     });
     const provasAntigas = (curso.provas || []).map(pv =>
       ({ ...pv, questoes: (pv.questoes || []).map(paraNuvem) }));
+    const licoes = curso.licoes || [];
     // confere antes de mandar: erro do Firestore aqui não diz qual questão é
     for(const k of Object.keys(porProva)){
       const ruim = acharListaAninhada(porProva[k], k);
       if(ruim) return telaAdmin("Uma questão tem lista dentro de lista, que o Firestore não aceita: " + ruim);
+    }
+    if(licoes.length){
+      const ruimLic = acharListaAninhada(licoes, "licoes");
+      if(ruimLic) return telaAdmin("Uma lição tem lista dentro de lista, que o Firestore não aceita: " + ruimLic);
     }
     /* Publicar substitui o que está no ar. Enquanto existir um grupo só, errar
        aqui é chato; com vários grupos, é publicar a prova de uma turma na turma
@@ -6667,7 +6979,10 @@ async function telaAdmin(aviso){
     const resumoProvas = provasAntigas.length
       ? `<li><b>Provas anteriores</b>: ${provasAntigas.length} (${
           provasAntigas.reduce((n,pv) => n + (pv.questoes||[]).length, 0)} questões)</li>` : "";
-    const resumo = resumoProvas + Object.keys(porProva).sort().map(k => {
+    const resumoLicoes = licoes.length
+      ? `<li><b>Lições</b>: ${licoes.length} (${
+          licoes.reduce((n,l) => n + (l.passos||[]).length, 0)} passos)</li>` : "";
+    const resumo = resumoProvas + resumoLicoes + Object.keys(porProva).sort().map(k => {
       const corte = k.lastIndexOf("_");
       const discId = k.slice(0, corte), provaId = k.slice(corte + 1);
       const antes = (jaPublicado[k] || 0);
@@ -6706,6 +7021,12 @@ async function telaAdmin(aviso){
       if(provasAntigas.length){
         await N.api.setDoc(ref("grupos", dono.id, "banco", "__provas"), {
           provas: provasAntigas, itens: [],
+          atualizadoEm: N.api.serverTimestamp()
+        });
+      }
+      if(licoes.length){
+        await N.api.setDoc(ref("grupos", dono.id, "banco", "__licoes"), {
+          licoes: licoes, itens: [],
           atualizadoEm: N.api.serverTimestamp()
         });
       }
