@@ -742,7 +742,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026on-v03";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026on-v05";</script>
 <script>window.VERSAO_BANCO = "684a01b441d4";</script>
 
 <script>
@@ -1011,6 +1011,13 @@ const padrao = () => ({
      (PRECO_PALETA) que libera a escolha entre as opções de PALETAS. */
   emojisComprados:[],
   paletaComprada:false, paleta:"padrao",
+  /* Timestamp da última vez que apelido/emoji mudaram NESTE aparelho.
+     Resolve o caso de dois aparelhos que já passaram pelo onboarding e
+     divergem depois (ex: comprou um emoji novo no tablet) — sem isso, cada
+     aparelho "protegia" seu próprio valor local contra a nuvem, e a mudança
+     nunca chegava no outro. Quem mudou por último, em qualquer aparelho,
+     ganha — ver `juntarProgresso`. */
+  identidadeEm:0,
   /* desafios expirados sem resposta que já foram avisados — pra não mostrar
      o mesmo aviso toda vez que a pessoa abre a aba do grupo */
   desafiosExpiradosVistos:[]
@@ -1828,6 +1835,7 @@ function telaOnboarding(){
     S.termosAceitos = true;
     S.termosVersao = TERMOS_VERSAO;
     S.onboardingCompleto = true;
+    tocarIdentidade();
     salvar(); agendarSincronia();
     telaInicio();
   };
@@ -2632,6 +2640,9 @@ const TENTATIVAS_POR_COMPRA = 2;
 const PRECO_RECARGA       = 30;  // metade do preço, só recarrega as tentativas
 
 function saldoMoedas(){ return Math.max(0, (S.moedasGanhas || 0) - (S.moedasGastas || 0)); }
+/* Chama sempre que apelido ou emoji mudam, ANTES de salvar(). Ver comentário
+   em `identidadeEm` no padrao() e a lógica de merge em `juntarProgresso`. */
+function tocarIdentidade(){ S.identidadeEm = Date.now(); }
 function souDonoDoGrupo(){ return N.papel === "dono"; }
 function ganharMoedas(qtd){ if(qtd > 0) S.moedasGanhas = (S.moedasGanhas || 0) + qtd; }
 function gastarMoedas(qtd){ S.moedasGastas = (S.moedasGastas || 0) + qtd; }
@@ -3137,7 +3148,7 @@ function telaAjustes(op){
      campo — redesenhar a cada letra tiraria o cursor do lugar. */
   const iApel = $("#apelido");
   if(iApel){
-    iApel.oninput = () => { S.apelido = iApel.value.slice(0, 14); salvar(); };
+    iApel.oninput = () => { S.apelido = iApel.value.slice(0, 14); tocarIdentidade(); salvar(); };
     iApel.onblur  = () => { agendarSincronia(); telaAjustes(); };
     iApel.onkeydown = ev => { if(ev.key === "Enter") iApel.blur(); };
   }
@@ -3146,7 +3157,7 @@ function telaAjustes(op){
     const comprados = new Set(S.emojisComprados || []);
     const desbloqueado = i < EMOJIS_GRATIS || comprados.has(e);
     if(desbloqueado){
-      S.emoji = e; salvar(); agendarSincronia(); telaAjustes();
+      S.emoji = e; tocarIdentidade(); salvar(); agendarSincronia(); telaAjustes();
       return;
     }
     if(saldoMoedas() < PRECO_EMOJI){
@@ -3163,11 +3174,12 @@ function telaAjustes(op){
         gastarMoedas(PRECO_EMOJI);
         S.emojisComprados = [...comprados, e];
         S.emoji = e;
+        tocarIdentidade();
         salvar(); agendarSincronia(); telaAjustes();
       });
   });
   document.querySelectorAll("[data-paleta]").forEach(b => b.onclick = () => {
-    S.paleta = b.dataset.paleta; salvar(); agendarSincronia(); aplicarPaleta(); telaAjustes();
+    S.paleta = b.dataset.paleta; tocarIdentidade(); salvar(); agendarSincronia(); aplicarPaleta(); telaAjustes();
   });
   if($("#comprarPaleta")) $("#comprarPaleta").onclick = () => {
     if(saldoMoedas() < PRECO_PALETA){
@@ -5526,7 +5538,7 @@ const CAMPOS_SINC = ["prog","xp","xpSemana","semana","ofensiva","ultimoDia","dia
                      "desafiosVistos","desafiosGanhos","desafiosExpiradosVistos",
                      "moedasGanhas","moedasGastas","provasCompradas","marcosMoedas","brindeBoasVindas",
                      "onboardingCompleto","genero","termosAceitos","termosVersao",
-                     "emojisComprados","paletaComprada","paleta"];
+                     "emojisComprados","paletaComprada","paleta","identidadeEm"];
 
 function juntarProgresso(local, remoto){
   /* Mesma conta em dois aparelhos: fica o mais adiantado de cada questão,
@@ -5607,7 +5619,7 @@ function juntarProgresso(local, remoto){
   fora.historico = { ...(remoto.historico || {}), ...(local.historico || {}) };
   fora.datas     = { ...(remoto.datas || {}), ...(local.datas || {}) };
   if(remoto.recorde) fora.recorde = Math.min(local.recorde || 1e9, remoto.recorde);
-  /* Apelido, emoji e ajustes de estudo viajam com a conta. A regra é simples:
+  /* Apelido, emoji e paleta de cores viajam com a conta. A regra é simples:
      num aparelho recém-instalado, tudo vem da nuvem — é o tablet novo que tem
      que ficar igual ao celular. Num aparelho já em uso, o que está aqui é o que
      a pessoa acabou de escolher aqui, e não pode ser sobrescrito por um valor
@@ -5686,9 +5698,27 @@ function juntarProgresso(local, remoto){
     }
   }
 
-  ["apelido","emoji"].forEach(k => {
-    fora[k] = (aparelhoNovo || herdouIdentidade) ? (remoto[k] || local[k] || "") : (local[k] || remoto[k] || "");
+  /* Critério final, e o que devia ter existido desde o início: `identidadeEm`
+     é um relógio que anda toda vez que apelido/emoji/paleta mudam em QUALQUER
+     aparelho (ver `tocarIdentidade`). Quem mudou por último ganha, ponto —
+     não importa se o aparelho é "novo" ou "já em uso". Isso resolve o caso
+     que a Isabela pegou depois: comprou um emoji novo no tablet, e o celular
+     (que já tinha feito o próprio onboarding antes) continuava "protegendo"
+     o emoji velho porque nem `aparelhoNovo` nem `herdouIdentidade` se aplicam
+     quando os dois aparelhos já têm identidade própria — só o timestamp
+     resolve esse empate de verdade.
+
+     Aparelhos que ainda não têm `identidadeEm` (contas de antes desta versão)
+     caem no critério antigo como reserva, até o relógio começar a rodar. */
+  const remotoTemRelogio = (remoto.identidadeEm || 0) > 0;
+  const localTemRelogio  = (local.identidadeEm  || 0) > 0;
+  const usarRemoto = (remotoTemRelogio || localTemRelogio)
+    ? (remoto.identidadeEm || 0) > (local.identidadeEm || 0)
+    : (aparelhoNovo || herdouIdentidade);
+  ["apelido","emoji","paleta"].forEach(k => {
+    fora[k] = usarRemoto ? (remoto[k] || local[k] || "") : (local[k] || remoto[k] || "");
   });
+  fora.identidadeEm = Math.max(local.identidadeEm || 0, remoto.identidadeEm || 0);
   fora.meta = SESSAO; fora.segPorQuestao = SEG_POR_QUESTAO; fora.esperaMin = ESPERA_MIN;
   return fora;
 }
