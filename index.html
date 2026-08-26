@@ -762,7 +762,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026on-v21";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026on-v25";</script>
 <script>window.VERSAO_BANCO = "684a01b441d4";</script>
 
 <script>
@@ -3889,7 +3889,14 @@ function render(){
     rodape: barraTempoHTML(), comNav:false });
   $("#sair").onclick = () => caixaConfirma("Sair da bateria?",
     "O que você já respondeu fica salvo — as questões que sobraram voltam na próxima vez.",
-    "Sair", () => { pararRelogio(); aba = "inicio"; telaInicio(); });
+    "Sair", () => {
+      pararRelogio();
+      S.historicoTempo = S.historicoTempo || {};
+      const seg = Math.round((Date.now() - SES.inicio) / 1000);
+      S.historicoTempo[hoje()] = (S.historicoTempo[hoje()] || 0) + seg;
+      salvar();
+      aba = "inicio"; telaInicio();
+    });
   const bv = $("#voltarQ"); if(bv) bv.onclick = () => telaRever(SES.log.length - 1);
   SES.respondido = false;
   if(SES.fim) tocarRelogio();
@@ -4967,6 +4974,15 @@ function telaRever(n){
 function telaFim(){
   pararRelogio();
   if(SES && SES.prova) return telaProvaFim(SES.prova);
+  /* Tempo de estudo, por dia — pensado pra retrospectiva de fim de ano (pedido
+     da Isabela, 2026-08-26): "quantas horas você estudou esse ano" não dá pra
+     reconstruir depois, então guarda aqui, na conclusão normal da bateria, e
+     também no botão de sair no meio (ver `#sair`). Mesmo formato de
+     `S.historico` (chave = dia, valor acumula) — some dentro do MESMO
+     documento que já sincroniza, não é escrita nova no Firestore. */
+  S.historicoTempo = S.historicoTempo || {};
+  const segEstaSessao = Math.round((Date.now() - SES.inicio) / 1000);
+  S.historicoTempo[hoje()] = (S.historicoTempo[hoje()] || 0) + segEstaSessao;
   const pc = SES.total ? Math.round(100 * SES.acertos / SES.total) : 0;
   const bateuMeta = S.feitosHoje >= S.meta;
   const respondidas = SES.vistos.length - SES.estourou;
@@ -5624,7 +5640,14 @@ function telaProvas(){
 function telaProvaFim(pv){
   pararRelogio();
   const feito = feitoDaProva(pv.id) || { respostas:{} };
+  const jaEstavaTerminada = feito.terminada;      // reabrir prova já feita não conta tempo de novo
   feito.terminada = true; salvar();
+  if(!jaEstavaTerminada && SES && SES.inicio){
+    S.historicoTempo = S.historicoTempo || {};
+    const seg = Math.round((Date.now() - SES.inicio) / 1000);
+    S.historicoTempo[hoje()] = (S.historicoTempo[hoje()] || 0) + seg;
+    salvar();
+  }
   const n = notaDaProva(pv, feito);
   /* A nota é sobre o que foi corrigido, não sobre a prova inteira. Com uma
      discursiva esperando correção, dividir pelo total daria uma porcentagem que
