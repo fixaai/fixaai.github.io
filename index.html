@@ -647,6 +647,19 @@ textarea.resposta.alta{width:100%;min-height:130px;resize:vertical;font-family:i
 .vfitem .vfgrid .opt{padding:10px 12px;margin-bottom:0}
 .justBox{margin-top:10px}
 
+.matrizWrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:4px}
+.matrizTabela{border-collapse:collapse;width:100%;font-size:12.5px}
+.matrizTabela th,.matrizTabela td{padding:6px 5px;border:1px solid var(--line);text-align:center;white-space:nowrap}
+.matrizTabela thead th{background:var(--card);font-size:11px}
+.matrizTabela td.rotulo{text-align:left;white-space:normal;min-width:150px;font-size:12px;font-weight:600}
+.mgrupo{display:flex;gap:3px;justify-content:center}
+.mopt{min-width:26px;padding:5px 4px;border-radius:7px;border:2px solid var(--line);background:var(--card);
+  font-weight:800;font-size:11px;cursor:pointer;color:inherit}
+.mopt.sel{border-color:var(--brand);background:var(--brand-soft);color:var(--brand)}
+.mopt.ok{border-color:var(--brand);background:var(--brand-soft);color:var(--brand)}
+.mopt.no{border-color:var(--wrong);background:var(--wrong-soft);color:var(--wrong)}
+.matrizLegenda{font-size:12px;color:var(--muted,#888);margin:0 0 10px}
+
 .cloze{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;font-size:17px;line-height:2.1}
 .blank{display:inline-block;min-width:104px;border-bottom:3px solid var(--ink-2);text-align:center;
   padding:1px 8px;margin:0 2px;font-weight:700;vertical-align:baseline;border-radius:4px 4px 0 0}
@@ -682,6 +695,24 @@ input.blankInput.no{background:var(--wrong-soft);border-bottom-color:var(--wrong
 .simInstrucao{background:var(--brand-soft);border:2px solid var(--brand);border-radius:var(--r);
   padding:14px 16px;margin-bottom:4px;font-weight:700;font-size:15px;line-height:1.4;color:var(--ink)}
 .simProgresso{font-size:12.5px;font-weight:800;color:var(--brand);margin-top:6px}
+/* ---------- lição: diagrama, tabela, ordenar ---------- */
+.diagramaLic{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;margin-bottom:16px}
+.diagramaLic svg{width:100%;height:auto;display:block}
+.tabelaLic{width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:4px}
+.tabelaLic th,.tabelaLic td{border:1px solid var(--line);padding:7px 6px;text-align:center}
+.tabelaLic th{background:var(--bg);color:var(--ink-2);font-weight:800;font-size:11px}
+.tabelaLic td:first-child{text-align:left;font-weight:700}
+.legendaTabela{font-size:11px;color:var(--ink-2);margin:6px 0 16px}
+.seqpool{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.seqchip{background:var(--card);border:2px solid var(--line);border-radius:12px;padding:9px 12px;
+  font-size:13px;font-weight:600;color:var(--ink)}
+.seqchip:disabled{opacity:.3}
+.seqlist{margin-bottom:4px}
+.seqitem{display:flex;gap:8px;align-items:center;background:var(--card);border-radius:10px;
+  padding:8px 10px;margin-bottom:6px;font-size:13.5px}
+.seqitem .n{flex:0 0 auto;width:20px;height:20px;border-radius:50%;background:var(--brand);color:#fff;
+  font-size:11px;font-weight:800;display:grid;place-items:center}
+.seqitem.errado .n{background:var(--wrong)}
 
 .slots{min-height:56px;border:2px dashed var(--line);border-radius:var(--r);padding:8px;margin-bottom:14px;background:var(--card)}
 .slots:empty::after{content:"Toque nas etapas abaixo, na ordem certa";color:var(--ink-2);font-size:13px;
@@ -762,7 +793,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026on-v25";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026on-v30";</script>
 <script>window.VERSAO_BANCO = "684a01b441d4";</script>
 
 <script>
@@ -777,7 +808,8 @@ const CAIXA_MAX  = INTERVALOS.length - 1;
 const NOMES_TIPO  = { vf:"V ou F", mcq:"Assinalar", multi:"Marcar várias", escrita:"Escrever", cloze:"Lacunas", ordem:"Ordenar", relacionar:"Relacionar" };
 const TITULO_TIPO = { vf:"Verdadeiro ou falso", mcq:"Escolha a certa", multi:"Marque TODAS as corretas",
                       escrita:"Escreva a resposta", cloze:"Complete as lacunas", ordem:"Coloque em ordem",
-                      relacionar:"Relacione", discursiva:"Discursiva", vfjust:"Verdadeiro ou falso, com justificativa" };
+                      relacionar:"Relacione", discursiva:"Discursiva", vfjust:"Verdadeiro ou falso, com justificativa",
+                      matriz:"Preencha a tabela" };
 
 /* toda questão pertence a uma disciplina e a uma prova */
 let porId = {}, discPorId = {};
@@ -984,6 +1016,15 @@ const PALETAS = [
   { id:"rosa",   nome:"Rosa", cor:"#d1477f",
     vars:{ "--brand":"#d1477f", "--brand-dark":"#6b4030", "--brand-soft":"#fbe8f0" },
     varsEscuro:{ "--brand-soft":"#d1477f35" } },
+  { id:"azul-claro", nome:"Azul clarinho", cor:"#9FD6F0",
+    vars:{ "--brand":"#9FD6F0", "--brand-dark":"#6FB8E0", "--brand-soft":"#EAF7FC" },
+    varsEscuro:{ "--brand-soft":"#9FD6F035" } },
+  { id:"rosa-claro", nome:"Rosa clarinho", cor:"#E08FC8",
+    vars:{ "--brand":"#E08FC8", "--brand-dark":"#C468A8", "--brand-soft":"#FBEAF5" },
+    varsEscuro:{ "--brand-soft":"#E08FC835" } },
+  { id:"roxo-claro", nome:"Roxo clarinho", cor:"#B18DE0",
+    vars:{ "--brand":"#B18DE0", "--brand-dark":"#8F68C0", "--brand-soft":"#F3EDFB" },
+    varsEscuro:{ "--brand-soft":"#B18DE035" } },
 ];
 
 /* Aplica a paleta escolhida nas variáveis CSS do :root. Chamada no boot e
@@ -1073,6 +1114,17 @@ const gruposProvasAbertos = new Set();   // quais grupos (P3, P4...) estão aber
    app de banco: órgão, bicho, vidraria, estudo. */
 const EMOJIS = ["🧠","🫀","🫁","🦴","🦷","👁️","🩺","💊","💉","🩹","🧫","🦠","🧬","🔬",
                 "🧪","🩸","🌡️","⚕️","📚","✏️","🎓","☕","🌱","⭐"];
+/* Emojis "premium" — fora do tema de saúde, preço próprio (2026-08-26).
+   Não usam EMOJIS_GRATIS nem PRECO_EMOJI; ficam numa lista à parte porque o
+   preço de cada um pode ser diferente do padrão. */
+const EMOJIS_PREMIUM = [
+  { e:"🧸", preco:50 },
+  { e:"🎀", preco:50 }
+];
+function precoDoEmoji(e){
+  const p = EMOJIS_PREMIUM.find(x => x.e === e);
+  return p ? p.preco : PRECO_EMOJI;
+}
 
 function carregar(){
   try{
@@ -1590,6 +1642,36 @@ const CONQUISTAS = [
     desc:"Respondeu quinhentos exercícios.", tem: () => totalRespondidas() >= 500 },
   { id:"mil", emoji:"🏛️", nome:"Mil", dica:"Quantidade também conta.",
     desc:"Respondeu mil exercícios.", tem: () => totalRespondidas() >= 1000 },
+  { id:"cincomil", emoji:"🏟️", nome:"Cinco mil", dica:"Quantidade também conta.",
+    desc:"Respondeu cinco mil exercícios.", tem: () => totalRespondidas() >= 5000 },
+  { id:"xp20k", emoji:"⚡", nome:"20 mil XP", dica:"XP acumula desde o primeiro dia.",
+    desc:"Chegou a 20.000 XP no total.", tem: () => (S.xp || 0) >= 20000 },
+  { id:"xp100k", emoji:"🌟", nome:"100 mil XP", dica:"XP acumula desde o primeiro dia.",
+    desc:"Chegou a 100.000 XP no total.", tem: () => (S.xp || 0) >= 100000 },
+  { id:"sub30", emoji:"🐇", nome:"Meio minuto", dica:"Velocidade só vale sem erro.",
+    desc:"Fechou uma sessão sem errar, em menos de 30 segundos por questão em média.",
+    tem: () => (S.marcos.sub30 || 0) >= 1 },
+  { id:"sub10", emoji:"🚀", nome:"Dez segundos", dica:"Velocidade só vale sem erro.",
+    desc:"Fechou uma sessão sem errar, em menos de 10 segundos por questão em média.",
+    tem: () => (S.marcos.sub10 || 0) >= 1 },
+  { id:"sub30x30", emoji:"🏹", nome:"Sempre rápida", dica:"Uma vez pode ser sorte.",
+    desc:"Fez isso (sem errar, menos de 30s por questão) trinta vezes.",
+    tem: () => (S.marcos.sub30 || 0) >= 30 },
+  { id:"sub30x100", emoji:"🎖️", nome:"Sempre rápida de verdade", dica:"Uma vez pode ser sorte.",
+    desc:"Fez isso (sem errar, menos de 30s por questão) cem vezes.",
+    tem: () => (S.marcos.sub30 || 0) >= 100 },
+  { id:"zerou", emoji:"🧹", nome:"Fila zerada", dica:"Tem dia que a fila de revisão vence rápido.",
+    desc:"Chegou a zero questões vencidas de revisão.",
+    tem: () => !!S.marcos.zerouFila },
+  { id:"cincoprovas", emoji:"📜", nome:"Cinco provas", dica:"Prova antiga também é estudo.",
+    desc:"Terminou cinco provas antigas.",
+    tem: () => Object.keys(S.provasFeitas || {}).length >= 5 },
+  { id:"lic10", emoji:"📖", nome:"Dez lições", dica:"Lição ensina antes de testar.",
+    desc:"Concluiu dez lições.", tem: () => (S.licoesFeitas || []).length >= 10 },
+  { id:"lic50", emoji:"📚", nome:"Cinquenta lições", dica:"Lição ensina antes de testar.",
+    desc:"Concluiu cinquenta lições.", tem: () => (S.licoesFeitas || []).length >= 50 },
+  { id:"lic100", emoji:"🎓", nome:"Cem lições", dica:"Lição ensina antes de testar.",
+    desc:"Concluiu cem lições.", tem: () => (S.licoesFeitas || []).length >= 100 },
   { id:"sete", emoji:"🎭", nome:"Sete jeitos de saber", dica:"Existe mais de um tipo de exercício.",
     desc:"Respondeu ao menos um de cada um dos sete tipos.",
     tem: () => tiposJaFeitos().size >= 7 },
@@ -2218,16 +2300,21 @@ function licoesDoTopico(topId){
 /* Diz se o foco atual da aba Exercícios toca algum assunto que tem lição —
    pra mostrar a chamada acima do botão Começar. Só quando o foco é
    específico o bastante pra fazer sentido (uma disciplina escolhida); no
-   "mix de tudo" a chamada seria vaga demais pra ser útil. */
+   "mix de tudo" a chamada seria vaga demais pra ser útil. Lição já concluída
+   não entra aqui — pedido da Isabela (2026-08-26): "ficam achando que é uma
+   lição nova" depois que ela já fez. O botão "Ver lição" continua disponível
+   no diálogo do assunto (isso não é aviso, é opção), só o aviso automático
+   some. */
 function licaoRelevanteAoFoco(){
   const f = S.foco;
   if(!f || !f.disc || !(CURSO.licoes || []).length) return null;
+  const feitas = new Set(S.licoesFeitas || []);
   const tops = (f.tops && f.tops.length)
     ? f.tops
     : CURSO.topicos.filter(t => t.disc === f.disc
         && (!f.prova || itensDaProva(f.disc, f.prova).some(i => i.top === t.id))).map(t => t.id);
   for(const topId of tops){
-    const achadas = licoesDoTopico(topId);
+    const achadas = licoesDoTopico(topId).filter(l => !feitas.has(l.id));
     if(achadas.length) return achadas[0];
   }
   return null;
@@ -2286,10 +2373,33 @@ function telaLicao(licId, origem){
   if(!lic) return telaInicio();
   let passo = 0;
   let maisAlto = 0;          // até onde ela já avançou de verdade (confirmando)
+  /* Ordem embaralhada de exibição das opções (mcq/multi), calculada uma vez
+     por passo e guardada aqui — pedido explícito (2026-08-26): "embaralhar
+     de verdade, não me obrigar a variar a posição na hora de escrever o
+     JSON". Sem esse cache, ir e voltar pelas setinhas reembaralharia toda
+     vez, o que ficaria estranho (a opção muda de lugar sozinha). */
+  const ordemPorPasso = {};
+  function ordemDoPasso(idx, n){
+    if(!ordemPorPasso[idx]){
+      const arr = Array.from({length:n}, (_,i) => i);
+      for(let i = arr.length - 1; i > 0; i--){
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      ordemPorPasso[idx] = arr;
+    }
+    return ordemPorPasso[idx];
+  }
 
   function sair(){
     if(origem && origem.discId && origem.topId) perguntarAssunto(origem.discId, origem.topId);
     else telaEstudar();
+  }
+  /* Chamada só quando ela chega no fim de verdade (Concluir), não quando sai
+     no meio pelo ✕ — "concluir" é terminar, não desistir. */
+  function marcarConcluida(){
+    S.licoesFeitas = S.licoesFeitas || [];
+    if(!S.licoesFeitas.includes(lic.id)){ S.licoesFeitas.push(lic.id); salvar(); }
   }
 
   /* Só o botão grande de baixo (Continuar/Confirmar/Concluir) avança pra um
@@ -2301,29 +2411,65 @@ function telaLicao(licId, origem){
     render();
   }
 
+  function tabelaHTML(t){
+    const linhas = t.linhas.map((linha, ri) => {
+      const celulas = linha.map((cel, ci) => {
+        if(ri === 0) return `<th>${esc(cel)}</th>`;
+        const classe = (t.classes && t.classes[ri] && t.classes[ri][ci - 1]) ? ` class="${esc(t.classes[ri][ci - 1])}"` : "";
+        return `<td${classe}>${esc(cel)}</td>`;
+      }).join("");
+      return `<tr>${celulas}</tr>`;
+    }).join("");
+    return `<table class="tabelaLic">${linhas}</table>${t.legenda ? `<div class="legendaTabela">${esc(t.legenda)}</div>` : ""}`;
+  }
+
   function render(){
     const p = lic.passos[passo];
     const c = p.simulacao ? null : p.check;   // simulação substitui a checagem — o teste de
                                                  // verdade vem depois, na questão de ordenar
+    const tipo = c ? (c.tipo || c.formato) : null;  // "tipo" é o nome novo (exportação
+                                                      // 2026-08-26); "formato" continua
+                                                      // funcionando pras lições antigas
     const pct = Math.round((passo / lic.passos.length) * 100);
     const barra = `<div style="height:6px;background:var(--line);border-radius:99px;margin-bottom:18px">
       <div style="height:100%;width:${pct}%;background:var(--brand);border-radius:99px"></div></div>`;
 
+    /* Diagrama (SVG original, nunca copiado) e tabela — vêm antes do texto,
+       igual manual de laboratório: primeiro a figura, depois a explicação.
+       `diagramaSvg` é o SVG completo já embutido no passo (formato novo);
+       `diagrama` + `lic.diagramas` (chave → SVG) é o formato antigo, mantido
+       só pra não quebrar lição publicada antes de 2026-08-26. */
+    const diagramaHTML = p.diagramaSvg
+      ? `<div class="diagramaLic">${p.diagramaSvg}</div>`
+      : (p.diagrama ? `<div class="diagramaLic">${(lic.diagramas || {})[p.diagrama] || ""}</div>` : "");
+    const tabelaHTMLBloco = !p.tabela ? "" : tabelaHTML(p.tabela);
+
     /* O check usa chips (toque solto, fica verde) por padrão quando é de
        marcar mais de uma — é o mesmo visual do banco de palavras do cloze,
        mais rápido de escanear que uma lista de alternativa cheia. `mcq`
-       (uma resposta só) continua em lista, a não ser que peça chips. */
-    const usaChips = c && (c.estilo === "chips" || (c.formato === "multi" && c.estilo !== "lista"));
-    const ordem = c ? embaralhar(c.opcoes.map((o,i) => ({o,i}))) : [];
-    const checkHTML = !c ? "" : `
-      <div class="qtitle" style="margin-top:${p.corpo ? "18px" : "8px"};font-size:17px">${esc(c.pergunta)}</div>
-      ${c.formato === "multi" ? `<p class="dica">Pode haver mais de uma certa — toque em todas.</p>` : ""}
-      ${usaChips
-        ? `<div class="bank" id="licOpcoes">${ordem.map(x => `<button class="chip" data-li="${x.i}">${esc(x.o)}</button>`).join("")}</div>`
-        : `<div id="licOpcoes">${ordem.map((x,n) => `<div class="optrow">
-             <button class="opt" data-li="${x.i}"><span class="k">${"ABCDE"[n]}</span><span>${esc(x.o)}</span></button>
-           </div>`).join("")}</div>`}
-      <div id="licFeedback" style="margin-top:10px;font-size:14px;line-height:1.5"></div>`;
+       (uma resposta só) continua em lista, a não ser que peça chips.
+       `ordem` é um terceiro formato: monta uma sequência tocando um pool
+       embaralhado, igual ao tipo `ordem` do banco de exercícios normal. */
+    let checkHTML = "";
+    if(c && tipo === "ordem"){
+      checkHTML = `
+        <div class="qtitle" style="margin-top:${(p.corpo || diagramaHTML || tabelaHTMLBloco) ? "18px" : "8px"};font-size:17px">${esc(c.pergunta)}</div>
+        <div class="seqlist" id="licSeqLista"></div>
+        <div class="seqpool" id="licSeqPool"></div>
+        <div id="licFeedback" style="margin-top:10px;font-size:14px;line-height:1.5"></div>`;
+    } else if(c){
+      const usaChips = c.estilo === "chips" || (tipo === "multi" && c.estilo !== "lista");
+      const ordem = ordemDoPasso(passo, c.opcoes.length);
+      checkHTML = `
+        <div class="qtitle" style="margin-top:${(p.corpo || diagramaHTML || tabelaHTMLBloco) ? "18px" : "8px"};font-size:17px">${esc(c.pergunta)}</div>
+        ${tipo === "multi" ? `<p class="dica">Pode haver mais de uma certa — toque em todas.</p>` : ""}
+        ${usaChips
+          ? `<div class="bank" id="licOpcoes">${ordem.map(i => `<button class="chip" data-li="${i}">${esc(c.opcoes[i])}</button>`).join("")}</div>`
+          : `<div id="licOpcoes">${ordem.map((i,n) => `<div class="optrow">
+               <button class="opt" data-li="${i}"><span class="k">${"ABCDE"[n]}</span><span>${esc(c.opcoes[i])}</span></button>
+             </div>`).join("")}</div>`}
+        <div id="licFeedback" style="margin-top:10px;font-size:14px;line-height:1.5"></div>`;
+    }
 
     /* Simulação: aparece o roteiro real, uma instrução de cada vez, e ela toca
        na ferramenta certa pra avançar. Errar só balança — sem mensagem, sem
@@ -2342,6 +2488,7 @@ function telaLicao(licId, origem){
     const corpo = `${barra}
       <div class="qtag">Lição · ${esc(lic.nome)}</div>
       ${p.titulo ? `<div class="qtitle" style="margin-top:8px">${esc(p.titulo)}</div>` : ""}
+      ${diagramaHTML}${tabelaHTMLBloco}
       ${p.corpo ? `<div style="font-size:15px;line-height:1.6">${p.corpo}</div>` : ""}
       ${checkHTML}${simHTML}`;
 
@@ -2396,19 +2543,53 @@ function telaLicao(licId, origem){
 
     if(!c){
       document.getElementById("licAvanca").onclick = () => {
-        if(ultimo){ sair(); return; }
+        if(ultimo){ marcarConcluida(); sair(); return; }
         avancar(passo + 1);
       };
       return;
     }
 
-    // passo com checagem (sozinha, ou junto de conteúdo acima)
-    const sel = c.formato === "multi" ? new Set() : { v: null };
+    if(tipo === "ordem"){
+      const pool = ordemDoPasso(passo, c.passos.length);   // reaproveita o mesmo cache de embaralho
+      const escolhidos = [];
+      let verificado = false;
+      function pintarSeq(){
+        const restantes = pool.filter(i => !escolhidos.includes(i));
+        document.getElementById("licSeqPool").innerHTML = restantes.map(i =>
+          `<button class="seqchip" data-seq="${i}" ${verificado ? "disabled" : ""}>${esc(c.passos[i])}</button>`).join("");
+        document.getElementById("licSeqLista").innerHTML = escolhidos.map((idx, pos) =>
+          `<div class="seqitem${verificado && idx !== pos ? " errado" : ""}"><span class="n">${pos+1}</span>${esc(c.passos[idx])}</div>`).join("");
+        document.querySelectorAll("#licSeqPool [data-seq]").forEach(b => b.onclick = () => {
+          if(verificado) return;
+          escolhidos.push(+b.dataset.seq);
+          pintarSeq();
+          document.getElementById("licVerificar").disabled = escolhidos.length !== c.passos.length;
+        });
+      }
+      pintarSeq();
+      document.getElementById("licVerificar").disabled = true;
+      document.getElementById("licVerificar").onclick = () => {
+        if(verificado) return;
+        verificado = true;
+        const acertou = escolhidos.every((idx, pos) => idx === pos);
+        pintarSeq();
+        document.getElementById("licFeedback").innerHTML =
+          `<b>${acertou ? "Isso aí ✓" : "Quase"}</b><br>${esc(c.exp)}`;
+        const btV = document.getElementById("licVerificar");
+        btV.textContent = ultimo ? "Concluir" : "Continuar";
+        btV.disabled = false;
+        btV.onclick = () => { if(ultimo){ marcarConcluida(); sair(); return; } avancar(passo + 1); };
+      };
+      return;
+    }
+
+    // passo com checagem mcq/multi (sozinha, ou junto de conteúdo acima)
+    const sel = tipo === "multi" ? new Set() : { v: null };
     let respondido = false;
     document.querySelectorAll("#licOpcoes [data-li]").forEach(b => b.onclick = () => {
       if(respondido) return;
       const i = +b.dataset.li;
-      if(c.formato === "multi"){
+      if(tipo === "multi"){
         if(sel.has(i)){ sel.delete(i); b.classList.remove("sel"); }
         else { sel.add(i); b.classList.add("sel"); }
         document.getElementById("licVerificar").disabled = sel.size === 0;
@@ -2421,8 +2602,8 @@ function telaLicao(licId, origem){
     document.getElementById("licVerificar").onclick = () => {
       if(respondido) return;
       respondido = true;
-      const gab = c.formato === "multi" ? new Set(c.corretas) : new Set([c.correta]);
-      const marcado = c.formato === "multi" ? sel : new Set([sel.v]);
+      const gab = tipo === "multi" ? new Set(c.corretas) : new Set([c.correta]);
+      const marcado = tipo === "multi" ? sel : new Set([sel.v]);
       document.querySelectorAll("#licOpcoes [data-li]").forEach(b => {
         const i = +b.dataset.li;
         b.classList.remove("sel");
@@ -2435,7 +2616,7 @@ function telaLicao(licId, origem){
       const btV = document.getElementById("licVerificar");
       btV.textContent = ultimo ? "Concluir" : "Continuar";
       btV.disabled = false;
-      btV.onclick = () => { if(ultimo){ sair(); return; } avancar(passo + 1); };
+      btV.onclick = () => { if(ultimo){ marcarConcluida(); sair(); return; } avancar(passo + 1); };
     };
   }
   render();
@@ -2960,7 +3141,7 @@ function caixaPerfilDoGrupo(m, nome, emoji, xpSemana){
       <div class="pfN"><b>⭐ ${xpSemana}</b><span>XP nesta semana</span></div>
       <div class="pfN"><b>🏅 ${tem.size}</b><span>conquistas</span></div>
     </div>
-    <div class="secao" style="margin-top:18px">Conquistas · ${tem.size} de ${CONQUISTAS.length}</div>
+    <div class="secao" style="margin-top:18px">Conquistas · ${tem.size} alcançadas</div>
     ${selosDeOutraPessoa(tem)}
     <p class="muted" style="margin-top:12px">Você vê <b>quantas</b> conquistas essa pessoa já tem, mas
       o nome só aparece nas que você também conquistou. Descobrir o que cada uma pede faz parte — e
@@ -3010,7 +3191,7 @@ function telaPerfil(){
     </div>
   </div>
 
-  <div class="secao">Conquistas · ${ganhas.length} de ${CONQUISTAS.length}</div>
+  <div class="secao">Conquistas · ${ganhas.length} alcançadas</div>
   <div class="cardz">
     <div class="selos">
       ${CONQUISTAS.map(c => ids.has(c.id)
@@ -3460,10 +3641,16 @@ function telaAjustes(op){
           data-emoji="${e}" data-emoji-i="${i}" aria-label="${on ? "Escolher" : "Destravar"} ${e}">${e}
           ${on ? "" : `<span class="precoTag">🪙${PRECO_EMOJI}</span>`}</button>`;
       }).join("")}
+      ${EMOJIS_PREMIUM.map(({e, preco}) => {
+        const on = comprados.has(e);
+        return `<button class="emj ${e === emojiAtual ? "on" : ""} ${on ? "" : "trancado"}"
+          data-emoji="${e}" data-emoji-i="-1" aria-label="${on ? "Escolher" : "Destravar"} ${e}">${e}
+          ${on ? "" : `<span class="precoTag">🪙${preco}</span>`}</button>`;
+      }).join("")}
     </div>
-    <p class="muted" style="margin-top:12px">Os ${EMOJIS_GRATIS} primeiros são de graça. Os outros
-      custam <b>🪙${PRECO_EMOJI} cada</b> pra destravar — depois de destravado, é seu pra sempre.
-      Saldo atual: <b>🪙${saldoMoedas()}</b>.</p>
+    <p class="muted" style="margin-top:12px">Os ${EMOJIS_GRATIS} primeiros são de graça. Os do meio
+      custam <b>🪙${PRECO_EMOJI} cada</b>, e os dois últimos (🧸🎀) custam <b>🪙50 cada</b> — depois
+      de destravado, é seu pra sempre. Saldo atual: <b>🪙${saldoMoedas()}</b>.</p>
     <p class="muted" style="margin-top:8px">Na tela inicial vai aparecer
       <b>Fixa aí${apelido ? ", " + esc(apelido) : ""} ${esc(emojiAtual)}</b>.
       Isso viaja com a sua conta: escolheu no celular, aparece no tablet também.</p>
@@ -3641,23 +3828,25 @@ function telaAjustes(op){
   document.querySelectorAll("[data-emoji]").forEach(b => b.onclick = () => {
     const e = b.dataset.emoji, i = +b.dataset.emojiI;
     const comprados = new Set(S.emojisComprados || []);
-    const desbloqueado = i < EMOJIS_GRATIS || comprados.has(e);
+    const ehPremium = EMOJIS_PREMIUM.some(x => x.e === e);
+    const desbloqueado = (!ehPremium && i < EMOJIS_GRATIS) || comprados.has(e);
+    const preco = precoDoEmoji(e);
     if(desbloqueado){
       S.emoji = e; tocarIdentidade(); salvar(); sincronizarAgora(); telaAjustes();
       return;
     }
-    if(saldoMoedas() < PRECO_EMOJI){
+    if(saldoMoedas() < preco){
       caixaAviso("Moedas insuficientes",
-        `Esse emoji custa 🪙${PRECO_EMOJI} e seu saldo é 🪙${saldoMoedas()}. Continue fazendo
+        `Esse emoji custa 🪙${preco} e seu saldo é 🪙${saldoMoedas()}. Continue fazendo
          exercícios pra juntar moeda.`);
       return;
     }
     caixaConfirma(`Destravar ${e}?`,
-      `Custa 🪙${PRECO_EMOJI}. Depois de destravado é seu pra sempre, e você pode trocar
+      `Custa 🪙${preco}. Depois de destravado é seu pra sempre, e você pode trocar
        de emoji quando quiser sem pagar de novo.`,
       "Destravar",
       () => {
-        gastarMoedas(PRECO_EMOJI);
+        gastarMoedas(preco);
         S.emojisComprados = [...comprados, e];
         S.emoji = e;
         tocarIdentidade();
@@ -3901,7 +4090,8 @@ function render(){
   SES.respondido = false;
   if(SES.fim) tocarRelogio();
   const desenhar = { vf:rVF, mcq:rMCQ, multi:rMulti, escrita:rEscrita, cloze:rCloze,
-                     ordem:rOrdem, relacionar:rRelDespacha, discursiva:rDiscursiva, vfjust:rVFJust }[it.t];
+                     ordem:rOrdem, relacionar:rRelDespacha, discursiva:rDiscursiva, vfjust:rVFJust,
+                     matriz:rMatriz }[it.t];
   if(!desenhar){
     /* Tipo que este app ainda não sabe desenhar — banco novo em programa velho.
        Melhor dizer isso e seguir do que quebrar a bateria inteira. */
@@ -4256,6 +4446,71 @@ function rVFBloco(it){
     resp[k] = b.dataset.v === "1";
     document.querySelectorAll(`.vfitem[data-item="${k}"] [data-v]`).forEach(x => x.classList.toggle("sel", x === b));
     atualizaVerificar(resp.every(r => r !== null));
+  });
+}
+
+/* ---------- 1b2. Matriz — tabela A/D/SE (sistema complemento e afins) ----------
+
+   Pedido novo (provas de Imunologia, 2026-08-30): mais de uma prova traz uma
+   questão que é uma TABELA — várias linhas (processos) contra várias colunas
+   (componentes deletados), cada célula marcada com um símbolo de um conjunto
+   pequeno e fixo (aqui sempre SE/D/A, mas o rótulo de cada símbolo vem do
+   próprio banco). Isso não é nem `vf` (célula não é V/F) nem `relacionar`
+   (não é par único, é uma malha inteira) — por isso o tipo novo `matriz`.
+
+   Mesmo espírito do `vf` em bloco: nota parcial, célula por célula
+   (acertos/total × valor), só fecha e corrige tudo de uma vez, com o botão
+   Verificar, depois que TODA célula estiver preenchida — corrigir célula a
+   célula em tempo real ia entregar o gabarito aos poucos. `it.colunas` e
+   `it.linhas` são os rótulos; `it.gabarito` é uma matriz (mesma forma de
+   linhas × colunas) com o símbolo certo de cada célula; os símbolos
+   possíveis são sempre os três do enunciado desta questão (SE/D/A) — não
+   precisou generalizar pra um conjunto configurável porque as duas provas
+   que trazem esse formato usam exatamente esses três. */
+function rMatriz(it){
+  const val = valorDaQuestao(it);
+  const simbolos = ["SE", "D", "A"];
+  const nLinhas = it.linhas.length, nCols = it.colunas.length, total = nLinhas * nCols;
+  const resp = it.linhas.map(() => new Array(nCols).fill(null));
+  $("#q").innerHTML = cabecalho(it, it.enunciado || "Preencha cada célula da tabela.") +
+    `<p class="matrizLegenda">SE = sem efeito · D = diminuído, não abolido · A = abolido</p>
+     <div class="matrizWrap"><table class="matrizTabela">
+       <thead><tr><th></th>${it.colunas.map(c => `<th>${esc(c)}</th>`).join("")}</tr></thead>
+       <tbody>${it.linhas.map((linha, r) => `
+         <tr data-r="${r}">
+           <td class="rotulo">${esc(linha)}</td>
+           ${it.colunas.map((c, cIdx) => `
+             <td><div class="mgrupo" data-r="${r}" data-c="${cIdx}">
+               ${simbolos.map(s => `<button class="mopt" data-r="${r}" data-c="${cIdx}" data-v="${s}">${s}</button>`).join("")}
+             </div></td>`).join("")}
+         </tr>`).join("")}
+       </tbody>
+     </table></div>`;
+  pedirVerificar(() => {
+    if(SES.respondido) return;
+    if(resp.some(linha => linha.some(v => v === null))) return;
+    document.querySelectorAll(".mopt").forEach(b => b.disabled = true);
+    let acertos = 0;
+    it.linhas.forEach((_, r) => it.colunas.forEach((_, c) => {
+      const certo = resp[r][c] === it.gabarito[r][c];
+      if(certo) acertos++;
+      document.querySelectorAll(`.mgrupo[data-r="${r}"][data-c="${c}"] .mopt`).forEach(x => {
+        if(x.dataset.v === it.gabarito[r][c]) x.classList.add("ok");
+        else if(x.dataset.v === resp[r][c]) x.classList.add("no");
+      });
+    }));
+    const nota = Math.round((acertos / total) * val * 100) / 100;
+    guardarRespostaDeProva(it, nota, { celulas: resp });
+    const texto = `Você acertou ${acertos} de ${total} células — ${nota} de ${val} pontos.` +
+      (it.exp ? `<br><br>${it.exp}` : "");
+    concluir(it, acertos === total, texto);
+  }, false);
+  document.querySelectorAll(".mopt").forEach(b => b.onclick = () => {
+    if(SES.respondido) return;
+    const r = +b.dataset.r, c = +b.dataset.c;
+    resp[r][c] = b.dataset.v;
+    document.querySelectorAll(`.mgrupo[data-r="${r}"][data-c="${c}"] .mopt`).forEach(x => x.classList.toggle("sel", x === b));
+    atualizaVerificar(resp.every(linha => linha.every(v => v !== null)));
   });
 }
 
@@ -5004,7 +5259,15 @@ function telaFim(){
   /* marcos que não dá para recalcular depois: uma vez acontecidos, ficam */
   S.marcos = S.marcos || {};
   if(semErro) S.marcos.perfeitas = (S.marcos.perfeitas || 0) + 1;
+  /* Contagem de sessões perfeitas rápidas — pedido pra virar conquista de
+     "fazer isso várias vezes" (2026-08-26), não só uma vez de sorte. Mesmo
+     critério do recorde (sem erro, sem estourar, pelo menos 5 questões). */
+  if(semErro && !SES.estourou && SES.total >= 5 && segMedio != null){
+    if(segMedio < 30) S.marcos.sub30 = (S.marcos.sub30 || 0) + 1;
+    if(segMedio < 10) S.marcos.sub10 = (S.marcos.sub10 || 0) + 1;
+  }
   S.marcos.ofensivaMax = Math.max(S.marcos.ofensivaMax || 0, S.ofensiva || 0);
+  if(totalRespondidas() > 0 && vencidos().length === 0) S.marcos.zerouFila = true;
   const prox = provaMaisProxima();
   if(prox && prox.dias <= 1) S.marcos.vespera = true;
   const antesDasConquistas = S.marcos.conquistas || [];
@@ -5598,6 +5861,13 @@ function telaPreviaProva(pv){
       extra = `<ul style="margin:8px 0 0;padding-left:18px">${
         q.itens.map((s, i) => `<li>${i + 1}. ${esc(s.frase)}</li>`).join("")}</ul>`;
     }
+    if(q.t === "matriz" && (q.linhas || []).length){
+      /* Mostra as linhas e colunas de verdade (é o que dá o tamanho da
+         tabela), sem nenhum símbolo de resposta — só a estrutura. */
+      extra = `<p class="muted" style="margin:8px 0 4px;font-size:12px">Colunas: ${
+        esc((q.colunas || []).join(" · "))}</p>
+        <ul style="margin:0;padding-left:18px">${q.linhas.map(l => `<li>${esc(l)}</li>`).join("")}</ul>`;
+    }
     if(q.t === "discursiva" && (q.partes || []).length){
       /* Cada parte (a, b, c...) aparece como texto — sem caixa de resposta
          nenhuma aqui, é só pra saber o tamanho da questão antes de comprar. */
@@ -5758,6 +6028,9 @@ function gabaritoEmTexto(q){
   if(q.t === "multi") return (q.corretas || []).map(i => (q.opcoes || [])[i]).join(" · ");
   if(q.t === "escrita") return q.resp || "";
   if(q.t === "relacionar") return (q.pares || []).map(p => p[0] + " → " + p[1]).join("\n");
+  if(q.t === "matriz") return (q.linhas || []).map((linha, r) =>
+      linha + ": " + (q.colunas || []).map((c, cIdx) => c + "=" + ((q.gabarito || [])[r] || [])[cIdx]).join(", ")
+    ).join("\n");
   return "";
 }
 
@@ -6062,14 +6335,14 @@ function bancoGuardado(){
 /* ---------- progresso na nuvem ---------- */
 const CAMPOS_SINC = ["prog","xp","xpSemana","semana","ofensiva","ultimoDia","dia",
                      "feitosHoje","recorde",
-                     "datas","foco","historico","reportes","apelido","emoji","marcadas",
+                     "datas","foco","historico","historicoTempo","reportes","apelido","emoji","marcadas",
                      "provasFeitas",
                      "horizonte","marcos","congelados",
                      "nivel","sala","semanaSala","semanaPassada","ligaVista","pod1","pod2","gelos",
                      "desafiosVistos","desafiosGanhos","desafiosExpiradosVistos",
                      "moedasGanhas","moedasGastas","provasCompradas","marcosMoedas","brindeBoasVindas",
                      "onboardingCompleto","genero","termosAceitos","termosVersao",
-                     "emojisComprados","paletaComprada","paleta","identidadeEm"];
+                     "emojisComprados","paletaComprada","paleta","identidadeEm","licoesFeitas"];
 
 function juntarProgresso(local, remoto){
   /* Mesma conta em dois aparelhos: fica o mais adiantado de cada questão,
@@ -6118,6 +6391,7 @@ function juntarProgresso(local, remoto){
   fora.genero = local.genero != null ? local.genero : remoto.genero;
   /* Emoji e paleta comprados: união — comprou num aparelho, vale nos dois. */
   fora.emojisComprados = [...new Set([...(local.emojisComprados || []), ...(remoto.emojisComprados || [])])];
+  fora.licoesFeitas = [...new Set([...(local.licoesFeitas || []), ...(remoto.licoesFeitas || [])])];
   fora.paletaComprada = !!(local.paletaComprada || remoto.paletaComprada);
   fora.desafiosExpiradosVistos = [...new Set([...(local.desafiosExpiradosVistos || []),
                                               ...(remoto.desafiosExpiradosVistos || [])])].slice(-200);
@@ -6148,6 +6422,7 @@ function juntarProgresso(local, remoto){
   }
 
   fora.historico = { ...(remoto.historico || {}), ...(local.historico || {}) };
+  fora.historicoTempo = { ...(remoto.historicoTempo || {}), ...(local.historicoTempo || {}) };
   fora.datas     = { ...(remoto.datas || {}), ...(local.datas || {}) };
   if(remoto.recorde) fora.recorde = Math.min(local.recorde || 1e9, remoto.recorde);
   /* Apelido, emoji e paleta de cores viajam com a conta. A regra é simples:
