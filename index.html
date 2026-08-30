@@ -6264,14 +6264,64 @@ async function entrarNoGrupoPorCodigo(codigo){
    O Firestore NÃO aceita lista dentro de lista. As questões de relacionar
    guardam os pares como [["esquerda","direita"], ...] — exatamente o formato
    proibido. Na ida cada par vira {e,d}; na volta, par de novo. O resto do app
-   continua vendo pares como sempre viu.                                    */
+   continua vendo pares como sempre viu.
+
+   A questão de tipo `matriz` (2026-08-30) tem o mesmo problema em
+   `gabarito`: é uma matriz linhas×colunas, ou seja, array de arrays. Na ida
+   cada linha vira {valores:[...]}; na volta, array de novo — mesma ideia dos
+   pares, só que por linha inteira em vez de par a par.                     */
 function paraNuvem(it){
-  if(!Array.isArray(it.pares)) return it;
-  return { ...it, pares: it.pares.map(p => ({ e: p[0], d: p[1] })) };
+  let out = it;
+  if(Array.isArray(it.pares))
+    out = { ...out, pares: it.pares.map(p => ({ e: p[0], d: p[1] })) };
+  if(Array.isArray(it.gabarito) && it.gabarito.length && Array.isArray(it.gabarito[0]))
+    out = { ...out, gabarito: it.gabarito.map(linha => ({ valores: linha })) };
+  return out;
 }
 function daNuvem(it){
-  if(!Array.isArray(it.pares)) return it;
-  return { ...it, pares: it.pares.map(p => Array.isArray(p) ? p : [p.e, p.d]) };
+  let out = it;
+  if(Array.isArray(it.pares))
+    out = { ...out, pares: it.pares.map(p => Array.isArray(p) ? p : [p.e, p.d]) };
+  if(Array.isArray(it.gabarito) && it.gabarito.length && !Array.isArray(it.gabarito[0]))
+    out = { ...out, gabarito: it.gabarito.map(linha => Array.isArray(linha) ? linha : linha.valores) };
+  return out;
+}
+
+/* Lições (2026-08-26) têm o mesmo problema num lugar diferente: a `tabela`
+   de um passo guarda `linhas` como array de arrays (uma linha = um array de
+   células), e opcionalmente `classes` como outro array de arrays paralelo
+   (uma linha = um array de classes CSS, uma por célula). Os dois são listas
+   dentro de listas. Na ida, cada linha vira {celulas:[...], classes:[...]?}
+   (classes só entra na linha se tiver alguma); na volta, os dois arrays de
+   novo, célula a célula. O resto do app (tabelaHTML) continua só lendo
+   `t.linhas[i]` como array e `t.classes[i][j]` como antes. */
+function paraNuvemTabela(t){
+  if(!t || !Array.isArray(t.linhas) || !t.linhas.length || !Array.isArray(t.linhas[0])) return t;
+  const classes = t.classes || [];
+  const linhas = t.linhas.map((linha, ri) => {
+    const row = { celulas: linha };
+    if(classes[ri] && classes[ri].length) row.classes = classes[ri];
+    return row;
+  });
+  const { classes: _omit, ...resto } = t;
+  return { ...resto, linhas };
+}
+function daNuvemTabela(t){
+  if(!t || !Array.isArray(t.linhas) || !t.linhas.length || Array.isArray(t.linhas[0])) return t;
+  const classes = t.linhas.map(l => l.classes || []);
+  const linhas = t.linhas.map(l => l.celulas);
+  const temClasses = classes.some(c => c.length);
+  const out = { ...t, linhas };
+  if(temClasses) out.classes = classes;
+  return out;
+}
+function paraNuvemLicao(l){
+  if(!Array.isArray(l.passos)) return l;
+  return { ...l, passos: l.passos.map(p => p.tabela ? { ...p, tabela: paraNuvemTabela(p.tabela) } : p) };
+}
+function daNuvemLicao(l){
+  if(!Array.isArray(l.passos)) return l;
+  return { ...l, passos: l.passos.map(p => p.tabela ? { ...p, tabela: daNuvemTabela(p.tabela) } : p) };
 }
 /* Rede de proteção: se um tipo novo de exercício trouxer outra lista aninhada,
    quero saber na hora de publicar, com o caminho exato, e não um erro genérico. */
@@ -6318,7 +6368,7 @@ async function lerBancoDoGrupo(g){
     (b.licoes || []).forEach(l => {
       if(vistos.has("lc"+l.id)) return;
       vistos.add("lc"+l.id);
-      curso.licoes.push(l);
+      curso.licoes.push(daNuvemLicao(l));
     });
   });
   return curso;
@@ -7438,7 +7488,7 @@ async function telaAdmin(aviso){
     });
     const provasAntigas = (curso.provas || []).map(pv =>
       ({ ...pv, questoes: (pv.questoes || []).map(paraNuvem) }));
-    const licoes = curso.licoes || [];
+    const licoes = (curso.licoes || []).map(paraNuvemLicao);
     // confere antes de mandar: erro do Firestore aqui não diz qual questão é
     for(const k of Object.keys(porProva)){
       const ruim = acharListaAninhada(porProva[k], k);
