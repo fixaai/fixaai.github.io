@@ -793,7 +793,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026on-v32";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026ex-v01";</script>
 <script>window.VERSAO_BANCO = "a48ee8304ad4";</script>
 
 <script>
@@ -1791,6 +1791,15 @@ function registrar(id, acertou){
      quando ela já teve uma passada limpa. Prova sempre usa o estágio 2,
      não importa o que está guardado aqui — ver `rRel`/`rRelFacil`. */
   if(itReg && itReg.t === "relacionar"){
+    if(!p.estagio) p.estagio = 1;
+    if(acertou) p.estagio = Math.min(p.estagio + 1, 2);
+  }
+  /* Lacuna de ESCREVER (`cloze` com `digitar:true`) também progride em dois
+     estágios (pedido da Isabela, 2026-09-28: "eu não sei a resposta na
+     primeira vez que eu tô vendo"). Estágio 1 = escolher as palavras num banco
+     de fichas; depois de acertar, estágio 2 = digitar. Prova não passa por
+     aqui (a linha lá em cima devolve antes) e sempre usa a versão de digitar. */
+  if(itReg && itReg.t === "cloze" && itReg.digitar){
     if(!p.estagio) p.estagio = 1;
     if(acertou) p.estagio = Math.min(p.estagio + 1, 2);
   }
@@ -4758,7 +4767,12 @@ function rEscrita(it){
    montar uma capenga, com opções de outro assunto que entregam a resposta
    pelo formato. */
 function rEscritaEscolha(it){
-  const distratores = distratoresEscrita(it, 3);
+  /* `it.dist` (2026-09-28): alternativas erradas escritas no próprio item,
+     do mesmo formato da resposta. Têm prioridade sobre as do tópico — assim
+     um assunto com uma questão de escrever só também ganha o estágio de
+     múltipla escolha, sem misturar respostas de outro assunto. */
+  const proprios = (it.dist || []).filter(d => d && d !== it.resp);
+  const distratores = proprios.length >= 2 ? embaralhar(proprios).slice(0, 3) : distratoresEscrita(it, 3);
   if(distratores.length < 2) return rEscritaLivre(it);
   const opcoes = embaralhar([it.resp, ...distratores]);
   const certa = opcoes.indexOf(it.resp);
@@ -4881,8 +4895,22 @@ function guardarParcialDeProva(it, acertos, total, rotulo, extra){
     : "";
 }
 
+/* Fichas extras para a lacuna de escrever no estágio 1, quando o item não
+   traz `dist`: respostas de outras lacunas do MESMO tópico (regra de nunca
+   misturar assunto), para o banco de fichas não ter só as respostas certas. */
+function fichasExtrasDoTopico(it, n){
+  const minhas = new Set(it.lacunas.map(l => l.resp));
+  const pool = [];
+  (CURSO.itens || []).forEach(x => {
+    if(x.t !== "cloze" || x.top !== it.top || x.id === it.id) return;
+    (x.lacunas || []).forEach(l => { if(l.resp && !minhas.has(l.resp) && !pool.includes(l.resp)) pool.push(l.resp); });
+  });
+  return embaralhar(pool).slice(0, n);
+}
+
 function rCloze(it){
-  if(it.digitar) return rClozeDigitar(it);
+  const escolhendoPrimeiro = it.digitar && !SES.prova && estagioDe(it) < 2;
+  if(it.digitar && !escolhendoPrimeiro) return rClozeDigitar(it);
   const partes = it.texto.split(/(\[\[\d+\]\])/g);
   const corpo = partes.map(p => {
     const m = p.match(/^\[\[(\d+)\]\]$/);
@@ -4894,9 +4922,13 @@ function rCloze(it){
   it.lacunas.forEach(l => (l.dist||[]).forEach(d => {
     if(!respostas.includes(d) && !extras.includes(d)) extras.push(d);
   }));
+  if(escolhendoPrimeiro && !extras.length)
+    fichasExtrasDoTopico(it, Math.min(4, Math.max(2, it.lacunas.length)))
+      .forEach(d => { if(!respostas.includes(d)) extras.push(d); });
   const banco = embaralhar(respostas.concat(extras));
 
   $("#q").innerHTML = cabecalho(it, it.enunciado) +
+    (escolhendoPrimeiro ? `<p class="dica">Primeira vez vendo esta questão — escolha as palavras. Depois de acertar, ela volta para você escrever.</p>` : "") +
     `<div class="cloze">${corpo}</div>
      <div class="bank">${banco.map((w,i) => `<button class="chip" data-w="${i}">${esc(w)}</button>`).join("")}</div>`;
 
