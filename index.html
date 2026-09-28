@@ -793,8 +793,8 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026on-v31";</script>
-<script>window.VERSAO_BANCO = "684a01b441d4";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026on-v32";</script>
+<script>window.VERSAO_BANCO = "a48ee8304ad4";</script>
 
 <script>
 "use strict";
@@ -4863,6 +4863,24 @@ function rEscritaLivre(it){
      original era de completar por extenso não pode virar múltipla escolha
      nem virar "toque no chip certo": as duas dão pista que a prova de
      verdade não dava. */
+/* Nota parcial numa questão de prova feita de vários sub-itens independentes
+   (lacunas, pares). A professora tira ponto só do sub-item errado e o resto
+   pontua — a prova aqui dentro passou a fazer igual. O `vf` em bloco e a
+   `matriz` já faziam isso; a `cloze` e a `relacionar` davam 0 ou o valor
+   cheio, o que cobrava mais rigor do que a prova de verdade.
+
+   Fora da prova nada muda: a repetição espaçada continua exigindo a questão
+   inteira certa para o item subir de caixa — é `concluir(it, tudoOk, …)` que
+   decide isso, e ele continua recebendo tudoOk. */
+function guardarParcialDeProva(it, acertos, total, rotulo, extra){
+  const val = valorDaQuestao(it);
+  const nota = Math.round((acertos / total) * val * 100) / 100;
+  guardarRespostaDeProva(it, nota, Object.assign({ acertos, total }, extra || {}));
+  return (SES && SES.prova)
+    ? `Você acertou ${acertos} de ${total} ${rotulo} — ${nota} de ${val} pontos.<br><br>`
+    : "";
+}
+
 function rCloze(it){
   if(it.digitar) return rClozeDigitar(it);
   const partes = it.texto.split(/(\[\[\d+\]\])/g);
@@ -4908,15 +4926,17 @@ function rCloze(it){
 
   pedirVerificar(() => {
     if(!completo()) return;
-    let tudoOk = true;
+    let acertos = 0;
     blanks.forEach((b, i) => {
       const dado = banco[preenchido[i]], certo = it.lacunas[i].resp;
       b.classList.remove("filled");
-      if(dado === certo) b.classList.add("ok");
-      else { tudoOk = false; b.classList.add("no"); b.insertAdjacentHTML("afterend", ` <span class="blank fix">${esc(certo)}</span>`); }
+      if(dado === certo){ acertos++; b.classList.add("ok"); }
+      else { b.classList.add("no"); b.insertAdjacentHTML("afterend", ` <span class="blank fix">${esc(certo)}</span>`); }
     });
     $(".bank").style.display = "none";
-    concluir(it, tudoOk, esc(it.exp));
+    const n = it.lacunas.length;
+    const aviso = guardarParcialDeProva(it, acertos, n, "lacunas");
+    concluir(it, acertos === n, aviso + esc(it.exp));
   }, false);
   pintar();
 }
@@ -4949,16 +4969,18 @@ function rClozeDigitar(it){
   pedirVerificar(() => {
     if(SES.respondido) return;
     if(!completo()) return;
-    let tudoOk = true;
+    let acertos = 0;
     inputs.forEach((inp, i) => {
       const lac = it.lacunas[i];
       const r = conferirEscrita(lac, inp.value);
       inp.disabled = true;
-      if(r.certo) inp.classList.add("ok");
-      else{ tudoOk = false; inp.classList.add("no");
+      if(r.certo){ acertos++; inp.classList.add("ok"); }
+      else{ inp.classList.add("no");
         inp.insertAdjacentHTML("afterend", ` <span class="blank fix">${esc(lac.resp)}</span>`); }
     });
-    concluir(it, tudoOk, esc(it.exp));
+    const n = it.lacunas.length;
+    const aviso = guardarParcialDeProva(it, acertos, n, "lacunas");
+    concluir(it, acertos === n, aviso + esc(it.exp));
   }, false);
   setTimeout(() => { try{ inputs[0].focus({ preventScroll:true }); }catch(e){} }, 60);
 }
@@ -5131,18 +5153,19 @@ function rRel(it){
 
   pedirVerificar(() => {
     if(formados.length !== tot) return;
-    let tudoOk = true;
+    let tudoOk = true, certos = 0;
     formados.forEach((f, n) => {
       /* Compara pelo TEXTO certo do lado direito, não pelo índice do par
          original — com valor repetido (duas coisas que precisam de COX-1,
          por exemplo), o índice não bate mesmo a resposta estando certa. */
       const certo = dirL[f.r].txt === it.pares[esqL[f.l].i][1];
-      if(!certo) tudoOk = false;
+      if(certo) certos++; else tudoOk = false;
       const el = $(`.srow[data-pos="${n}"]`);
       if(el) el.classList.add(certo ? "ok" : "no");
     });
     $("#mgrid").style.display = "none";
-    concluir(it, tudoOk, listaDePares(it) + esc(it.exp));
+    const aviso = guardarParcialDeProva(it, certos, tot, "pares");
+    concluir(it, tudoOk, aviso + listaDePares(it) + esc(it.exp));
   }, false);
 }
 
@@ -5402,6 +5425,25 @@ function telaFim(){
    como se fossem uma resposta corrida — a Cloud Function nunca fica sabendo
    que existiu mais de uma caixa. Questão sem `partes` continua com uma caixa
    só, exatamente como sempre foi. */
+/* O comando da questão, quando ele acrescenta alguma coisa aos rótulos das
+   partes. Tira a pontuação e os acentos dos dois lados, apaga do enunciado o
+   texto de cada rótulo e vê o que sobra: sobrando frase de verdade (15+
+   caracteres), esse é o comando e ele precisa aparecer — "defina e explique a
+   função dos termos abaixo", "os anticoncepcionais podem ser formados por
+   estrogênio e progesterona...". Não sobrando, o enunciado era só a colagem
+   dos rótulos e não se repete. */
+function enunciadoUtil(it, partes){
+  const texto = (it.enunciado || it.p || "").trim();
+  if(!texto || !partes || !partes.length) return texto;
+  const limpa = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "")
+                      .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  let resto = " " + limpa(texto) + " ";
+  partes.forEach(r => {
+    const p = limpa(r);
+    if(p) resto = resto.split(p).join(" ");
+  });
+  return resto.replace(/\s+/g, " ").trim().length >= 15 ? texto : "";
+}
 function rDiscursiva(it){
   const g = it.gab || {};
   const val = valorDaQuestao(it);
@@ -5409,9 +5451,21 @@ function rDiscursiva(it){
   const boxes = partes || [null];
   const d = discPorId[it.disc];
   /* A tag ("DISCURSIVA") sempre vem primeiro, antes até do caso clínico —
-     é a primeira coisa que diz que tipo de questão é essa. Com partes, o
-     enunciado grande (a+b+c juntos) NÃO se repete: cada parte já aparece
-     como rótulo em cima da própria caixa, e mostrar duas vezes só confunde. */
+     é a primeira coisa que diz que tipo de questão é essa.
+
+     O enunciado aparece SEMPRE, inclusive com partes. Antes ele era escondido
+     quando havia `partes`, no pressuposto de que os rótulos a) b) c) já
+     repetiriam o enunciado — e não repetem: `enunciado` é o comando da questão
+     ("de acordo com os casos abaixo, escreva qual hormônio usar e por quê") e
+     `partes` são só os rótulos ("a) Paciente amamentando:"). Sem o comando, a
+     pessoa não tem como saber o que responder. Bug encontrado pela Isabela
+     fazendo a P4 de farmaco: ela leu "a) Paciente amamentando" e respondeu
+     metformina, porque nada na tela dizia que a questão era de
+     anticoncepcional.
+
+     A única exceção é o formato antigo do banco, em que o `enunciado` já era
+     a colagem dos próprios rótulos ("a) Explique... b) Explique..."). Aí sim
+     mostrar os dois é repetição pura, e `enunciadoUtil` devolve vazio. */
   $("#q").innerHTML =
     `<div class="qhead">
       <div class="qtag">${TITULO_TIPO[it.t]}${d ? " · " + esc(d.nome) : ""}</div>
@@ -5420,7 +5474,7 @@ function rDiscursiva(it){
     </div>
     ${imagemDaQuestao(it)}
     ${it.apoio ? `<div class="apoio">${esc(it.apoio)}</div>` : ""}
-    ${partes ? "" : `<div class="qtitle">${esc(it.enunciado || it.p)}</div>`}
+    ${enunciadoUtil(it, partes) ? `<div class="qtitle">${esc(enunciadoUtil(it, partes))}</div>` : ""}
     ${blocoFonte(it)}
     <p class="dica">Responda com as suas palavras. Vale ${plural(val, "ponto", "pontos")}${
        partes ? `, no total das ${plural(partes.length, "parte", "partes")}` : ""}.</p>
