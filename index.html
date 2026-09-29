@@ -793,7 +793,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026ex-v01";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026ex-v02";</script>
 <script>window.VERSAO_BANCO = "a48ee8304ad4";</script>
 
 <script>
@@ -6668,6 +6668,7 @@ function juntarProgresso(local, remoto){
 async function baixarProgresso(){
   try{
     const d = await N.api.getDoc(ref("progresso", N.usuario.uid));
+    nuvemLida = true;     /* leu (mesmo que o documento ainda não exista): gravar é seguro */
     return d.exists() ? d.data() : null;
   }catch(e){ return null; }
 }
@@ -6687,6 +6688,9 @@ async function baixarProgresso(){
    ============================================================ */
 async function publicarPlacar(){
   if(!N.ligado || !N.usuario || !N.grupo) return;
+  /* Mesmo cuidado da sincronia: sem ter lido a nuvem nesta abertura, o XP daqui
+     pode ser de dias atrás, e o grupo veria um número menor que o real. */
+  if(!nuvemLida) return;
   const dados = {
     apelido: (S.apelido || "").trim().slice(0, 14),
     emoji: (S.emoji || "").slice(0, 8),
@@ -7087,6 +7091,10 @@ function acertarContasDosDesafios(lista){
    próprio (Cloud Functions pede plano pago), é o mais correto que dá para
    fazer só com regra do Firestore. */
 let sincPendente = null, sincUltimo = 0, sincEmCurso = false, ultimoRemoto = null;
+/* Só é seguro GRAVAR o progresso depois de ter LIDO a nuvem pelo menos uma vez
+   nesta abertura do app (ou de saber que lá não existe nada). Ver o comentário
+   em `sincronizarAgora`. */
+let nuvemLida = false;
 function agendarSincronia(){
   /* Escrever a cada questão gastaria cota à toa. Uma escrita a cada 15s,
      mais uma garantida ao fechar o app, dá conta com folga. */
@@ -7127,7 +7135,21 @@ async function sincronizarAgora(op){
     try{
       const d = await N.api.getDoc(ref("progresso", N.usuario.uid));
       if(d.exists()) mudou = aplicarRemoto(d.data());
-    }catch(e){ /* sem rede: sobe o que tem, e na próxima a gente lê */ }
+      nuvemLida = true;
+    }catch(e){ /* sem rede: não grava nada — ver abaixo */ }
+  }
+  /* Bug que custou o XP de uma colega (2026-09-29): ela caiu de ~19 mil para
+     12,2 mil. Quando a leitura falhava (sinal fraco, app abrindo) ou o app
+     fechava antes da primeira leitura, a gravação acontecia do mesmo jeito,
+     com o que estava neste aparelho — e um aparelho com dados de dias atrás
+     escrevia o número velho POR CIMA do número certo da nuvem. O "junta pelo
+     maior" só funciona se a gente juntou antes de gravar. Agora: sem ter lido
+     a nuvem nesta abertura, não grava; o progresso fica guardado aqui e sobe
+     na próxima sincronia que conseguir ler primeiro. As regras do Firestore
+     também recusam qualquer gravação que diminua o XP (ver firestore.rules). */
+  if(!nuvemLida){
+    sincEmCurso = false;
+    return;
   }
   const dados = {};
   CAMPOS_SINC.forEach(k => { if(S[k] !== undefined) dados[k] = S[k]; });
@@ -7874,7 +7896,7 @@ async function abrirComGrupo(g){
   indexarBanco();
 
   const remoto = await baixarProgresso();
-  if(remoto){ S = { ...S, ...juntarProgresso(S, remoto) }; salvar(); }
+  if(remoto){ S = { ...S, ...juntarProgresso(S, remoto) }; salvar(); ultimoRemoto = remoto; }
   aplicarPaleta();
 
   if(!S.onboardingCompleto){ telaOnboarding(); sincronizarAgora(); return; }
