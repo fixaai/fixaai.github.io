@@ -793,8 +793,8 @@ input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--l
 <body>
 <div id="app"></div>
 
-<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026ex-v02";</script>
-<script>window.VERSAO_BANCO = "a48ee8304ad4";</script>
+<script>window.FIREBASE_CONFIG = {"apiKey": "AIzaSyCDUiFNVc-4vE3Ow1Ab3y9mJGIkl-f0Ggc", "authDomain": "fixaai-59643.firebaseapp.com", "projectId": "fixaai-59643", "storageBucket": "fixaai-59643.firebasestorage.app", "messagingSenderId": "55814687438", "appId": "1:55814687438:web:00064c69726bd379b65e9f"}; window.GOOGLE_CLIENT_ID = "55814687438-lam7uujfa8k9p4e1jqt0rungattd9dup.apps.googleusercontent.com"; window.VERSAO_BUILD = "026im-v01";</script>
+<script>window.VERSAO_BANCO = "41e70e0c015e";</script>
 
 <script>
 "use strict";
@@ -4478,11 +4478,15 @@ function rVFBloco(it){
    que trazem esse formato usam exatamente esses três. */
 function rMatriz(it){
   const val = valorDaQuestao(it);
-  const simbolos = ["SE", "D", "A"];
+  // Conjunto de símbolos: SE/D/A por padrão (provas de complemento, P3);
+  // a tabela de hipersensibilidade da P4 usa "+"/"−" via it.simbolos (2026-10-13).
+  const simbolos = Array.isArray(it.simbolos) && it.simbolos.length ? it.simbolos : ["SE", "D", "A"];
+  const legenda = it.legenda || (it.simbolos ? "" : "SE = sem efeito · D = diminuído, não abolido · A = abolido");
   const nLinhas = it.linhas.length, nCols = it.colunas.length, total = nLinhas * nCols;
   const resp = it.linhas.map(() => new Array(nCols).fill(null));
   $("#q").innerHTML = cabecalho(it, it.enunciado || "Preencha cada célula da tabela.") +
-    `<p class="matrizLegenda">SE = sem efeito · D = diminuído, não abolido · A = abolido</p>
+    (legenda ? `<p class="matrizLegenda">${esc(legenda)}</p>` : "") +
+    `
      <div class="matrizWrap"><table class="matrizTabela">
        <thead><tr><th></th>${it.colunas.map(c => `<th>${esc(c)}</th>`).join("")}</tr></thead>
        <tbody>${it.linhas.map((linha, r) => `
